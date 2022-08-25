@@ -1,0 +1,12 @@
+# Changelog for terraform-azurerm-sharepoint
+
+## [1.1.0] - 2022-08-25
+
+### Changed
+
+- Added validation on variable sharepoint_version
+- Removed variable dns_label_prefix and replaced it variable resource_group_name
+
+## [1.0.0] - 2022-08-25
+
+Initial release

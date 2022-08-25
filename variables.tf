@@ -10,10 +10,15 @@ variable "resource_group_name" {
 variable "sharepoint_version" {
   default     = "SE"
   description = "Version of SharePoint farm to create."
-}
-
-variable "dns_label_prefix" {
-  description = "[Prefix] of public DNS names of VMs, e.g. '[Prefix]-[VMName].[region].cloudapp.azure.com'"
+  validation {
+    condition = contains([
+      "SE",
+      "2019",
+      "2016",
+      "2013"
+    ], var.sharepoint_version)
+    error_message = "Invalid SharePoint farm version."
+  }
 }
 
 variable "admin_username" {

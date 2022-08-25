@@ -130,7 +130,7 @@ resource "azurerm_public_ip" "pip_dc" {
   name                = "PublicIP-${var.config_dc["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.dns_label_prefix)}-${lower(var.config_dc["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_dc["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
@@ -153,7 +153,7 @@ resource "azurerm_public_ip" "pip_sql" {
   name                = "PublicIP-${var.config_sql["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.dns_label_prefix)}-${lower(var.config_sql["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_sql["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
@@ -175,7 +175,7 @@ resource "azurerm_public_ip" "pip_sp" {
   name                = "PublicIP-${var.config_sp["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.dns_label_prefix)}-${lower(var.config_sp["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_sp["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
@@ -457,7 +457,7 @@ resource "azurerm_public_ip" "pip_fe" {
   name                = "PublicIP-${var.config_fe["vmName"]}-${count.index}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.dns_label_prefix)}-${lower(var.config_fe["vmName"])}-${count.index}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_fe["vmName"])}-${count.index}"
   allocation_method   = "Dynamic"
 }
 
