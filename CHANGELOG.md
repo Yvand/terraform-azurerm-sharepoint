@@ -4,11 +4,12 @@
 
 ### Added
 
-- Add possibility to configure Azure Bastion
+- Added possibility to configure Azure Bastion
 
 ### Changed
 
 - Moved variables that were used to store configuration to locals
+- Increased timeout for DSC extensions of DC and SQL to 45 minutes
 
 ## [1.1.0] - 2022-08-25
 
