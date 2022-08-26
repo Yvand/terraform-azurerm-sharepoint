@@ -6,24 +6,26 @@ locals {
   config_sp_image = lookup(local.config_sp_image_list, var.sharepoint_version)
   create_rdp_rule = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   general_settings = {
-    dscScriptsFolder  = "dsc"
-    adfsSvcUserName   = "adfssvc"
-    sqlSvcUserName    = "sqlsvc"
-    spSetupUserName   = "spsetup"
-    spFarmUserName    = "spfarm"
-    spSvcUserName     = "spsvc"
-    spAppPoolUserName = "spapppool"
-    spSuperUserName   = "spSuperUser"
-    spSuperReaderName = "spSuperReader"
-    sqlAlias          = "SQLAlias"
+    dscScriptsFolder      = "dsc"
+    adfsSvcUserName       = "adfssvc"
+    sqlSvcUserName        = "sqlsvc"
+    spSetupUserName       = "spsetup"
+    spFarmUserName        = "spfarm"
+    spSvcUserName         = "spsvc"
+    spAppPoolUserName     = "spapppool"
+    spSuperUserName       = "spSuperUser"
+    spSuperReaderName     = "spSuperReader"
+    sqlAlias              = "SQLAlias"
+    bastion_publicip_name = "${lower(azurerm_resource_group.rg.name)}-bastion"
   }
 
   network_settings = {
-    vNetPrivatePrefix          = "10.1.0.0/16"
-    vNetPrivateSubnetDCPrefix  = "10.1.1.0/24"
-    vNetPrivateSubnetSQLPrefix = "10.1.2.0/24"
-    vNetPrivateSubnetSPPrefix  = "10.1.3.0/24"
-    vmDCPrivateIPAddress       = "10.1.1.4"
+    vNetPrivatePrefix              = "10.1.0.0/16"
+    vNetPrivateSubnetDCPrefix      = "10.1.1.0/24"
+    vNetPrivateSubnetSQLPrefix     = "10.1.2.0/24"
+    vNetPrivateSubnetSPPrefix      = "10.1.3.0/24"
+    vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
+    vmDCPrivateIPAddress           = "10.1.1.4"
   }
 
   config_dc = {
@@ -45,8 +47,8 @@ locals {
   }
 
   config_sp = {
-    vmName = "SP"
-    vmSize = "Standard_B4ms"
+    vmName             = "SP"
+    vmSize             = "Standard_B4ms"
     storageAccountType = "Standard_LRS"
   }
 
@@ -647,4 +649,66 @@ SETTINGS
     }
   }
 PROTECTED_SETTINGS
+}
+
+# Configuration for Azure Bastion
+resource "azurerm_network_security_group" "nsg_subnet_bastion" {
+  count               = var.enable_azure_bastion ? 1 : 0
+  name                = "NSG-Subnet-${local.config_sp["vmName"]}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "allow-443-Internet"
+  description                 = "Allow RDP"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "Internet"
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 120
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_subnet" "subnet_bastion" {
+  count                = var.enable_azure_bastion ? 1 : 0
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
+}
+
+resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
+  count                     = var.enable_azure_bastion ? 1 : 0
+  subnet_id                 = azurerm_subnet.subnet_bastion[0].id
+  network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
+}
+
+resource "azurerm_public_ip" "pip_bastion" {
+  count               = var.enable_azure_bastion ? 1 : 0
+  name                = "PublicIP-Bastion"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  domain_name_label   = local.general_settings.bastion_publicip_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
+}
+
+resource "azurerm_bastion_host" "Bastion" {
+  count               = var.enable_azure_bastion ? 1 : 0
+  name                = "Bastion"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.subnet_bastion[0].id
+    public_ip_address_id = azurerm_public_ip.pip_bastion[0].id
+  }
 }

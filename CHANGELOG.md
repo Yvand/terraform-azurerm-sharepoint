@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add possibility to configure Azure Bastion
+
 ### Changed
 
 - Moved variables that were used to store configuration to locals
