@@ -1,5 +1,11 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## Unreleased
+
+### Changed
+
+- Moved variables that were used to store configuration to locals
+
 ## [1.1.0] - 2022-08-25
 
 ### Changed

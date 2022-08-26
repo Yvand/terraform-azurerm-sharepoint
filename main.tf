@@ -3,8 +3,92 @@ provider "azurerm" {
 }
 
 locals {
-  config_sp_image = lookup(var.config_sp_image, var.sharepoint_version)
+  config_sp_image = lookup(local.config_sp_image_list, var.sharepoint_version)
   create_rdp_rule = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  general_settings = {
+    dscScriptsFolder  = "dsc"
+    adfsSvcUserName   = "adfssvc"
+    sqlSvcUserName    = "sqlsvc"
+    spSetupUserName   = "spsetup"
+    spFarmUserName    = "spfarm"
+    spSvcUserName     = "spsvc"
+    spAppPoolUserName = "spapppool"
+    spSuperUserName   = "spSuperUser"
+    spSuperReaderName = "spSuperReader"
+    sqlAlias          = "SQLAlias"
+  }
+
+  network_settings = {
+    vNetPrivatePrefix          = "10.1.0.0/16"
+    vNetPrivateSubnetDCPrefix  = "10.1.1.0/24"
+    vNetPrivateSubnetSQLPrefix = "10.1.2.0/24"
+    vNetPrivateSubnetSPPrefix  = "10.1.3.0/24"
+    vmDCPrivateIPAddress       = "10.1.1.4"
+  }
+
+  config_dc = {
+    vmName             = "DC"
+    vmSize             = "Standard_B2s"
+    vmImagePublisher   = "MicrosoftWindowsServer"
+    vmImageOffer       = "WindowsServer"
+    vmImageSKU         = "2022-datacenter-azure-edition-smalldisk"
+    storageAccountType = "Standard_LRS"
+  }
+
+  config_sql = {
+    vmName             = "SQL"
+    vmSize             = "Standard_B2ms"
+    vmImagePublisher   = "MicrosoftSQLServer"
+    vmImageOffer       = "sql2019-ws2022"
+    vmImageSKU         = "sqldev-gen2"
+    storageAccountType = "Standard_LRS"
+  }
+
+  config_sp = {
+    vmName = "SP"
+    vmSize = "Standard_B4ms"
+    storageAccountType = "Standard_LRS"
+  }
+
+  config_sp_image_list = {
+    "SE"   = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "2019" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019:latest"
+    "2016" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
+    "2013" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
+  }
+
+  config_fe = {
+    vmName = "FE"
+    vmSize = "Standard_B4ms"
+  }
+
+  config_dc_dsc = {
+    fileName       = "ConfigureDCVM.zip"
+    script         = "ConfigureDCVM.ps1"
+    function       = "ConfigureDCVM"
+    forceUpdateTag = "1.0"
+  }
+
+  config_sql_dsc = {
+    fileName       = "ConfigureSQLVM.zip"
+    script         = "ConfigureSQLVM.ps1"
+    function       = "ConfigureSQLVM"
+    forceUpdateTag = "1.0"
+  }
+
+  config_sp_dsc = {
+    fileName       = "ConfigureSPVM.zip"
+    script         = "ConfigureSPVM.ps1"
+    function       = "ConfigureSPVM"
+    forceUpdateTag = "1.0"
+  }
+
+  config_fe_dsc = {
+    fileName       = "ConfigureFEVM.zip"
+    script         = "ConfigureFEVM.ps1"
+    function       = "ConfigureFEVM"
+    forceUpdateTag = "1.0"
+  }
 }
 
 # Create a resource group
@@ -15,7 +99,7 @@ resource "azurerm_resource_group" "rg" {
 
 # Create the network security groups
 resource "azurerm_network_security_group" "nsg_subnet_dc" {
-  name                = "NSG-Subnet-${var.config_dc["vmName"]}"
+  name                = "NSG-Subnet-${local.config_dc["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -37,7 +121,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sql" {
-  name                = "NSG-Subnet-${var.config_sql["vmName"]}"
+  name                = "NSG-Subnet-${local.config_sql["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -59,7 +143,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sp" {
-  name                = "NSG-Subnet-${var.config_sp["vmName"]}"
+  name                = "NSG-Subnet-${local.config_sp["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -85,15 +169,15 @@ resource "azurerm_virtual_network" "vnet" {
   name                = "${azurerm_resource_group.rg.name}-vnet"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  address_space       = [var.network_settings["vNetPrivatePrefix"]]
+  address_space       = [local.network_settings["vNetPrivatePrefix"]]
 }
 
 # Subnet and NSG for DC
 resource "azurerm_subnet" "subnet_dc" {
-  name                 = "Subnet-${var.config_dc["vmName"]}"
+  name                 = "Subnet-${local.config_dc["vmName"]}"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [var.network_settings["vNetPrivateSubnetDCPrefix"]]
+  address_prefixes     = [local.network_settings["vNetPrivateSubnetDCPrefix"]]
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsg_subnetdc_association" {
@@ -102,10 +186,10 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetdc_assoc
 }
 
 resource "azurerm_subnet" "subnet_sql" {
-  name                 = "Subnet-${var.config_sql["vmName"]}"
+  name                 = "Subnet-${local.config_sql["vmName"]}"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [var.network_settings["vNetPrivateSubnetSQLPrefix"]]
+  address_prefixes     = [local.network_settings["vNetPrivateSubnetSQLPrefix"]]
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsg_subnetsql_association" {
@@ -114,10 +198,10 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetsql_asso
 }
 
 resource "azurerm_subnet" "subnet_sp" {
-  name                 = "Subnet-${var.config_sp["vmName"]}"
+  name                 = "Subnet-${local.config_sp["vmName"]}"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [var.network_settings["vNetPrivateSubnetSPPrefix"]]
+  address_prefixes     = [local.network_settings["vNetPrivateSubnetSPPrefix"]]
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_association" {
@@ -127,15 +211,15 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_assoc
 
 # Create artifacts for VM DC
 resource "azurerm_public_ip" "pip_dc" {
-  name                = "PublicIP-${var.config_dc["vmName"]}"
+  name                = "PublicIP-${local.config_dc["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_dc["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_dc["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_network_interface" "nic_dc_0" {
-  name                = "NIC-${var.config_dc["vmName"]}-0"
+  name                = "NIC-${local.config_dc["vmName"]}-0"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -143,22 +227,22 @@ resource "azurerm_network_interface" "nic_dc_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_dc.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = var.network_settings["vmDCPrivateIPAddress"]
+    private_ip_address            = local.network_settings["vmDCPrivateIPAddress"]
     public_ip_address_id          = azurerm_public_ip.pip_dc.id
   }
 }
 
 # Create artifacts for VM SQL
 resource "azurerm_public_ip" "pip_sql" {
-  name                = "PublicIP-${var.config_sql["vmName"]}"
+  name                = "PublicIP-${local.config_sql["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_sql["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sql["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_network_interface" "nic_sql_0" {
-  name                = "NIC-${var.config_sql["vmName"]}-0"
+  name                = "NIC-${local.config_sql["vmName"]}-0"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -172,15 +256,15 @@ resource "azurerm_network_interface" "nic_sql_0" {
 
 # Create artifacts for VM SP
 resource "azurerm_public_ip" "pip_sp" {
-  name                = "PublicIP-${var.config_sp["vmName"]}"
+  name                = "PublicIP-${local.config_sp["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_sp["vmName"])}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sp["vmName"])}"
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_network_interface" "nic_sp_0" {
-  name                = "NIC-${var.config_sp["vmName"]}-0"
+  name                = "NIC-${local.config_sp["vmName"]}-0"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -194,12 +278,12 @@ resource "azurerm_network_interface" "nic_sp_0" {
 
 # Create virtual machines
 resource "azurerm_windows_virtual_machine" "vm_dc" {
-  name                     = var.config_dc["vmName"]
-  computer_name            = var.config_dc["vmName"]
+  name                     = local.config_dc["vmName"]
+  computer_name            = local.config_dc["vmName"]
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   network_interface_ids    = [azurerm_network_interface.nic_dc_0.id]
-  size                     = var.config_dc["vmSize"]
+  size                     = local.config_dc["vmSize"]
   admin_username           = var.admin_username
   admin_password           = var.admin_password
   license_type             = "Windows_Server"
@@ -208,22 +292,22 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${var.config_dc["vmName"]}-OS"
-    storage_account_type = var.config_dc["storageAccountType"]
+    name                 = "Disk-${local.config_dc["vmName"]}-OS"
+    storage_account_type = local.config_dc["storageAccountType"]
     caching              = "ReadWrite"
   }
 
   source_image_reference {
-    publisher = var.config_dc["vmImagePublisher"]
-    offer     = var.config_dc["vmImageOffer"]
-    sku       = var.config_dc["vmImageSKU"]
+    publisher = local.config_dc["vmImagePublisher"]
+    offer     = local.config_dc["vmImageOffer"]
+    sku       = local.config_dc["vmImageSKU"]
     version   = "latest"
   }
 }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   # count                      = 0
-  name                       = "VM-${var.config_dc["vmName"]}-DSC"
+  name                       = "VM-${local.config_dc["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_dc.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
@@ -238,13 +322,13 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${var.general_settings["dscScriptsFolder"]}/${var.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
-	    "function": "${var.config_dc_dsc["function"]}",
-	    "script": "${var.config_dc_dsc["script"]}"
+	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "function": "${local.config_dc_dsc["function"]}",
+	    "script": "${local.config_dc_dsc["script"]}"
     },
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
-      "PrivateIP": "${var.network_settings["vmDCPrivateIPAddress"]}"
+      "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}"
     },
     "privacy": {
       "dataCollection": "enable"
@@ -260,7 +344,7 @@ SETTINGS
         "Password": "${var.admin_password}"
       },
       "AdfsSvcCreds": {
-        "UserName": "${var.general_settings["adfsSvcUserName"]}",
+        "UserName": "${local.general_settings["adfsSvcUserName"]}",
         "Password": "${var.service_accounts_password}"
       }
     }
@@ -269,12 +353,12 @@ PROTECTED_SETTINGS
 }
 
 resource "azurerm_windows_virtual_machine" "vm_sql" {
-  name                     = var.config_sql["vmName"]
-  computer_name            = var.config_sql["vmName"]
+  name                     = local.config_sql["vmName"]
+  computer_name            = local.config_sql["vmName"]
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   network_interface_ids    = [azurerm_network_interface.nic_sql_0.id]
-  size                     = var.config_sql["vmSize"]
+  size                     = local.config_sql["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = var.admin_password
   license_type             = "Windows_Server"
@@ -283,22 +367,22 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${var.config_sql["vmName"]}-OS"
-    storage_account_type = var.config_sql["storageAccountType"]
+    name                 = "Disk-${local.config_sql["vmName"]}-OS"
+    storage_account_type = local.config_sql["storageAccountType"]
     caching              = "ReadWrite"
   }
 
   source_image_reference {
-    publisher = var.config_sql["vmImagePublisher"]
-    offer     = var.config_sql["vmImageOffer"]
-    sku       = var.config_sql["vmImageSKU"]
+    publisher = local.config_sql["vmImagePublisher"]
+    offer     = local.config_sql["vmImageOffer"]
+    sku       = local.config_sql["vmImageSKU"]
     version   = "latest"
   }
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   # count                      = 0
-  name                       = "VM-${var.config_sql["vmName"]}-DSC"
+  name                       = "VM-${local.config_sql["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
@@ -313,12 +397,12 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${var.general_settings["dscScriptsFolder"]}/${var.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
-	    "function": "${var.config_sql_dsc["function"]}",
-	    "script": "${var.config_sql_dsc["script"]}"
+	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "function": "${local.config_sql_dsc["function"]}",
+	    "script": "${local.config_sql_dsc["script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${var.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}"
     },
     "privacy": {
@@ -335,11 +419,11 @@ SETTINGS
         "Password": "${var.admin_password}"
       },
       "SqlSvcCreds": {
-        "UserName": "${var.general_settings["sqlSvcUserName"]}",
+        "UserName": "${local.general_settings["sqlSvcUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${var.general_settings["spSetupUserName"]}",
+        "UserName": "${local.general_settings["spSetupUserName"]}",
         "Password": "${var.service_accounts_password}"
       }
     }
@@ -348,12 +432,12 @@ PROTECTED_SETTINGS
 }
 
 resource "azurerm_windows_virtual_machine" "vm_sp" {
-  name                     = var.config_sp["vmName"]
-  computer_name            = var.config_sp["vmName"]
+  name                     = local.config_sp["vmName"]
+  computer_name            = local.config_sp["vmName"]
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   network_interface_ids    = [azurerm_network_interface.nic_sp_0.id]
-  size                     = var.config_sp["vmSize"]
+  size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = var.admin_password
   license_type             = "Windows_Server"
@@ -362,8 +446,8 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${var.config_sp["vmName"]}-OS"
-    storage_account_type = var.config_sp["storageAccountType"]
+    name                 = "Disk-${local.config_sp["vmName"]}-OS"
+    storage_account_type = local.config_sp["storageAccountType"]
     caching              = "ReadWrite"
   }
 
@@ -377,7 +461,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
 
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   # count                      = 0
-  name                       = "VM-${var.config_sp["vmName"]}-DSC"
+  name                       = "VM-${local.config_sp["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
@@ -392,16 +476,16 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${var.general_settings["dscScriptsFolder"]}/${var.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
-	    "function": "${var.config_sp_dsc["function"]}",
-	    "script": "${var.config_sp_dsc["script"]}"
+	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "function": "${local.config_sp_dsc["function"]}",
+	    "script": "${local.config_sp_dsc["script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${var.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}",
-      "DCName": "${var.config_dc["vmName"]}",
-      "SQLName": "${var.config_sql["vmName"]}",
-      "SQLAlias": "${var.general_settings["sqlAlias"]}",
+      "DCName": "${local.config_dc["vmName"]}",
+      "SQLName": "${local.config_sql["vmName"]}",
+      "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": true
     },
@@ -419,19 +503,19 @@ SETTINGS
         "Password": "${var.admin_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${var.general_settings["spSetupUserName"]}",
+        "UserName": "${local.general_settings["spSetupUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPFarmCreds": {
-        "UserName": "${var.general_settings["spFarmUserName"]}",
+        "UserName": "${local.general_settings["spFarmUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPSvcCreds": {
-        "UserName": "${var.general_settings["spSvcUserName"]}",
+        "UserName": "${local.general_settings["spSvcUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPAppPoolCreds": {
-        "UserName": "${var.general_settings["spAppPoolUserName"]}",
+        "UserName": "${local.general_settings["spAppPoolUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPPassphraseCreds": {
@@ -439,11 +523,11 @@ SETTINGS
         "Password": "${var.service_accounts_password}"
       },
       "SPSuperUserCreds": {
-        "UserName": "${var.general_settings["spSuperUserName"]}",
+        "UserName": "${local.general_settings["spSuperUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPSuperReaderCreds": {
-        "UserName": "${var.general_settings["spSuperReaderName"]}",
+        "UserName": "${local.general_settings["spSuperReaderName"]}",
         "Password": "${var.service_accounts_password}"
       }
     }
@@ -454,16 +538,16 @@ PROTECTED_SETTINGS
 # Can create 0 to var.number_additional_frontend FE VMs
 resource "azurerm_public_ip" "pip_fe" {
   count               = var.number_additional_frontend
-  name                = "PublicIP-${var.config_fe["vmName"]}-${count.index}"
+  name                = "PublicIP-${local.config_fe["vmName"]}-${count.index}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(var.config_fe["vmName"])}-${count.index}"
+  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_fe["vmName"])}-${count.index}"
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_network_interface" "nic_fe_0" {
   count               = var.number_additional_frontend
-  name                = "NIC-${var.config_fe["vmName"]}-${count.index}-0"
+  name                = "NIC-${local.config_fe["vmName"]}-${count.index}-0"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -477,12 +561,12 @@ resource "azurerm_network_interface" "nic_fe_0" {
 
 resource "azurerm_windows_virtual_machine" "vm_fe" {
   count                    = var.number_additional_frontend
-  name                     = "${var.config_fe["vmName"]}-${count.index}"
-  computer_name            = "${var.config_fe["vmName"]}-${count.index}"
+  name                     = "${local.config_fe["vmName"]}-${count.index}"
+  computer_name            = "${local.config_fe["vmName"]}-${count.index}"
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
   network_interface_ids    = [element(azurerm_network_interface.nic_fe_0.*.id, count.index)]
-  size                     = var.config_sp["vmSize"]
+  size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = var.admin_password
   license_type             = "Windows_Server"
@@ -491,8 +575,8 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${var.config_fe["vmName"]}-${count.index}-OS"
-    storage_account_type = var.config_sp["storageAccountType"]
+    name                 = "Disk-${local.config_fe["vmName"]}-${count.index}-OS"
+    storage_account_type = local.config_sp["storageAccountType"]
     caching              = "ReadWrite"
   }
 
@@ -507,7 +591,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
 resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   # count                      = 0
   count                      = var.number_additional_frontend
-  name                       = "VM-${var.config_fe["vmName"]}-${count.index}-DSC"
+  name                       = "VM-${local.config_fe["vmName"]}-${count.index}-DSC"
   virtual_machine_id         = element(azurerm_windows_virtual_machine.vm_fe.*.id, count.index)
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
@@ -522,16 +606,16 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${var.general_settings["dscScriptsFolder"]}/${var.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
-	    "function": "${var.config_fe_dsc["function"]}",
-	    "script": "${var.config_fe_dsc["script"]}"
+	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "function": "${local.config_fe_dsc["function"]}",
+	    "script": "${local.config_fe_dsc["script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${var.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}",
-      "DCName": "${var.config_dc["vmName"]}",
-      "SQLName": "${var.config_sql["vmName"]}",
-      "SQLAlias": "${var.general_settings["sqlAlias"]}",
+      "DCName": "${local.config_dc["vmName"]}",
+      "SQLName": "${local.config_sql["vmName"]}",
+      "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": true
     },
@@ -549,11 +633,11 @@ SETTINGS
         "Password": "${var.admin_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${var.general_settings["spSetupUserName"]}",
+        "UserName": "${local.general_settings["spSetupUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPFarmCreds": {
-        "UserName": "${var.general_settings["spFarmUserName"]}",
+        "UserName": "${local.general_settings["spFarmUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
       "SPPassphraseCreds": {
