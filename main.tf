@@ -317,7 +317,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   auto_upgrade_minor_version = true
 
   timeouts {
-    create = "30m"
+    create = "45m"
   }
 
   settings = <<SETTINGS
@@ -392,7 +392,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   auto_upgrade_minor_version = true
 
   timeouts {
-    create = "30m"
+    create = "45m"
   }
 
   settings = <<SETTINGS
