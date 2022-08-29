@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [1.2.1] - 2022-08-29
+
+### Fixed
+
+- Added rules that were missing on the network security group for Bastion
+- Fixed a typo in the name of Bastion's subnet
+
 ## [1.2.0] - 2022-08-26
 
 ### Added
