@@ -3,7 +3,9 @@ provider "azurerm" {
 }
 
 locals {
-  config_sp_image = lookup(local.config_sp_image_list, var.sharepoint_version)
+  config_sp_image = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
+  config_sp_dsc   = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc   = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
   create_rdp_rule = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   general_settings = {
     dscScriptsFolder      = "dsc"
@@ -13,6 +15,7 @@ locals {
     spFarmUserName        = "spfarm"
     spSvcUserName         = "spsvc"
     spAppPoolUserName     = "spapppool"
+    spADDirSyncUserName   = "spdirsync"
     spSuperUserName       = "spSuperUser"
     spSuperReaderName     = "spSuperReader"
     sqlAlias              = "SQLAlias"
@@ -53,10 +56,10 @@ locals {
   }
 
   config_sp_image_list = {
-    "SE"   = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
-    "2019" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019:latest"
-    "2016" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
-    "2013" = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019:latest"
+    "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
+    "2013"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
   }
 
   config_fe = {
@@ -78,16 +81,30 @@ locals {
     forceUpdateTag = "1.0"
   }
 
-  config_sp_dsc = {
-    fileName       = "ConfigureSPVM.zip"
-    script         = "ConfigureSPVM.ps1"
+  config_sp_legacy_dsc = {
+    fileName       = "ConfigureSPLegacy.zip"
+    script         = "ConfigureSPLegacy.ps1"
     function       = "ConfigureSPVM"
     forceUpdateTag = "1.0"
   }
 
-  config_fe_dsc = {
-    fileName       = "ConfigureFEVM.zip"
-    script         = "ConfigureFEVM.ps1"
+  config_sp_se_dsc = {
+    fileName       = "ConfigureSPSE.zip"
+    script         = "ConfigureSPSE.ps1"
+    function       = "ConfigureSPVM"
+    forceUpdateTag = "1.0"
+  }
+
+  config_fe_legacy_dsc = {
+    fileName       = "ConfigureFELegacyVM.zip"
+    script         = "ConfigureFELegacyVM.ps1"
+    function       = "ConfigureFEVM"
+    forceUpdateTag = "1.0"
+  }
+
+  config_fe_se_dsc = {
+    fileName       = "ConfigureFESEVM.zip"
+    script         = "ConfigureFESEVM.ps1"
     function       = "ConfigureFEVM"
     forceUpdateTag = "1.0"
   }
@@ -217,7 +234,9 @@ resource "azurerm_public_ip" "pip_dc" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_dc["vmName"])}"
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
 }
 
 resource "azurerm_network_interface" "nic_dc_0" {
@@ -240,7 +259,9 @@ resource "azurerm_public_ip" "pip_sql" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sql["vmName"])}"
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
 }
 
 resource "azurerm_network_interface" "nic_sql_0" {
@@ -262,7 +283,9 @@ resource "azurerm_public_ip" "pip_sp" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sp["vmName"])}"
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
 }
 
 resource "azurerm_network_interface" "nic_sp_0" {
@@ -489,7 +512,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "EnableAnalysis": true
+      "EnableAnalysis": false
     },
     "privacy": {
       "dataCollection": "enable"
@@ -520,6 +543,10 @@ SETTINGS
         "UserName": "${local.general_settings["spAppPoolUserName"]}",
         "Password": "${var.service_accounts_password}"
       },
+      "SPADDirSyncCreds": {
+        "UserName": "${local.general_settings["spADDirSyncUserName"]}",
+        "Password": "${var.service_accounts_password}"
+      },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
         "Password": "${var.service_accounts_password}"
@@ -544,7 +571,9 @@ resource "azurerm_public_ip" "pip_fe" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_fe["vmName"])}-${count.index}"
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
 }
 
 resource "azurerm_network_interface" "nic_fe_0" {
@@ -619,7 +648,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "EnableAnalysis": true
+      "EnableAnalysis": false
     },
     "privacy": {
       "dataCollection": "enable"

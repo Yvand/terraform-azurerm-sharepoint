@@ -1,3 +1,5 @@
-location                   = "France Central"
-sharepoint_version         = "SE"
-number_additional_frontend = 0
+location                    = "France Central"
+sharepoint_version          = "Subscription-RTM"
+# sharepoint_version         = "2019"
+number_additional_frontend = 1
+enable_azure_bastion       = true
