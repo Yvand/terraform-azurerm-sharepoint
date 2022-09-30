@@ -8,11 +8,12 @@ variable "resource_group_name" {
 }
 
 variable "sharepoint_version" {
-  default     = "SE"
+  default     = "Subscription-22H2"
   description = "Version of SharePoint farm to create."
   validation {
     condition = contains([
-      "SE",
+      "Subscription-22H2",
+      "Subscription-RTM",
       "2019",
       "2016",
       "2013"
@@ -185,6 +186,16 @@ variable "time_zone" {
       "Line Islands Standard Time"
     ], var.time_zone)
     error_message = "Invalid time zone value."
+  }
+}
+
+variable "auto_shutdown_time" {
+  default     = "1900"
+  type        = string
+  description = "The time at which VMs will be automatically shutdown (24h HHmm format). Set value to '9999' to NOT configure the auto shutdown."
+  validation {
+    condition     = length(var.auto_shutdown_time) == 4
+    error_message = "The auto_shutdown_time value must contain 4 characters."
   }
 }
 
