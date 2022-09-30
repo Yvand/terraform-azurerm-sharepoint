@@ -377,6 +377,20 @@ SETTINGS
 PROTECTED_SETTINGS
 }
 
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_dc_shutdown" {
+  count              = var.auto_shutdown_time == "9999" ? 0 : 1
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_dc.id
+  location           = azurerm_resource_group.rg.location
+  enabled            = true
+
+  daily_recurrence_time = var.auto_shutdown_time
+  timezone              = var.time_zone
+
+  notification_settings {
+    enabled = false
+  }
+}
+
 resource "azurerm_windows_virtual_machine" "vm_sql" {
   name                     = local.config_sql["vmName"]
   computer_name            = local.config_sql["vmName"]
@@ -454,6 +468,20 @@ SETTINGS
     }
   }
 PROTECTED_SETTINGS
+}
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sql_shutdown" {
+  count              = var.auto_shutdown_time == "9999" ? 0 : 1
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql.id
+  location           = azurerm_resource_group.rg.location
+  enabled            = true
+
+  daily_recurrence_time = var.auto_shutdown_time
+  timezone              = var.time_zone
+
+  notification_settings {
+    enabled = false
+  }
 }
 
 resource "azurerm_windows_virtual_machine" "vm_sp" {
@@ -562,6 +590,20 @@ SETTINGS
     }
   }
 PROTECTED_SETTINGS
+}
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_shutdown" {
+  count              = var.auto_shutdown_time == "9999" ? 0 : 1
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
+  location           = azurerm_resource_group.rg.location
+  enabled            = true
+
+  daily_recurrence_time = var.auto_shutdown_time
+  timezone              = var.time_zone
+
+  notification_settings {
+    enabled = false
+  }
 }
 
 # Can create 0 to var.number_additional_frontend FE VMs
@@ -678,6 +720,20 @@ SETTINGS
     }
   }
 PROTECTED_SETTINGS
+}
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_shutdown" {
+  count              = var.number_additional_frontend > 0 && var.auto_shutdown_time != "9999" ? var.number_additional_frontend : 0
+  virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe.*.id, count.index)
+  location           = azurerm_resource_group.rg.location
+  enabled            = true
+
+  daily_recurrence_time = var.auto_shutdown_time
+  timezone              = var.time_zone
+
+  notification_settings {
+    enabled = false
+  }
 }
 
 # Configuration for Azure Bastion

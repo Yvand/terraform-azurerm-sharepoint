@@ -2,6 +2,10 @@
 
 ## [1.3.0] - Unreleased
 
+### Added
+
+- Added variable auto_shutdown_time to configure the auto shutdown of virtual machines
+
 ### Fixed
 
 - Make changes to work with the new version of the ARM template / DSC extensions used as reference

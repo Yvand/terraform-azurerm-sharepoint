@@ -189,6 +189,16 @@ variable "time_zone" {
   }
 }
 
+variable "auto_shutdown_time" {
+  default     = "1900"
+  type        = string
+  description = "The time at which VMs will be automatically shutdown (24h HHmm format). Set value to '9999' to NOT configure the auto shutdown."
+  validation {
+    condition     = length(var.auto_shutdown_time) == 4
+    error_message = "The auto_shutdown_time value must contain 4 characters."
+  }
+}
+
 variable "number_additional_frontend" {
   default     = 0
   description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
