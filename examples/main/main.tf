@@ -1,6 +1,6 @@
 module "sharepoint" {
   source  = "Yvand/sharepoint/azurerm"
-  version = "1.3.0"
+  version = ">=1.3.0"
 
   location                   = "West Europe"
   resource_group_name        = "<xxx>"
