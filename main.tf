@@ -3,10 +3,12 @@ provider "azurerm" {
 }
 
 locals {
-  config_sp_image = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc   = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc   = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
-  create_rdp_rule = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  config_sp_image           = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
+  config_sp_dsc             = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc             = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  create_rdp_rule           = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  admin_password            = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
+  service_accounts_password = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   general_settings = {
     dscScriptsFolder      = "dsc"
     adfsSvcUserName       = "adfssvc"
@@ -96,18 +98,31 @@ locals {
   }
 
   config_fe_legacy_dsc = {
-    fileName       = "ConfigureFELegacyVM.zip"
-    script         = "ConfigureFELegacyVM.ps1"
+    fileName       = "ConfigureFELegacy.zip"
+    script         = "ConfigureFELegacy.ps1"
     function       = "ConfigureFEVM"
     forceUpdateTag = "1.0"
   }
 
   config_fe_se_dsc = {
-    fileName       = "ConfigureFESEVM.zip"
-    script         = "ConfigureFESEVM.ps1"
+    fileName       = "ConfigureFESE.zip"
+    script         = "ConfigureFESE.ps1"
     function       = "ConfigureFEVM"
     forceUpdateTag = "1.0"
   }
+}
+
+# Service account password
+resource "random_password" "random_admin_password" {
+  length           = 8
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "random_service_accounts_password" {
+  length           = 8
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 # Create a resource group
@@ -310,7 +325,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   network_interface_ids    = [azurerm_network_interface.nic_dc_0.id]
   size                     = local.config_dc["vmSize"]
   admin_username           = var.admin_username
-  admin_password           = var.admin_password
+  admin_password           = local.admin_password
   license_type             = "Windows_Server"
   timezone                 = var.time_zone
   enable_automatic_updates = true
@@ -366,11 +381,11 @@ SETTINGS
     "configurationArguments": {
       "AdminCreds": {
         "UserName": "${var.admin_username}",
-        "Password": "${var.admin_password}"
+        "Password": "${local.admin_password}"
       },
       "AdfsSvcCreds": {
         "UserName": "${local.general_settings["adfsSvcUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       }
     }
   }
@@ -399,7 +414,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   network_interface_ids    = [azurerm_network_interface.nic_sql_0.id]
   size                     = local.config_sql["vmSize"]
   admin_username           = "local-${var.admin_username}"
-  admin_password           = var.admin_password
+  admin_password           = local.admin_password
   license_type             = "Windows_Server"
   timezone                 = var.time_zone
   enable_automatic_updates = true
@@ -455,15 +470,15 @@ SETTINGS
     "configurationArguments": {
       "DomainAdminCreds": {
         "UserName": "${var.admin_username}",
-        "Password": "${var.admin_password}"
+        "Password": "${local.admin_password}"
       },
       "SqlSvcCreds": {
         "UserName": "${local.general_settings["sqlSvcUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPSetupCreds": {
         "UserName": "${local.general_settings["spSetupUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       }
     }
   }
@@ -492,7 +507,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   network_interface_ids    = [azurerm_network_interface.nic_sp_0.id]
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
-  admin_password           = var.admin_password
+  admin_password           = local.admin_password
   license_type             = "Windows_Server"
   timezone                 = var.time_zone
   enable_automatic_updates = true
@@ -522,7 +537,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   auto_upgrade_minor_version = true
 
   timeouts {
-    create = "75m"
+    create = "120m"
   }
 
   settings = <<SETTINGS
@@ -553,39 +568,39 @@ SETTINGS
     "configurationArguments": {
       "DomainAdminCreds": {
         "UserName": "${var.admin_username}",
-        "Password": "${var.admin_password}"
+        "Password": "${local.admin_password}"
       },
       "SPSetupCreds": {
         "UserName": "${local.general_settings["spSetupUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.general_settings["spFarmUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPSvcCreds": {
         "UserName": "${local.general_settings["spSvcUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPAppPoolCreds": {
         "UserName": "${local.general_settings["spAppPoolUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPADDirSyncCreds": {
         "UserName": "${local.general_settings["spADDirSyncUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPSuperUserCreds": {
         "UserName": "${local.general_settings["spSuperUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPSuperReaderCreds": {
         "UserName": "${local.general_settings["spSuperReaderName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       }
     }
   }
@@ -641,7 +656,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   network_interface_ids    = [element(azurerm_network_interface.nic_fe_0.*.id, count.index)]
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
-  admin_password           = var.admin_password
+  admin_password           = local.admin_password
   license_type             = "Windows_Server"
   timezone                 = var.time_zone
   enable_automatic_updates = true
@@ -672,7 +687,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   auto_upgrade_minor_version = true
 
   timeouts {
-    create = "90m"
+    create = "120m"
   }
 
   settings = <<SETTINGS
@@ -703,19 +718,19 @@ SETTINGS
     "configurationArguments": {
       "DomainAdminCreds": {
         "UserName": "${var.admin_username}",
-        "Password": "${var.admin_password}"
+        "Password": "${local.admin_password}"
       },
       "SPSetupCreds": {
         "UserName": "${local.general_settings["spSetupUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.general_settings["spFarmUserName"]}",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${var.service_accounts_password}"
+        "Password": "${local.service_accounts_password}"
       }
     }
   }

@@ -25,14 +25,23 @@ variable "sharepoint_version" {
 variable "admin_username" {
   default     = "yvand"
   description = "Name of the AD and SharePoint administrator. 'administrator' is not allowed"
+  validation {
+    condition = !contains([
+      "admin",
+      "administrator"
+    ], var.admin_username)
+    error_message = "'admin' and 'administrator' are not allowed as value of admin_username."
+  }
 }
 
 variable "admin_password" {
-  description = "Input must meet password complexity requirements as documented for property 'admin_password' in https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/virtualmachines-create-or-update"
+  default     = ""
+  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "service_accounts_password" {
-  description = "Input must meet password complexity requirements as documented for property 'admin_password' in https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/virtualmachines-create-or-update"
+  default     = ""
+  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "domain_fqdn" {
@@ -202,6 +211,10 @@ variable "auto_shutdown_time" {
 variable "number_additional_frontend" {
   default     = 0
   description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
+  validation {
+    condition     = var.number_additional_frontend >= 0 && var.number_additional_frontend <= 4
+    error_message = "The number_additional_frontend value must be between 0 and 4 included."
+  }
 }
 
 variable "rdp_traffic_allowed" {

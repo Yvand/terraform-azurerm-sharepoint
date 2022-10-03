@@ -1,5 +1,18 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [1.3.1] -  Unreleased
+
+### Fixed
+
+- Link to DSC extension of FE VM was not correct
+
+### Changed
+
+- Password variables `admin_password` and `service_accounts_password` can now be auto-generated, if they are left empty
+- Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
+- Added a condition in variable `number_additional_frontend` as value can only be between 0 and 4 included
+- Increase timeout of resource azurerm_virtual_machine_extension for SharePoint VM to 120 minutes
+
 ## [1.3.0] -  2022-09-30
 
 ### Added
