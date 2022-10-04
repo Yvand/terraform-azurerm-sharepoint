@@ -36,6 +36,7 @@ module "sharepoint" {
   - If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.
   - If 'ServiceTagName': Firewall accepts all incoming RDP traffic from the specified 'ServiceTagName'.
   - If 'xx.xx.xx.xx': Firewall accepts incoming RDP traffic only from the IP 'xx.xx.xx.xx'.
+- Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 
 Using the default options, the complete deployment takes about 1h (but it is worth it).  
 
@@ -43,10 +44,14 @@ Using the default options, the complete deployment takes about 1h (but it is wor
 
 Regardless of the SharePoint version selected, an extensive configuration is performed, with some differences depending on the version:
 
-### Common
+### Common to all SharePoint versions
 
-- Active Directory forest is created, and AD CS and AD FS are installed and configured. LDAPS (LDAP over SSL) is also conigured.
-- 
+- Active Directory forest created, AD CS and AD FS are installed and configured. LDAPS (LDAP over SSL) is also conigured.
+- SharePoint service applications configured: User Profile, add-ins, session state.
+- SharePoint has 1 web application with path based and host-named site collections. There are 2 zones:
+  - Default zone: HTTP with Windows authentication.
+  - Intranet zone: HTTPS with federated (ADFS) authentication. Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
+- An OAuth trust is created, and a dedicated IIS site is created with 2 bindings (HTTP + HTTPS) to host custom high-trust add-ins.
 
 ### Specific to SharePoint Subscription
 

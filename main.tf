@@ -3,12 +3,14 @@ provider "azurerm" {
 }
 
 locals {
-  config_sp_image           = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc             = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc             = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
-  create_rdp_rule           = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
-  admin_password            = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
+  config_sp_image                       = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
+  config_sp_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  create_rdp_rule                       = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  admin_password                        = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
+  service_accounts_password             = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
+  enable_hybrid_benefit_server_licenses = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+
   general_settings = {
     dscScriptsFolder      = "dsc"
     adfsSvcUserName       = "adfssvc"
@@ -35,26 +37,26 @@ locals {
 
   config_dc = {
     vmName             = "DC"
-    vmSize             = "Standard_B2s"
+    vmSize             = var.vm_dc_size
     vmImagePublisher   = "MicrosoftWindowsServer"
     vmImageOffer       = "WindowsServer"
     vmImageSKU         = "2022-datacenter-azure-edition-smalldisk"
-    storageAccountType = "Standard_LRS"
+    storageAccountType = var.vm_dc_storage_account_type
   }
 
   config_sql = {
     vmName             = "SQL"
-    vmSize             = "Standard_B2ms"
+    vmSize             = var.vm_sql_size
     vmImagePublisher   = "MicrosoftSQLServer"
     vmImageOffer       = "sql2019-ws2022"
     vmImageSKU         = "sqldev-gen2"
-    storageAccountType = "Standard_LRS"
+    storageAccountType = var.vm_sql_storage_account_type
   }
 
   config_sp = {
     vmName             = "SP"
-    vmSize             = "Standard_B4ms"
-    storageAccountType = "Standard_LRS"
+    vmSize             = var.vm_sp_size
+    storageAccountType = var.vm_sp_storage_account_type
   }
 
   config_sp_image_list = {
@@ -66,7 +68,7 @@ locals {
 
   config_fe = {
     vmName = "FE"
-    vmSize = "Standard_B4ms"
+    vmSize = var.vm_sp_size
   }
 
   config_dc_dsc = {
@@ -326,7 +328,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   size                     = local.config_dc["vmSize"]
   admin_username           = var.admin_username
   admin_password           = local.admin_password
-  license_type             = "Windows_Server"
+  license_type             = local.enable_hybrid_benefit_server_licenses
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -415,7 +417,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   size                     = local.config_sql["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = "Windows_Server"
+  license_type             = local.enable_hybrid_benefit_server_licenses
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -508,7 +510,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = "Windows_Server"
+  license_type             = local.enable_hybrid_benefit_server_licenses
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -657,7 +659,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = "Windows_Server"
+  license_type             = local.enable_hybrid_benefit_server_licenses
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
