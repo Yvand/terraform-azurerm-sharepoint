@@ -1,5 +1,25 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [2.0.0] -  Unreleased
+
+### Fixed
+
+- Link to DSC extension of FE VM was not correct
+
+### Added
+
+- Added 6 variables to allow custom values on the size and storage account type of the virtual machines
+- Added variable `enable_hybrid_benefit_server_licenses`
+
+### Changed
+
+- Now, only variable `resource_group_name` requires to be explicitly set
+- Password variables `admin_password` and `service_accounts_password` can now be auto-generated, if they are left empty
+- Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
+- Added a condition in variable `number_additional_frontend` as value can only be between 0 and 4 included
+- Default storage account type of all virtual machines is now standard SSD disks instead of standard HDD (deployment time goes down from 1h30 to 1h)
+- Increase timeout of resource azurerm_virtual_machine_extension for SharePoint VM to 120 minutes (necessary when using HDD disks instead of SSD)
+
 ## [1.3.0] -  2022-09-30
 
 ### Added

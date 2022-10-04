@@ -25,14 +25,23 @@ variable "sharepoint_version" {
 variable "admin_username" {
   default     = "yvand"
   description = "Name of the AD and SharePoint administrator. 'administrator' is not allowed"
+  validation {
+    condition = !contains([
+      "admin",
+      "administrator"
+    ], var.admin_username)
+    error_message = "'admin' and 'administrator' are not allowed as value of admin_username."
+  }
 }
 
 variable "admin_password" {
-  description = "Input must meet password complexity requirements as documented for property 'admin_password' in https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/virtualmachines-create-or-update"
+  default     = ""
+  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "service_accounts_password" {
-  description = "Input must meet password complexity requirements as documented for property 'admin_password' in https://docs.microsoft.com/en-us/rest/api/compute/virtualmachines/virtualmachines-create-or-update"
+  default     = ""
+  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "domain_fqdn" {
@@ -202,6 +211,10 @@ variable "auto_shutdown_time" {
 variable "number_additional_frontend" {
   default     = 0
   description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
+  validation {
+    condition     = var.number_additional_frontend >= 0 && var.number_additional_frontend <= 4
+    error_message = "The number_additional_frontend value must be between 0 and 4 included."
+  }
 }
 
 variable "rdp_traffic_allowed" {
@@ -213,6 +226,75 @@ variable "enable_azure_bastion" {
   default     = false
   type        = bool
   description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
+}
+
+variable "enable_hybrid_benefit_server_licenses" {
+  default     = false
+  type        = bool
+  description = "Enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information."
+}
+
+variable "vm_dc_size" {
+  default     = "Standard_B2s"
+  description = "Size of the DC VM."
+}
+
+variable "vm_dc_storage_account_type" {
+  default     = "StandardSSD_LRS"
+  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  validation {
+    condition = contains([
+      "Standard_LRS",
+      "StandardSSD_LRS",
+      "Premium_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "UltraSSD_LRS"
+    ], var.vm_dc_storage_account_type)
+    error_message = "Invalid storage account type value."
+  }
+}
+
+variable "vm_sql_size" {
+  default     = "Standard_B2ms"
+  description = "Size of the SQL VM."
+}
+
+variable "vm_sql_storage_account_type" {
+  default     = "StandardSSD_LRS"
+  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  validation {
+    condition = contains([
+      "Standard_LRS",
+      "StandardSSD_LRS",
+      "Premium_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "UltraSSD_LRS"
+    ], var.vm_sql_storage_account_type)
+    error_message = "Invalid storage account type value."
+  }
+}
+
+variable "vm_sp_size" {
+  default     = "Standard_B4ms"
+  description = "Size of the SP VM."
+}
+
+variable "vm_sp_storage_account_type" {
+  default     = "StandardSSD_LRS"
+  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  validation {
+    condition = contains([
+      "Standard_LRS",
+      "StandardSSD_LRS",
+      "Premium_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "UltraSSD_LRS"
+    ], var.vm_sp_storage_account_type)
+    error_message = "Invalid storage account type value."
+  }
 }
 
 variable "_artifactsLocation" {

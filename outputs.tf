@@ -29,3 +29,13 @@ output "domain_admin_account_format_bastion" {
 output "local_admin_username" {
   value = azurerm_windows_virtual_machine.vm_sp.admin_username
 }
+
+output "admin_password" {
+  value     = local.admin_password
+  sensitive = true
+}
+
+output "service_accounts_password" {
+  value     = local.service_accounts_password
+  sensitive = true
+}
