@@ -11,7 +11,7 @@ This module is the Terraform version of [this public ARM template](https://azure
 ```terraform
 module "sharepoint" {
   source                     = "Yvand/sharepoint/azurerm"
-  version                    = ">=1.3.1"
+  version                    = ">=2.0.0"
 
   # Below are the main variables, other variables can also be set
   location                   = "West Europe"
@@ -25,11 +25,11 @@ module "sharepoint" {
 ## Key variables
 
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-22H2` (default): SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
-  - `Subscription-RTM`: SharePoint Subscription RTM is downloaded and installed
-  - `2019`: An image maintained by SharePoint Engineering, built with SharePoint 2019 bits installed is deployed
-  - `2016`: An image maintained by SharePoint Engineering, built with SharePoint 2016 bits installed is deployed
-  - `2013`: An image maintained by SharePoint Engineering, built with SharePoint 2013 bits installed is deployed
+  - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
+  - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
+  - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits installed.
+  - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits installed.
+  - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
 - Variables `admin_password` and `service_accounts_password` require a strong password [as documented here](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), but they can be left empty to use an auto-generated password that will be recorded in state file.
 - Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
   - If 'No' (default): Firewall denies all incoming RDP traffic from Internet.

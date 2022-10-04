@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Now, only variable `resource_group_name` requires to be explicitly set
 - Password variables `admin_password` and `service_accounts_password` can now be auto-generated, if they are left empty
 - Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
 - Added a condition in variable `number_additional_frontend` as value can only be between 0 and 4 included
