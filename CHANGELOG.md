@@ -1,6 +1,6 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [2.0.0] -  Unreleased
+## [2.0.0] -  22-10-04
 
 ### Fixed
 
