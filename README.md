@@ -55,7 +55,7 @@ Regardless of the SharePoint version selected, an extensive configuration is per
 
 ### Specific to SharePoint Subscription
 
-- HTTTPS site certificate is managed by SharePoint: It has the private key and sets the binding itself in the IIS site
+- HTTPS site certificate is managed by SharePoint: It has the private key and sets the binding itself in the IIS site
 - Federated authentication is configured using OpenID Connect
 
 ### Specific to SharePoint 2019 / 2016 / 2013
