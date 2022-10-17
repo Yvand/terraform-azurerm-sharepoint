@@ -24,6 +24,12 @@ module "sharepoint" {
 
 ## Key variables
 
+### Input variables
+
+- Variable `resource_group_name` is used for 2 things:
+  - As the name of the resource group which hosts all the resources that will be created.
+  - If variable `add_public_ip_to_each_vm` is `true` (default): As part of the public DNS name of VMs: `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"`
+- Variable `add_public_ip_to_each_vm`: If `true` (default), each VM gets a static public IP address associated to its network interface.
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
   - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
@@ -39,6 +45,10 @@ module "sharepoint" {
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 
 Using the default options, the complete deployment takes about 1h (but it is worth it).  
+
+### Output variables
+
+Valuable output variables are returned by the module, including the login, passwords and the public IP address of each virtual machine.
 
 ## Features
 

@@ -1,3 +1,8 @@
+# SharePoint Subscription 22H2
+
+This examples provisions SharePoint Subscription 22H2 and configures [Azure Bastion](https://learn.microsoft.com/azure/bastion/bastion-overview).  
+
+```hcl
 module "sharepoint" {
   source  = "Yvand/sharepoint/azurerm"
   version = ">=2.0.0"
@@ -16,3 +21,4 @@ module "sharepoint" {
   rdp_traffic_allowed        = "10.20.30.40"
   enable_azure_bastion       = true
 }
+```

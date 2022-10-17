@@ -1,6 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [2.0.0] -  22-10-04
+## [2.1.0] - Unreleased
+
+### Added
+
+- Added variable `add_public_ip_to_each_vm`
+- Added examples
+
+## [2.0.0] - 22-10-04
 
 ### Fixed
 

@@ -1,17 +1,21 @@
+output "resource_group_name" {
+  value = var.resource_group_name
+}
+
 output "resource_group_id" {
   value = azurerm_resource_group.rg.id
 }
 
 output "vm_dc_dns" {
-  value = azurerm_public_ip.pip_dc.fqdn
+  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_dc[0].id : null
 }
 
 output "vm_sql_dns" {
-  value = azurerm_public_ip.pip_sql.fqdn
+  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sql[0].id : null
 }
 
 output "vm_sp_dns" {
-  value = azurerm_public_ip.pip_sp.fqdn
+  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sp[0].id : null
 }
 
 output "vm_fe_dns" {
