@@ -10,7 +10,7 @@ This examples provisions SharePoint Subscription 22H2 with the following configu
 ```hcl
 module "sharepoint" {
   source  = "Yvand/sharepoint/azurerm"
-  version = ">=2.0.0"
+  version = ">=2.1.0"
 
   location                   = "West Europe"
   resource_group_name        = "<resource_group_name>"
