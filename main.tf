@@ -247,6 +247,7 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_assoc
 
 # Create artifacts for VM DC
 resource "azurerm_public_ip" "pip_dc" {
+  count               = var.add_public_ip_to_each_vm ? 1 : 0
   name                = "PublicIP-${local.config_dc["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -266,12 +267,13 @@ resource "azurerm_network_interface" "nic_dc_0" {
     subnet_id                     = azurerm_subnet.subnet_dc.id
     private_ip_address_allocation = "Static"
     private_ip_address            = local.network_settings["vmDCPrivateIPAddress"]
-    public_ip_address_id          = azurerm_public_ip.pip_dc.id
+    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_dc[0].id : null
   }
 }
 
 # Create artifacts for VM SQL
 resource "azurerm_public_ip" "pip_sql" {
+  count               = var.add_public_ip_to_each_vm ? 1 : 0
   name                = "PublicIP-${local.config_sql["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -290,12 +292,13 @@ resource "azurerm_network_interface" "nic_sql_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sql.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip_sql.id
+    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sql[0].id : null
   }
 }
 
 # Create artifacts for VM SP
 resource "azurerm_public_ip" "pip_sp" {
+  count               = var.add_public_ip_to_each_vm ? 1 : 0
   name                = "PublicIP-${local.config_sp["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -314,7 +317,7 @@ resource "azurerm_network_interface" "nic_sp_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip_sp.id
+    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sp[0].id : null
   }
 }
 
@@ -625,7 +628,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_shutdown" {
 
 # Can create 0 to var.number_additional_frontend FE VMs
 resource "azurerm_public_ip" "pip_fe" {
-  count               = var.number_additional_frontend
+  count               = var.add_public_ip_to_each_vm ? var.number_additional_frontend : 0
   name                = "PublicIP-${local.config_fe["vmName"]}-${count.index}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -645,7 +648,7 @@ resource "azurerm_network_interface" "nic_fe_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = element(azurerm_public_ip.pip_fe.*.id, count.index)
+    public_ip_address_id          = var.add_public_ip_to_each_vm ? element(azurerm_public_ip.pip_fe.*.id, count.index) : null
   }
 }
 
