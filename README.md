@@ -36,7 +36,7 @@ module "sharepoint" {
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits installed.
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
-- Variables `admin_password` and `service_accounts_password` require a strong password [as documented here](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), but they can be left empty to use an auto-generated password that will be recorded in state file.
+- Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), but they can be left empty to use an auto-generated password that will be recorded in state file.
 - Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
   - If 'No' (default): Firewall denies all incoming RDP traffic from Internet.
   - If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.

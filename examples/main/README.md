@@ -1,6 +1,11 @@
 # SharePoint Subscription 22H2
 
-This examples provisions SharePoint Subscription 22H2 and configures [Azure Bastion](https://learn.microsoft.com/azure/bastion/bastion-overview).  
+This examples provisions SharePoint Subscription 22H2 with the following configuration:
+
+- Variable `number_additional_frontend` is set to `0`: SharePoint farm will have 1 server running everything.
+- Variable `rdp_traffic_allowed` is set to `10.20.30.40`: A rule is created on the network security groups to allow RDP traffic from incoming IP `10.20.30.40`.
+- Variable `enable_azure_bastion` is set to `true`: [Azure Bastion](https://learn.microsoft.com/azure/bastion/bastion-overview) is configured.
+
 
 ```hcl
 module "sharepoint" {
