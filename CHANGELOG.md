@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added variable `add_public_ip_to_each_vm`
+- Added variable `add_public_ip_address`
 - Added examples
 
 ## [2.0.0] - 22-10-04

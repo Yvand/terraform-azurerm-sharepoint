@@ -22,7 +22,7 @@ module "sharepoint" {
   time_zone                  = "Romance Standard Time"
   auto_shutdown_time         = "1900"
   number_additional_frontend = 0
-  add_public_ip_to_each_vm   = true
+  add_public_ip_address   = "SharePointVMsOnly"
   rdp_traffic_allowed        = "10.20.30.40"
   enable_azure_bastion       = true
 }

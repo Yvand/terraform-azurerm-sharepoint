@@ -28,8 +28,8 @@ module "sharepoint" {
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
-  - As part of the public DNS name of VMs, if variable `add_public_ip_to_each_vm` is `true`.
-- Variable `add_public_ip_to_each_vm`: If `true` (default), each VM gets a static public IP address with a name in the following format: `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"`.
+  - As part of the public DNS name of VMs, if variable `add_public_ip_address` is not set to `No`.
+- Variable `add_public_ip_address`: If `SharePointVMsOnly` (default), Only SharePoint VMs get a static public IP address with a name in the following format: `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"`.
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
   - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
@@ -43,6 +43,7 @@ module "sharepoint" {
   - If 'ServiceTagName': Firewall accepts all incoming RDP traffic from the specified 'ServiceTagName'.
   - If 'xx.xx.xx.xx': Firewall accepts incoming RDP traffic only from the IP 'xx.xx.xx.xx'.
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
+- Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
 Using the default options, the complete deployment takes about 1h (but it is worth it).  
 

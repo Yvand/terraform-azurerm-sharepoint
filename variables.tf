@@ -222,9 +222,17 @@ variable "rdp_traffic_allowed" {
   description = "Specify if RDP traffic is allowed to connect to the VMs:<br>- If 'No' (default): Firewall denies all incoming RDP traffic from Internet.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If 'ServiceTagName': Firewall accepts all incoming RDP traffic from the specified 'ServiceTagName'.<br>- If 'xx.xx.xx.xx': Firewall accepts incoming RDP traffic only from the IP 'xx.xx.xx.xx'."
 }
 
-variable "add_public_ip_to_each_vm" {
-  default     = true
-  description = "Specify if a static public IP address should be assigned to each VM."
+variable "add_public_ip_address" {
+  default     = "SharePointVMsOnly"
+  description = "Specify if a public IP address should be added."
+  validation {
+    condition = contains([
+      "Yes",
+      "No",
+      "SharePointVMsOnly"
+    ], var.add_public_ip_address)
+    error_message = "Invalid value specified for add_public_ip_address."
+  }
 }
 
 variable "enable_azure_bastion" {
