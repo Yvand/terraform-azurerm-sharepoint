@@ -3,13 +3,15 @@ provider "azurerm" {
 }
 
 locals {
+  is_sharepoint_subscription            = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   config_sp_image                       = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  config_sp_dsc                         = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc                         = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
   create_rdp_rule                       = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   admin_password                        = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   service_accounts_password             = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   enable_hybrid_benefit_server_licenses = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  sharePoint_builds_details             = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_packages) : jsonencode(null)
 
   general_settings = {
     dscScriptsFolder      = "dsc"
@@ -280,8 +282,8 @@ resource "azurerm_public_ip" "pip_dc" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_dc["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -306,8 +308,8 @@ resource "azurerm_public_ip" "pip_sql" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sql["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -331,8 +333,8 @@ resource "azurerm_public_ip" "pip_sp" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sp["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -589,7 +591,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${jsonencode(local.sharepoint_subscription_packages)}
+      "SharePointBuildsDetails": ${local.sharePoint_builds_details}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -662,8 +664,8 @@ resource "azurerm_public_ip" "pip_fe" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_fe["vmName"])}-${count.index}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -740,7 +742,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${jsonencode(local.sharepoint_subscription_packages)}
+      "SharePointBuildsDetails": ${local.sharePoint_builds_details}
     },
     "privacy": {
       "dataCollection": "enable"
