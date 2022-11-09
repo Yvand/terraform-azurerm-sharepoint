@@ -205,7 +205,7 @@ variable "enable_azure_bastion" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://github.com/Azure/azure-quickstart-templates/raw/master/application-workloads/sharepoint/sharepoint-adfs/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/v1.2.1/"
 }
 
 variable "_artifactsLocationSasToken" {
