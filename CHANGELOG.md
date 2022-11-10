@@ -1,5 +1,14 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## Unreleased
+
+### Changed
+
+- Improved the logic that installs SharePoint updates when deploying SharePoint Subscription
+- Renamed variable `add_public_ip_address` to `add_public_ip_address` and update its type and design to add more granularity. Now its default value is `SharePointVMsOnly`
+- Changed SKU of Public IP address resources to use Basic instead of Standard (except for Bastion which requires Standard)
+- Changed allocation method of Public IP address resources to use Dynamic instead of Static (except for Bastion which requires Static)
+
 ## [2.1.0] - 22-10-18
 
 ### Added
