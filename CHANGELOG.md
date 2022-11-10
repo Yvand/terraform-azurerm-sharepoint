@@ -2,7 +2,7 @@
 
 
 > This CHANGELOG covers only the changes related to this Terraform module.  
-The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult its repo to see the changes related to DSC.
+The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes related to DSC.
 
 ## Unreleased
 
