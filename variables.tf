@@ -303,7 +303,7 @@ variable "vm_sp_storage_account_type" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://github.com/Azure/azure-quickstart-templates/raw/master/application-workloads/sharepoint/sharepoint-adfs/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/v2.1.0/"
 }
 
 variable "_artifactsLocationSasToken" {
