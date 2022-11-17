@@ -219,7 +219,7 @@ variable "number_additional_frontend" {
 
 variable "rdp_traffic_allowed" {
   default     = "No"
-  description = "Specify if RDP traffic is allowed to connect to the VMs:<br>- If 'No' (default): Firewall denies all incoming RDP traffic from Internet.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If 'ServiceTagName': Firewall accepts all incoming RDP traffic from the specified 'ServiceTagName'.<br>- If 'xx.xx.xx.xx': Firewall accepts incoming RDP traffic only from the IP 'xx.xx.xx.xx'."
+  description = "Specify if RDP traffic is allowed:<br>- If 'No' (default): Firewall denies all incoming RDP traffic.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) / IP address (e.g. 192.168.99.0 or 2001:1234::): Firewall accepts incoming RDP traffic from the IP addresses specified."
 }
 
 variable "add_public_ip_address" {

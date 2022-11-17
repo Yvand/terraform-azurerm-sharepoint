@@ -38,10 +38,9 @@ module "sharepoint" {
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
 - Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), but they can be left empty to use an auto-generated password that will be recorded in state file.
 - Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
-  - If 'No' (default): Firewall denies all incoming RDP traffic from Internet.
+  - If 'No' (default): Firewall denies all incoming RDP traffic.
   - If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.
-  - If 'ServiceTagName': Firewall accepts all incoming RDP traffic from the specified 'ServiceTagName'.
-  - If 'xx.xx.xx.xx': Firewall accepts incoming RDP traffic only from the IP 'xx.xx.xx.xx'.
+  - If CIDR notation (e.g. `192.168.99.0/24` or `2001:1234::/64`) / IP address (e.g. `192.168.99.0` or `2001:1234::`): Firewall accepts incoming RDP traffic from the IP addresses specified.
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
