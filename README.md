@@ -11,7 +11,7 @@ This module is the Terraform version of [this public ARM template](https://azure
 ```terraform
 module "sharepoint" {
   source                     = "Yvand/sharepoint/azurerm"
-  version                    = ">=2.0.0"
+  version                    = ">=3.0.0"
 
   # Below are the main variables, other variables can also be set
   location                   = "West Europe"
