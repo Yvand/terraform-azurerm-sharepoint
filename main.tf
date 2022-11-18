@@ -3,15 +3,15 @@ provider "azurerm" {
 }
 
 locals {
-  is_sharepoint_subscription            = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
-  config_sp_image                       = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc                         = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc                         = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
-  create_rdp_rule                       = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
-  admin_password                        = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password             = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  enable_hybrid_benefit_server_licenses = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
-  sharePoint_builds_details             = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_packages) : jsonencode(null)
+  is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
+  config_sp_image            = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
+  config_sp_dsc              = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc              = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
+  service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
+  license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode(null)
 
   general_settings = {
     dscScriptsFolder      = "dsc"
@@ -28,7 +28,7 @@ locals {
     bastion_publicip_name = "${lower(azurerm_resource_group.rg.name)}-bastion"
   }
 
-  sharepoint_subscription_packages = [
+  sharepoint_subscription_bits = [
     {
       "Label" : "RTM",
       "Packages" : [
@@ -361,7 +361,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   size                     = local.config_dc["vmSize"]
   admin_username           = var.admin_username
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -450,7 +450,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   size                     = local.config_sql["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -543,7 +543,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -591,7 +591,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${local.sharePoint_builds_details}
+      "SharePointBuildsDetails": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -693,7 +693,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -742,7 +742,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${local.sharePoint_builds_details}
+      "SharePointBuildsDetails": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
