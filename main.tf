@@ -11,7 +11,7 @@ locals {
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
-  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode(null)
+  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
 
   general_settings = {
     dscScriptsFolder      = "dsc"
@@ -591,7 +591,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${local.sharepoint_bits_selected}
+      "SharePointBits": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -742,7 +742,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
       "EnableAnalysis": false,
-      "SharePointBuildsDetails": ${local.sharepoint_bits_selected}
+      "SharePointBits": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
