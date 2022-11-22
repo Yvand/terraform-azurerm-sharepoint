@@ -7,7 +7,7 @@ The DSC files are copied from [this Azure template](https://azure.microsoft.com/
 
 ### Changed
 
-- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and update its type and design to add more granularity. Now its default value is `SharePointVMsOnly`
+- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and changed its type to `string` to add more granularity. Its default value is now `SharePointVMsOnly`, to assign a public IP address only to SharePoint VMs.
 - Update NSG rules for Bastion
 - Changed SKU of Public IP address resources to use Basic instead of Standard (except for Bastion which requires Standard)
 - Changed allocation method of Public IP address resources to use Dynamic instead of Static (except for Bastion which requires Static)

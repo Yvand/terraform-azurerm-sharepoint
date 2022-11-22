@@ -24,7 +24,7 @@ variable "sharepoint_version" {
 
 variable "admin_username" {
   default     = "yvand"
-  description = "Name of the AD and SharePoint administrator. 'administrator' is not allowed"
+  description = "Name of the AD and SharePoint administrator. 'admin' and 'administrator' are not allowed."
   validation {
     condition = !contains([
       "admin",
@@ -36,12 +36,12 @@ variable "admin_username" {
 
 variable "admin_password" {
   default     = ""
-  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "service_accounts_password" {
   default     = ""
-  description = "Leave empty to use an auto-generated password that will be recorded in state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
 variable "domain_fqdn" {
@@ -203,8 +203,8 @@ variable "auto_shutdown_time" {
   type        = string
   description = "The time at which VMs will be automatically shutdown (24h HHmm format). Set value to '9999' to NOT configure the auto shutdown."
   validation {
-    condition     = length(var.auto_shutdown_time) == 4
-    error_message = "The auto_shutdown_time value must contain 4 characters."
+    condition     = can(regex("^\\d{4}$", var.auto_shutdown_time))
+    error_message = "The auto_shutdown_time value must contain 4 digits."
   }
 }
 
@@ -311,7 +311,7 @@ variable "vm_sp_storage_account_type" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/dev/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/main/"
 }
 
 variable "_artifactsLocationSasToken" {
