@@ -796,14 +796,46 @@ resource "azurerm_network_security_group" "nsg_subnet_bastion" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_internet" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_https_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "inbound-443-Internet"
-  description                 = "Allow RDP"
+  name                        = "AllowHttpsInBound"
+  description                 = "Allow Https InBound"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "443"
   source_address_prefix       = "Internet"
+  destination_port_range      = "443"
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 100
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_gatewaymanager_inbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowGatewayManagerInBound"
+  description                 = "Allow Gateway Manager InBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "GatewayManager"
+  destination_port_range      = "443"
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 110
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_loadbalancer_inbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowLoadBalancerInBound"
+  description                 = "Allow Load Balancer InBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "AzureLoadBalancer"
+  destination_port_range      = "443"
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 120
@@ -812,15 +844,15 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_intern
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_gatewaymanager" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhostcommunication_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "inbound-443-GatewayManager"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
+  name                        = "AllowBastionHostCommunicationInBound"
+  description                 = "Allow Bastion Host Communication InBound"
+  protocol                    = "*"
   source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "GatewayManager"
-  destination_address_prefix  = "*"
+  source_address_prefix       = "VirtualNetwork"
+  destination_port_ranges     = ["8080", "5701"]
+  destination_address_prefix  = "VirtualNetwork"
   access                      = "Allow"
   priority                    = 130
   direction                   = "Inbound"
@@ -828,49 +860,97 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_gatewa
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_rdp" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-3389-RDP"
-  description                 = "Allow RDP"
+  name                        = "DenyAllInBound"
+  description                 = "Deny All InBound"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_range      = "3389"
   source_address_prefix       = "*"
+  destination_port_range      = "*"
+  destination_address_prefix  = "*"
+  access                      = "Deny"
+  priority                    = 1000
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_sshrdp_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowSshRdpOutBound"
+  description                 = "Allow Ssh Rdp OutBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_ranges     = ["22", "3389"]
   destination_address_prefix  = "VirtualNetwork"
   access                      = "Allow"
-  priority                    = 120
+  priority                    = 100
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_ssh" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_azurecloud_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-22-SSH"
-  description                 = "Allow SSH"
-  protocol                    = "*"
+  name                        = "AllowAzureCloudCommunicationOutBound"
+  description                 = "Allow Azure Cloud Communication OutBound"
+  protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "22"
   source_address_prefix       = "*"
-  destination_address_prefix  = "VirtualNetwork"
-  access                      = "Allow"
-  priority                    = 121
-  direction                   = "Outbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_azurecloud" {
-  count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-443-AzureCloud"
-  description                 = "Allow AzureCloud"
-  protocol                    = "*"
-  source_port_range           = "*"
   destination_port_range      = "443"
-  source_address_prefix       = "*"
   destination_address_prefix  = "AzureCloud"
   access                      = "Allow"
+  priority                    = 110
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhost_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowBastionHostCommunicationOutBound"
+  description                 = "Allow Bastion Host Communication OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "VirtualNetwork"
+  destination_port_ranges     = ["8080", "5701"]
+  destination_address_prefix  = "VirtualNetwork"
+  access                      = "Allow"
+  priority                    = 120
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_getsessioninformation_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowGetSessionInformationOutBound"
+  description                 = "Allow Get Session Information OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_ranges     = ["80", "443"]
+  destination_address_prefix  = "Internet"
+  access                      = "Allow"
   priority                    = 130
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "DenyAllOutBound"
+  description                 = "Deny All OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_range      = "*"
+  destination_address_prefix  = "*"
+  access                      = "Deny"
+  priority                    = 1000
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
@@ -884,11 +964,11 @@ resource "azurerm_subnet" "subnet_bastion" {
   address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
-  count                     = var.enable_azure_bastion ? 1 : 0
-  subnet_id                 = azurerm_subnet.subnet_bastion[0].id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
-}
+# resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
+#   count                     = var.enable_azure_bastion ? 1 : 0
+#   subnet_id                 = azurerm_subnet.subnet_bastion[0].id
+#   network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
+# }
 
 resource "azurerm_public_ip" "pip_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0

@@ -1,6 +1,5 @@
 # Changelog for terraform-azurerm-sharepoint
 
-
 > This CHANGELOG covers only the changes related to this Terraform module.  
 The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes related to DSC.
 
@@ -8,10 +7,12 @@ The DSC files are copied from [this Azure template](https://azure.microsoft.com/
 
 ### Changed
 
-- Improved the logic that installs SharePoint updates when deploying SharePoint Subscription
-- Renamed variable `add_public_ip_address` to `add_public_ip_address` and update its type and design to add more granularity. Now its default value is `SharePointVMsOnly`
+- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and update its type and design to add more granularity. Now its default value is `SharePointVMsOnly`
+- Update NSG rules for Bastion
 - Changed SKU of Public IP address resources to use Basic instead of Standard (except for Bastion which requires Standard)
 - Changed allocation method of Public IP address resources to use Dynamic instead of Static (except for Bastion which requires Static)
+- Improved the logic that installs SharePoint updates when deploying SharePoint Subscription
+- Updated test for the value of variable auto_shutdown_time
 
 ## [2.1.0] - 22-10-18
 
