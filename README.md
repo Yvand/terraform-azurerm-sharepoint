@@ -29,7 +29,7 @@ module "sharepoint" {
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of VMs, if variable `add_public_ip_address` is not set to `No`.
-- Variable `add_public_ip_address`: If `SharePointVMsOnly` (default), Only SharePoint VMs get a static public IP address with a name in the following format: `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"`.
+- Variable `add_public_ip_address`: See [this section](#remote-access-and-security) for detailed information.
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
   - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
@@ -37,10 +37,7 @@ module "sharepoint" {
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits installed.
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
 - Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), but they can be left empty to use an auto-generated password that will be recorded in state file.
-- Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
-  - If 'No' (default): Firewall denies all incoming RDP traffic.
-  - If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.
-  - If CIDR notation (e.g. `192.168.99.0/24` or `2001:1234::/64`) or IP address (e.g. `192.168.99.0` or `2001:1234::`): Firewall accepts incoming RDP traffic from the IP addresses specified.
+- Variable `rdp_traffic_allowed`: See [this section](#remote-access-and-security) for detailed information.
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
@@ -71,6 +68,25 @@ Regardless of the SharePoint version selected, an extensive configuration is per
 ### Specific to SharePoint 2019 / 2016 / 2013
 
 - Federated authentication is configured using SAML 1.1
+
+## Remote access and security
+
+The template creates 1 virtual network with 3 subnets. All subnets are protected by a [Network Security Group](https://docs.microsoft.com/azure/virtual-network/network-security-groups-overview) with no custom rule by default.
+
+The following parameters impact the remote access of the virtual machines, and the network security:
+
+- Variable `add_public_ip_address`:
+  - if `SharePointVMsOnly` (default): Only SharePoint virtual machines get a public IP address with a DNS name and can be reached from Internet.
+  - If `Yes`: All virtual machines get a public IP address with a DNS name, and can be reached from Internet.
+  - if `No`: No public IP resource is created.
+  - The DNS name format of virtual machines is `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"` and is recorded as output in the state file.
+- Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
+  - If `No` (default): Firewall denies all incoming RDP traffic.
+  - If `*` or 'Internet': Firewall accepts all incoming RDP traffic from Internet.
+  - If CIDR notation (e.g. `192.168.99.0/24` or `2001:1234::/64`) or IP address (e.g. `192.168.99.0` or `2001:1234::`): Firewall accepts incoming RDP traffic from the IP addresses specified.
+* Variable `enable_azure_bastion`:
+  * if `true`: Configure service [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) to allow a secure remote access to virtual machines.
+  * if `false` (default): Service Azure Bastion is not created.
 
 ## Cost of the resources deployed
 
