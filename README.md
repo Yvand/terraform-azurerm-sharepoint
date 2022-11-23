@@ -35,8 +35,9 @@ There are some differences in the configuration, depending on the SharePoint ver
 - SharePoint User Profiles service is configured with a directory synchronization connection, and the MySite host is a host-named site collection.
 - SharePoint has 1 web application with path based and host-named site collections, and contains 2 zones:
   - Default zone: HTTP using Windows authentication.
-  - Intranet zone: HTTPS using federated (ADFS) authentication. Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
+  - Intranet zone: HTTPS using federated (ADFS) authentication.
 - An OAuth trust is created, as well as a custom IIS site to host your high-trust add-ins.
+- Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
 
 ### Specific to SharePoint Subscription
 
@@ -47,6 +48,7 @@ There are some differences in the configuration, depending on the SharePoint ver
 ### Specific to SharePoint 2019 / 2016 / 2013
 
 - SharePoint virtual machines are created using a disk image built and maintained by SharePoint Engineering.
+- The HTTPS site certificate is positioned by the DSC script.
 - Federated authentication with ADFS is configured using SAML 1.1.
 
 ## Key variables
