@@ -22,6 +22,28 @@ module "sharepoint" {
 }
 ```
 
+## Features
+
+Regardless of the SharePoint version selected, an extensive configuration is performed, with some differences depending on the version:
+
+### Common to all SharePoint versions
+
+- Active Directory forest created, AD CS and AD FS are installed and configured. LDAPS (LDAP over SSL) is also conigured.
+- SharePoint service applications configured: User Profile, add-ins, session state.
+- SharePoint has 1 web application with path based and host-named site collections. There are 2 zones:
+  - Default zone: HTTP with Windows authentication.
+  - Intranet zone: HTTPS with federated (ADFS) authentication. Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
+- An OAuth trust is created, and a dedicated IIS site is created with 2 bindings (HTTP + HTTPS) to host custom high-trust add-ins.
+
+### Specific to SharePoint Subscription
+
+- HTTPS site certificate is managed by SharePoint: It has the private key and sets the binding itself in the IIS site
+- Federated authentication with ADFS is configured using OpenID Connect
+
+### Specific to SharePoint 2019 / 2016 / 2013
+
+- Federated authentication with ADFS is configured using SAML 1.1
+
 ## Key variables
 
 ### Input variables
@@ -43,28 +65,6 @@ module "sharepoint" {
 ### Output variables
 
 Valuable output variables are returned by the module and recorded in the state file, including the login, passwords and the public IP address of each virtual machine.
-
-## Features
-
-Regardless of the SharePoint version selected, an extensive configuration is performed, with some differences depending on the version:
-
-### Common to all SharePoint versions
-
-- Active Directory forest created, AD CS and AD FS are installed and configured. LDAPS (LDAP over SSL) is also conigured.
-- SharePoint service applications configured: User Profile, add-ins, session state.
-- SharePoint has 1 web application with path based and host-named site collections. There are 2 zones:
-  - Default zone: HTTP with Windows authentication.
-  - Intranet zone: HTTPS with federated (ADFS) authentication. Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
-- An OAuth trust is created, and a dedicated IIS site is created with 2 bindings (HTTP + HTTPS) to host custom high-trust add-ins.
-
-### Specific to SharePoint Subscription
-
-- HTTPS site certificate is managed by SharePoint: It has the private key and sets the binding itself in the IIS site
-- Federated authentication is configured using OpenID Connect
-
-### Specific to SharePoint 2019 / 2016 / 2013
-
-- Federated authentication is configured using SAML 1.1
 
 ## Remote access and security
 
