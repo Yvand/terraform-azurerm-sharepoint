@@ -7,12 +7,16 @@ The DSC files are copied from [this Azure template](https://azure.microsoft.com/
 
 ### Changed
 
-- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and changed its type to `string` to add more granularity. Its default value is now `SharePointVMsOnly`, to assign a public IP address only to SharePoint VMs.
-- Update NSG rules for Bastion
+- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and changed its type to `string` to add more granularity. Its default value is now `"SharePointVMsOnly"`, to assign a public IP address only to SharePoint VMs
+- BREAKING CHANGE: Pass PowerShell parameter `$SharePointBits` to the DSC config of all SharePoint VMs
+- Moved the definition of SharePoint Subscription packages list from DSC to the module itself
 - Changed SKU of Public IP address resources to use Basic instead of Standard (except for Bastion which requires Standard)
 - Changed allocation method of Public IP address resources to use Dynamic instead of Static (except for Bastion which requires Static)
-- Improved the logic that installs SharePoint updates when deploying SharePoint Subscription
 - Updated test for the value of variable auto_shutdown_time
+
+### Fixed
+
+- Fixed the random error `NetworkSecurityGroupNotCompliantForAzureBastionSubnet` when deploying Azure Bastion by updating the rules in the network security group attached to Bastion's subnet
 
 ## [2.1.0] - 22-10-18
 
