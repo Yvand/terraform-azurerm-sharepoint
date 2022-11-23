@@ -1,18 +1,18 @@
 # Changelog for terraform-azurerm-sharepoint
 
 > This CHANGELOG covers only the changes related to this Terraform module.  
-The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes related to DSC.
+The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes specific to DSC.
 
 ## Unreleased
 
 ### Changed
 
-- BREAKING CHANGE: Renamed variable `add_public_ip_address` to `add_public_ip_address` and changed its type to `string` to add more granularity. Its default value is now `"SharePointVMsOnly"`, to assign a public IP address only to SharePoint VMs
+- BREAKING CHANGE: Renamed variable `add_public_ip_to_each_vm` to `add_public_ip_address` and changed its type to `string` to provide more granularity. Its default value is now `"SharePointVMsOnly"`, to assign a public IP address only to SharePoint VMs
 - BREAKING CHANGE: Pass PowerShell parameter `$SharePointBits` to the DSC config of all SharePoint VMs
 - Moved the definition of SharePoint Subscription packages list from DSC to the module itself
 - Changed SKU of Public IP address resources to use Basic instead of Standard (except for Bastion which requires Standard)
 - Changed allocation method of Public IP address resources to use Dynamic instead of Static (except for Bastion which requires Static)
-- Updated test for the value of variable auto_shutdown_time
+- Updated the test for the value of variable `auto_shutdown_time`
 
 ### Fixed
 
