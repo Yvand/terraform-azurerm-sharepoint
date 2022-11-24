@@ -12,15 +12,15 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 
 ```terraform
 module "sharepoint" {
-  source                     = "Yvand/sharepoint/azurerm"
-  version                    = ">=3.0.0"
+  source              = "Yvand/sharepoint/azurerm"
+  version             = ">=3.0.0"
 
   # Below are the main variables, other variables can also be set
-  location                   = "West Europe"
-  resource_group_name        = "<resourceGroupName>"
-  sharepoint_version         = "Subscription-22H2"
-  admin_username             = "yvand"
-  admin_password             = "<password>"
+  location            = "West Europe"
+  resource_group_name = "<resourceGroupName>"
+  sharepoint_version  = "Subscription-22H2"
+  admin_username      = "yvand"
+  admin_password      = "<password>"
 }
 ```
 
