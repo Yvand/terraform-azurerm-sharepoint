@@ -14,7 +14,6 @@ locals {
   sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
 
   general_settings = {
-    dscScriptsFolder      = "dsc"
     adfsSvcUserName       = "adfssvc"
     sqlSvcUserName        = "sqlsvc"
     spSetupUserName       = "spsetup"
@@ -397,7 +396,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${var._artifactsLocation}${local.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
 	    "function": "${local.config_dc_dsc["function"]}",
 	    "script": "${local.config_dc_dsc["script"]}"
     },
@@ -486,7 +485,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${var._artifactsLocation}${local.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
 	    "function": "${local.config_sql_dsc["function"]}",
 	    "script": "${local.config_sql_dsc["script"]}"
     },
@@ -579,7 +578,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${var._artifactsLocation}${local.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
 	    "function": "${local.config_sp_dsc["function"]}",
 	    "script": "${local.config_sp_dsc["script"]}"
     },
@@ -730,7 +729,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${var._artifactsLocation}${local.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
 	    "function": "${local.config_fe_dsc["function"]}",
 	    "script": "${local.config_fe_dsc["script"]}"
     },
