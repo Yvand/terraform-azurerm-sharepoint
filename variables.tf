@@ -309,11 +309,3 @@ variable "vm_sp_storage_account_type" {
     error_message = "Invalid storage account type value."
   }
 }
-
-variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/main/dsc/"
-}
-
-variable "_artifactsLocationSasToken" {
-  default = ""
-}

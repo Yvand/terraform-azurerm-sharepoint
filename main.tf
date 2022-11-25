@@ -12,6 +12,8 @@ locals {
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
+  _artifactsLocation         = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/main/dsc/"
+  _artifactsLocationSasToken = ""
 
   general_settings = {
     adfsSvcUserName       = "adfssvc"
@@ -396,7 +398,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_dc_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_dc_dsc["function"]}",
 	    "script": "${local.config_dc_dsc["script"]}"
     },
@@ -485,7 +487,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_sql_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_sql_dsc["function"]}",
 	    "script": "${local.config_sql_dsc["script"]}"
     },
@@ -578,7 +580,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_sp_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_sp_dsc["function"]}",
 	    "script": "${local.config_sp_dsc["script"]}"
     },
@@ -729,7 +731,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_fe_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_fe_dsc["function"]}",
 	    "script": "${local.config_fe_dsc["script"]}"
     },
