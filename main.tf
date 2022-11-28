@@ -389,7 +389,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
-  count                      = 0
+  # count                      = 0
   name                       = "VM-${local.config_dc["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_dc.id
   publisher                  = "Microsoft.Powershell"
@@ -478,7 +478,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
-  count                      = 0
+  # count                      = 0
   name                       = "VM-${local.config_sql["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql.id
   publisher                  = "Microsoft.Powershell"
@@ -571,7 +571,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
-  count                      = 0
+  # count                      = 0
   name                       = "VM-${local.config_sp["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
   publisher                  = "Microsoft.Powershell"
