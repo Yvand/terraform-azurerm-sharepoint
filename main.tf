@@ -145,17 +145,24 @@ locals {
   }
 }
 
-# Service account password
 resource "random_password" "random_admin_password" {
   length           = 8
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#$%*()-_=+[]{}:?"  # Do not include special characters '&<>' because they get encoded in the result
+  min_lower        = 1
+  min_numeric      = 1
+  min_upper        = 1
+  min_special      = 1
 }
 
 resource "random_password" "random_service_accounts_password" {
   length           = 8
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#$%*()-_=+[]{}:?"  # Do not include special characters '&<>' because they get encoded in the result
+  min_lower        = 1
+  min_numeric      = 1
+  min_upper        = 1
+  min_special      = 1
 }
 
 # Create a resource group
@@ -382,7 +389,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
-  # count                      = 0
+  count                      = 0
   name                       = "VM-${local.config_dc["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_dc.id
   publisher                  = "Microsoft.Powershell"
@@ -471,7 +478,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
-  # count                      = 0
+  count                      = 0
   name                       = "VM-${local.config_sql["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql.id
   publisher                  = "Microsoft.Powershell"
@@ -564,7 +571,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
-  # count                      = 0
+  count                      = 0
   name                       = "VM-${local.config_sp["vmName"]}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
   publisher                  = "Microsoft.Powershell"

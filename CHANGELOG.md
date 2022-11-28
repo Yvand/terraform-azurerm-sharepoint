@@ -3,7 +3,7 @@
 > This CHANGELOG covers only the changes related to this Terraform module.  
 The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes specific to DSC.
 
-## [3.0.0] - 22-11-25
+## [3.0.0] - 22-11-28
 
 ### Changed
 
@@ -17,6 +17,7 @@ The DSC files are copied from [this Azure template](https://azure.microsoft.com/
 ### Fixed
 
 - Fixed the random error `NetworkSecurityGroupNotCompliantForAzureBastionSubnet` when deploying Azure Bastion by updating the rules in the network security group attached to Bastion's subnet
+- Fixed the auto-generated password that may not work password for variables `admin_password` and `service_accounts_password` ([issue terraform-provider-random #337](https://github.com/hashicorp/terraform-provider-random/issues/337)).
 
 ## [2.1.0] - 22-10-18
 
