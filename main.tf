@@ -12,7 +12,7 @@ locals {
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
-  _artifactsLocation         = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/main/dsc/"
+  _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
 
   general_settings = {
@@ -34,7 +34,7 @@ locals {
       "Label" : "RTM",
       "Packages" : [
         {
-          "DownloadUrl" : "https://go.microsoft.com/fwlink/?linkid=2171943",
+          "DownloadUrl" : "https://download.microsoft.com/download/3/f/5/3f5f8a7e-462b-41ff-a5b2-04bdf5821ceb/OfficeServer.iso",
           "ChecksumType" : "SHA256",
           "Checksum" : "C576B847C573234B68FC602A0318F5794D7A61D8149EB6AE537AF04470B7FC05"
         }
@@ -148,7 +148,7 @@ locals {
 resource "random_password" "random_admin_password" {
   length           = 8
   special          = true
-  override_special = "!#$%*()-_=+[]{}:?"  # Do not include special characters '&<>' because they get encoded in the result
+  override_special = "!#$%*()-_=+[]{}:?" # Do not include special characters '&<>' because they get encoded in the result
   min_lower        = 1
   min_numeric      = 1
   min_upper        = 1
@@ -158,7 +158,7 @@ resource "random_password" "random_admin_password" {
 resource "random_password" "random_service_accounts_password" {
   length           = 8
   special          = true
-  override_special = "!#$%*()-_=+[]{}:?"  # Do not include special characters '&<>' because they get encoded in the result
+  override_special = "!#$%*()-_=+[]{}:?" # Do not include special characters '&<>' because they get encoded in the result
   min_lower        = 1
   min_numeric      = 1
   min_upper        = 1
