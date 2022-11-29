@@ -3,16 +3,19 @@ provider "azurerm" {
 }
 
 locals {
-  config_sp_image                       = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc                         = split("-", var.sharepoint_version)[0] == "Subscription" ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
-  create_rdp_rule                       = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
-  admin_password                        = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password             = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  enable_hybrid_benefit_server_licenses = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
+  config_sp_image            = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
+  config_sp_dsc              = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc              = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
+  service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
+  license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
+  _artifactsLocation         = var._artifactsLocation
+  _artifactsLocationSasToken = ""
 
   general_settings = {
-    dscScriptsFolder      = "dsc"
     adfsSvcUserName       = "adfssvc"
     sqlSvcUserName        = "sqlsvc"
     spSetupUserName       = "spsetup"
@@ -25,6 +28,34 @@ locals {
     sqlAlias              = "SQLAlias"
     bastion_publicip_name = "${lower(azurerm_resource_group.rg.name)}-bastion"
   }
+
+  sharepoint_subscription_bits = [
+    {
+      "Label" : "RTM",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/3/f/5/3f5f8a7e-462b-41ff-a5b2-04bdf5821ceb/OfficeServer.iso",
+          "ChecksumType" : "SHA256",
+          "Checksum" : "C576B847C573234B68FC602A0318F5794D7A61D8149EB6AE537AF04470B7FC05"
+        }
+      ]
+    },
+    {
+      "Label" : "22H2",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/8/d/f/8dfcb515-6e49-42e5-b20f-5ebdfd19d8e7/wssloc-subscription-kb5002270-fullfile-x64-glb.exe",
+          "ChecksumType" : "SHA256",
+          "Checksum" : "7E496530EB873146650A9E0653DE835CB2CAD9AF8D154CBD7387BB0F2297C9FC"
+        },
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/3/f/5/3f5b1ee0-3336-45d7-b2f4-1e6af977d574/sts-subscription-kb5002271-fullfile-x64-glb.exe",
+          "ChecksumType" : "SHA256",
+          "Checksum" : "247011443AC573D4F03B1622065A7350B8B3DAE04D6A5A6DC64C8270A3BE7636"
+        }
+      ]
+    }
+  ]
 
   network_settings = {
     vNetPrivatePrefix              = "10.1.0.0/16"
@@ -114,17 +145,24 @@ locals {
   }
 }
 
-# Service account password
 resource "random_password" "random_admin_password" {
   length           = 8
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#$%*()-_=+[]{}:?" # Do not include special characters '&<>' because they get encoded in the result
+  min_lower        = 1
+  min_numeric      = 1
+  min_upper        = 1
+  min_special      = 1
 }
 
 resource "random_password" "random_service_accounts_password" {
   length           = 8
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!#$%*()-_=+[]{}:?" # Do not include special characters '&<>' because they get encoded in the result
+  min_lower        = 1
+  min_numeric      = 1
+  min_upper        = 1
+  min_special      = 1
 }
 
 # Create a resource group
@@ -247,13 +285,13 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_assoc
 
 # Create artifacts for VM DC
 resource "azurerm_public_ip" "pip_dc" {
-  count               = var.add_public_ip_to_each_vm ? 1 : 0
+  count               = var.add_public_ip_address == "Yes" ? 1 : 0
   name                = "PublicIP-${local.config_dc["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_dc["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -267,19 +305,19 @@ resource "azurerm_network_interface" "nic_dc_0" {
     subnet_id                     = azurerm_subnet.subnet_dc.id
     private_ip_address_allocation = "Static"
     private_ip_address            = local.network_settings["vmDCPrivateIPAddress"]
-    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_dc[0].id : null
+    public_ip_address_id          = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_dc[0].id : null
   }
 }
 
 # Create artifacts for VM SQL
 resource "azurerm_public_ip" "pip_sql" {
-  count               = var.add_public_ip_to_each_vm ? 1 : 0
+  count               = var.add_public_ip_address == "Yes" ? 1 : 0
   name                = "PublicIP-${local.config_sql["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sql["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -292,19 +330,19 @@ resource "azurerm_network_interface" "nic_sql_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sql.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sql[0].id : null
+    public_ip_address_id          = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_sql[0].id : null
   }
 }
 
 # Create artifacts for VM SP
 resource "azurerm_public_ip" "pip_sp" {
-  count               = var.add_public_ip_to_each_vm ? 1 : 0
+  count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? 1 : 0
   name                = "PublicIP-${local.config_sp["vmName"]}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_sp["vmName"])}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -317,7 +355,7 @@ resource "azurerm_network_interface" "nic_sp_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sp[0].id : null
+    public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].id : null
   }
 }
 
@@ -331,7 +369,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   size                     = local.config_dc["vmSize"]
   admin_username           = var.admin_username
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -367,7 +405,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_dc_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_dc_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_dc_dsc["function"]}",
 	    "script": "${local.config_dc_dsc["script"]}"
     },
@@ -420,7 +458,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   size                     = local.config_sql["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -456,7 +494,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sql_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_sql_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_sql_dsc["function"]}",
 	    "script": "${local.config_sql_dsc["script"]}"
     },
@@ -513,7 +551,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -549,7 +587,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_sp_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_sp_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_sp_dsc["function"]}",
 	    "script": "${local.config_sp_dsc["script"]}"
     },
@@ -560,7 +598,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "EnableAnalysis": false
+      "EnableAnalysis": false,
+      "SharePointBits": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -628,13 +667,13 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_shutdown" {
 
 # Can create 0 to var.number_additional_frontend FE VMs
 resource "azurerm_public_ip" "pip_fe" {
-  count               = var.add_public_ip_to_each_vm ? var.number_additional_frontend : 0
+  count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? var.number_additional_frontend : 0
   name                = "PublicIP-${local.config_fe["vmName"]}-${count.index}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.config_fe["vmName"])}-${count.index}"
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
   sku_tier            = "Regional"
 }
 
@@ -648,7 +687,7 @@ resource "azurerm_network_interface" "nic_fe_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_to_each_vm ? element(azurerm_public_ip.pip_fe.*.id, count.index) : null
+    public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? element(azurerm_public_ip.pip_fe.*.id, count.index) : null
   }
 }
 
@@ -662,7 +701,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   size                     = local.config_sp["vmSize"]
   admin_username           = "local-${var.admin_username}"
   admin_password           = local.admin_password
-  license_type             = local.enable_hybrid_benefit_server_licenses
+  license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
@@ -699,7 +738,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${var._artifactsLocation}${local.general_settings["dscScriptsFolder"]}/${local.config_fe_dsc["fileName"]}${var._artifactsLocationSasToken}",
+	    "url": "${local._artifactsLocation}${local.config_fe_dsc["fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.config_fe_dsc["function"]}",
 	    "script": "${local.config_fe_dsc["script"]}"
     },
@@ -710,7 +749,8 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "EnableAnalysis": false
+      "EnableAnalysis": false,
+      "SharePointBits": ${local.sharepoint_bits_selected}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -764,14 +804,46 @@ resource "azurerm_network_security_group" "nsg_subnet_bastion" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_internet" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_https_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "inbound-443-Internet"
-  description                 = "Allow RDP"
+  name                        = "AllowHttpsInBound"
+  description                 = "Allow Https InBound"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "443"
   source_address_prefix       = "Internet"
+  destination_port_range      = "443"
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 100
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_gatewaymanager_inbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowGatewayManagerInBound"
+  description                 = "Allow Gateway Manager InBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "GatewayManager"
+  destination_port_range      = "443"
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 110
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_loadbalancer_inbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowLoadBalancerInBound"
+  description                 = "Allow Load Balancer InBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "AzureLoadBalancer"
+  destination_port_range      = "443"
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 120
@@ -780,15 +852,15 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_intern
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_gatewaymanager" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhostcommunication_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "inbound-443-GatewayManager"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
+  name                        = "AllowBastionHostCommunicationInBound"
+  description                 = "Allow Bastion Host Communication InBound"
+  protocol                    = "*"
   source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "GatewayManager"
-  destination_address_prefix  = "*"
+  source_address_prefix       = "VirtualNetwork"
+  destination_port_ranges     = ["8080", "5701"]
+  destination_address_prefix  = "VirtualNetwork"
   access                      = "Allow"
   priority                    = 130
   direction                   = "Inbound"
@@ -796,49 +868,97 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_inbound_gatewa
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_rdp" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-3389-RDP"
-  description                 = "Allow RDP"
+  name                        = "DenyAllInBound"
+  description                 = "Deny All InBound"
   protocol                    = "*"
   source_port_range           = "*"
-  destination_port_range      = "3389"
   source_address_prefix       = "*"
+  destination_port_range      = "*"
+  destination_address_prefix  = "*"
+  access                      = "Deny"
+  priority                    = 1000
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_sshrdp_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowSshRdpOutBound"
+  description                 = "Allow Ssh Rdp OutBound"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_ranges     = ["22", "3389"]
   destination_address_prefix  = "VirtualNetwork"
   access                      = "Allow"
-  priority                    = 120
+  priority                    = 100
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_ssh" {
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_azurecloud_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-22-SSH"
-  description                 = "Allow SSH"
-  protocol                    = "*"
+  name                        = "AllowAzureCloudCommunicationOutBound"
+  description                 = "Allow Azure Cloud Communication OutBound"
+  protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "22"
   source_address_prefix       = "*"
-  destination_address_prefix  = "VirtualNetwork"
-  access                      = "Allow"
-  priority                    = 121
-  direction                   = "Outbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_outbound_azurecloud" {
-  count                       = var.enable_azure_bastion ? 1 : 0
-  name                        = "outbound-443-AzureCloud"
-  description                 = "Allow AzureCloud"
-  protocol                    = "*"
-  source_port_range           = "*"
   destination_port_range      = "443"
-  source_address_prefix       = "*"
   destination_address_prefix  = "AzureCloud"
   access                      = "Allow"
+  priority                    = 110
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhost_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowBastionHostCommunicationOutBound"
+  description                 = "Allow Bastion Host Communication OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "VirtualNetwork"
+  destination_port_ranges     = ["8080", "5701"]
+  destination_address_prefix  = "VirtualNetwork"
+  access                      = "Allow"
+  priority                    = 120
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_getsessioninformation_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "AllowGetSessionInformationOutBound"
+  description                 = "Allow Get Session Information OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_ranges     = ["80", "443"]
+  destination_address_prefix  = "Internet"
+  access                      = "Allow"
   priority                    = 130
+  direction                   = "Outbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_outbound" {
+  count                       = var.enable_azure_bastion ? 1 : 0
+  name                        = "DenyAllOutBound"
+  description                 = "Deny All OutBound"
+  protocol                    = "*"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_range      = "*"
+  destination_address_prefix  = "*"
+  access                      = "Deny"
+  priority                    = 1000
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
@@ -852,11 +972,11 @@ resource "azurerm_subnet" "subnet_bastion" {
   address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
-  count                     = var.enable_azure_bastion ? 1 : 0
-  subnet_id                 = azurerm_subnet.subnet_bastion[0].id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
-}
+# resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
+#   count                     = var.enable_azure_bastion ? 1 : 0
+#   subnet_id                 = azurerm_subnet.subnet_bastion[0].id
+#   network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
+# }
 
 resource "azurerm_public_ip" "pip_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0

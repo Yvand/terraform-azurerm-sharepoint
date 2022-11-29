@@ -7,15 +7,15 @@ output "resource_group_id" {
 }
 
 output "vm_dc_dns" {
-  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_dc[0].fqdn : null
+  value = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_dc[0].fqdn : null
 }
 
 output "vm_sql_dns" {
-  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sql[0].fqdn : null
+  value = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_sql[0].fqdn : null
 }
 
 output "vm_sp_dns" {
-  value = var.add_public_ip_to_each_vm ? azurerm_public_ip.pip_sp[0].fqdn : null
+  value = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].fqdn : null
 }
 
 output "vm_fe_dns" {
