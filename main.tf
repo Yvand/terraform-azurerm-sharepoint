@@ -3,15 +3,10 @@ provider "azurerm" {
 }
 
 locals {
-  is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
-  config_sp_image            = lookup(local.config_sp_image_list, split("-", var.sharepoint_version)[0])
-  config_sp_dsc              = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
-  config_fe_dsc              = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
   create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
-  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
 
@@ -29,6 +24,20 @@ locals {
     bastion_publicip_name = "${lower(azurerm_resource_group.rg.name)}-bastion"
   }
 
+  # SharePoint settings
+  is_sharepoint_subscription    = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
+  sharepoint_bits_selected      = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
+  sharepoint_image_selected     = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
+  sharepoint_sites_authority    = "spsites"
+  sharepoint_central_admin_port = 5000
+  config_sp_dsc                 = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
+  config_fe_dsc                 = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
+  sharepoint_images_list = {
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
+    "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
+    "2013"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
+  }
   sharepoint_subscription_bits = [
     {
       "Label" : "RTM",
@@ -54,6 +63,110 @@ locals {
           "Checksum" : "247011443AC573D4F03B1622065A7350B8B3DAE04D6A5A6DC64C8270A3BE7636"
         }
       ]
+    }
+  ]
+
+  # So much work to configure a browser, seriously... https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies
+  edge_policies = [
+    {
+      "policyValueName" : "HideFirstRunExperience",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "TrackingPrevention",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 3
+    },
+    {
+      "policyValueName" : "AdsTransparencyEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "BingAdsSuppression",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "AdsSettingForIntrusiveAdsSites",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 2
+    },
+    {
+      "policyValueName" : "AskBeforeCloseEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "BlockThirdPartyCookies",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "ConfigureDoNotTrack",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "DiagnosticData",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "HubsSidebarEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "HomepageIsNewTabPage",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "HomepageLocation",
+      "policyValueType" : "String",
+      "policyValueValue" : "edge://newtab"
+    },
+    {
+      "policyValueName" : "ShowHomeButton",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "NewTabPageLocation",
+      "policyValueType" : "String",
+      "policyValueValue" : "about://blank"
+    },
+    {
+      "policyValueName" : "NewTabPageQuickLinksEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 1
+    },
+    {
+      "policyValueName" : "NewTabPageContentEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "NewTabPageAllowedBackgroundTypes",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 3
+    },
+    {
+      "policyValueName" : "NewTabPageAppLauncherEnabled",
+      "policyValueType" : "DWORD",
+      "policyValueValue" : 0
+    },
+    {
+      "policyValueName" : "ManagedFavorites",
+      "policyValueType" : "String",
+      "policyValueValue" : "[{ \"toplevel_name\": \"SharePoint\" }, { \"name\": \"Central administration\", \"url\": \"http://${local.config_sp["vmName"]}:${local.sharepoint_central_admin_port}/\" }, { \"name\": \"Root site - Default zone\", \"url\": \"http://${local.sharepoint_sites_authority}/\" }, { \"name\": \"Root site - Intranet zone\", \"url\": \"https://${local.sharepoint_sites_authority}.${var.domain_fqdn}/\" }]"
+    },
+    {
+      "policyValueName" : "NewTabPageManagedQuickLinks",
+      "policyValueType" : "String",
+      "policyValueValue" : "[{\"pinned\": true, \"title\": \"Central administration\", \"url\": \"http://${local.config_sp["vmName"]}:${local.sharepoint_central_admin_port}/\" }, { \"pinned\": true, \"title\": \"Root site - Default zone\", \"url\": \"http://${local.sharepoint_sites_authority}/\" }, { \"pinned\": true, \"title\": \"Root site - Intranet zone\", \"url\": \"https://${local.sharepoint_sites_authority}.${var.domain_fqdn}/\" }]"
     }
   ]
 
@@ -88,13 +201,6 @@ locals {
     vmName             = "SP"
     vmSize             = var.vm_sp_size
     storageAccountType = var.vm_sp_storage_account_type
-  }
-
-  config_sp_image_list = {
-    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
-    "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019:latest"
-    "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
-    "2013"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
   }
 
   config_fe = {
@@ -411,7 +517,8 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     },
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
-      "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}"
+      "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "EdgePolicies": ${jsonencode(local.edge_policies)}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -563,9 +670,9 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   }
 
   source_image_reference {
-    publisher = split(":", local.config_sp_image)[0]
-    offer     = split(":", local.config_sp_image)[1]
-    sku       = split(":", local.config_sp_image)[2]
+    publisher = split(":", local.sharepoint_image_selected)[0]
+    offer     = split(":", local.sharepoint_image_selected)[1]
+    sku       = split(":", local.sharepoint_image_selected)[2]
     version   = "latest"
   }
 }
@@ -598,6 +705,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
+      "SharePointSitesAuthority": "${local.sharepoint_sites_authority}",
+      "SharePointCentralAdminPort": "${local.sharepoint_central_admin_port}",
       "EnableAnalysis": false,
       "SharePointBits": ${local.sharepoint_bits_selected}
     },
@@ -713,9 +822,9 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   }
 
   source_image_reference {
-    publisher = split(":", local.config_sp_image)[0]
-    offer     = split(":", local.config_sp_image)[1]
-    sku       = split(":", local.config_sp_image)[2]
+    publisher = split(":", local.sharepoint_image_selected)[0]
+    offer     = split(":", local.sharepoint_image_selected)[1]
+    sku       = split(":", local.sharepoint_image_selected)[2]
     version   = "latest"
   }
 }
