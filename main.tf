@@ -858,6 +858,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "SQLName": "${local.config_sql["vmName"]}",
       "SQLAlias": "${local.general_settings["sqlAlias"]}",
       "SharePointVersion": "${var.sharepoint_version}",
+      "SharePointSitesAuthority": "${local.sharepoint_sites_authority}",
       "EnableAnalysis": false,
       "SharePointBits": ${local.sharepoint_bits_selected}
     },
