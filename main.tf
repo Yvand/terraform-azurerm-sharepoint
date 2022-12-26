@@ -33,7 +33,7 @@ locals {
   config_sp_dsc                 = local.is_sharepoint_subscription ? local.config_sp_se_dsc : local.config_sp_legacy_dsc
   config_fe_dsc                 = local.is_sharepoint_subscription ? local.config_fe_se_dsc : local.config_fe_legacy_dsc
   sharepoint_images_list = {
-    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
     "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
     "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
     "2013"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
@@ -66,110 +66,6 @@ locals {
     }
   ]
 
-  # So much work to configure a browser, seriously... https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies
-  edge_policies = [
-    {
-      "policyValueName" : "HideFirstRunExperience",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "TrackingPrevention",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 3
-    },
-    {
-      "policyValueName" : "AdsTransparencyEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "BingAdsSuppression",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "AdsSettingForIntrusiveAdsSites",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 2
-    },
-    {
-      "policyValueName" : "AskBeforeCloseEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "BlockThirdPartyCookies",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "ConfigureDoNotTrack",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "DiagnosticData",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "HubsSidebarEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "HomepageIsNewTabPage",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "HomepageLocation",
-      "policyValueType" : "String",
-      "policyValueValue" : "edge://newtab"
-    },
-    {
-      "policyValueName" : "ShowHomeButton",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "NewTabPageLocation",
-      "policyValueType" : "String",
-      "policyValueValue" : "about://blank"
-    },
-    {
-      "policyValueName" : "NewTabPageQuickLinksEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 1
-    },
-    {
-      "policyValueName" : "NewTabPageContentEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "NewTabPageAllowedBackgroundTypes",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 3
-    },
-    {
-      "policyValueName" : "NewTabPageAppLauncherEnabled",
-      "policyValueType" : "DWORD",
-      "policyValueValue" : 0
-    },
-    {
-      "policyValueName" : "ManagedFavorites",
-      "policyValueType" : "String",
-      "policyValueValue" : "[{ \"toplevel_name\": \"SharePoint\" }, { \"name\": \"Central administration\", \"url\": \"http://${local.config_sp["vmName"]}:${local.sharepoint_central_admin_port}/\" }, { \"name\": \"Root site - Default zone\", \"url\": \"http://${local.sharepoint_sites_authority}/\" }, { \"name\": \"Root site - Intranet zone\", \"url\": \"https://${local.sharepoint_sites_authority}.${var.domain_fqdn}/\" }]"
-    },
-    {
-      "policyValueName" : "NewTabPageManagedQuickLinks",
-      "policyValueType" : "String",
-      "policyValueValue" : "[{\"pinned\": true, \"title\": \"Central administration\", \"url\": \"http://${local.config_sp["vmName"]}:${local.sharepoint_central_admin_port}/\" }, { \"pinned\": true, \"title\": \"Root site - Default zone\", \"url\": \"http://${local.sharepoint_sites_authority}/\" }, { \"pinned\": true, \"title\": \"Root site - Intranet zone\", \"url\": \"https://${local.sharepoint_sites_authority}.${var.domain_fqdn}/\" }]"
-    }
-  ]
-
   network_settings = {
     vNetPrivatePrefix              = "10.1.0.0/16"
     vNetPrivateSubnetDCPrefix      = "10.1.1.0/24"
@@ -192,7 +88,7 @@ locals {
     vmName             = "SQL"
     vmSize             = var.vm_sql_size
     vmImagePublisher   = "MicrosoftSQLServer"
-    vmImageOffer       = "sql2019-ws2022"
+    vmImageOffer       = "sql2022-ws2022"
     vmImageSKU         = "sqldev-gen2"
     storageAccountType = var.vm_sql_storage_account_type
   }
@@ -518,7 +414,8 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
       "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
-      "EdgePolicies": ${jsonencode(local.edge_policies)}
+      "SharePointSitesAuthority": "${local.sharepoint_sites_authority}",
+      "SharePointCentralAdminPort": "${local.sharepoint_central_admin_port}"
     },
     "privacy": {
       "dataCollection": "enable"
