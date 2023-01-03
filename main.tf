@@ -84,6 +84,11 @@ locals {
   }
 
   deployment_settings = {
+    sharepoint_sites_authority    = "spsites"
+    sharepoint_central_admin_port = 5000
+    localAdminUserName            = "local-${var.admin_username}"
+    enable_analysis               = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
+    apply_browser_policies        = true
     adfsSvcUserName               = "adfssvc"
     sqlSvcUserName                = "sqlsvc"
     spSetupUserName               = "spsetup"
@@ -94,10 +99,6 @@ locals {
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
     sqlAlias                      = "SQLAlias"
-    localAdminUserName            = "local-${var.admin_username}"
-    enable_analysis               = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
-    sharepoint_sites_authority    = "spsites"
-    sharepoint_central_admin_port = 5000
   }
 }
 
@@ -369,7 +370,8 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
       "domainFQDN": "${var.domain_fqdn}",
       "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
-      "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}"
+      "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
+      "ApplyBrowserPolicies": "${local.deployment_settings.apply_browser_policies}"
     },
     "privacy": {
       "dataCollection": "enable"
