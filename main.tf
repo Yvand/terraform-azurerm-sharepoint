@@ -3,35 +3,15 @@ provider "azurerm" {
 }
 
 locals {
-  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
   bastion_publicip_name      = "${lower(azurerm_resource_group.rg.name)}-bastion"
+  license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
-
-  environment_settings = {
-    adfsSvcUserName     = "adfssvc"
-    sqlSvcUserName      = "sqlsvc"
-    spSetupUserName     = "spsetup"
-    spFarmUserName      = "spfarm"
-    spSvcUserName       = "spsvc"
-    spAppPoolUserName   = "spapppool"
-    spADDirSyncUserName = "spdirsync"
-    spSuperUserName     = "spSuperUser"
-    spSuperReaderName   = "spSuperReader"
-    sqlAlias            = "SQLAlias"
-    enable_analysis     = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
-  }
-
-  sharepoint_settings = {
-    sharepoint_sites_authority    = "spsites"
-    sharepoint_central_admin_port = 5000
-  }
-
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
-  sharepoint_bits_selected   = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
+  sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
     {
       "Label" : "RTM",
@@ -108,6 +88,22 @@ locals {
     vm_fe_fileName = local.is_sharepoint_subscription ? "ConfigureFESE.zip" : "ConfigureFELegacy.zip"
     vm_fe_script   = local.is_sharepoint_subscription ? "ConfigureFESE.ps1" : "ConfigureFELegacy.ps1"
     vm_fe_function = "ConfigureFEVM"
+  }
+
+  deployment_settings = {
+    adfsSvcUserName               = "adfssvc"
+    sqlSvcUserName                = "sqlsvc"
+    spSetupUserName               = "spsetup"
+    spFarmUserName                = "spfarm"
+    spSvcUserName                 = "spsvc"
+    spAppPoolUserName             = "spapppool"
+    spADDirSyncUserName           = "spdirsync"
+    spSuperUserName               = "spSuperUser"
+    spSuperReaderName             = "spSuperReader"
+    sqlAlias                      = "SQLAlias"
+    enable_analysis               = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
+    sharepoint_sites_authority    = "spsites"
+    sharepoint_central_admin_port = 5000
   }
 }
 
@@ -378,8 +374,8 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
       "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
-      "SharePointSitesAuthority": "${local.sharepoint_settings.sharepoint_sites_authority}",
-      "SharePointCentralAdminPort": "${local.sharepoint_settings.sharepoint_central_admin_port}"
+      "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
+      "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}"
     },
     "privacy": {
       "dataCollection": "enable"
@@ -395,7 +391,7 @@ SETTINGS
         "Password": "${local.admin_password}"
       },
       "AdfsSvcCreds": {
-        "UserName": "${local.environment_settings.adfsSvcUserName}",
+        "UserName": "${local.deployment_settings.adfsSvcUserName}",
         "Password": "${local.service_accounts_password}"
       }
     }
@@ -484,11 +480,11 @@ SETTINGS
         "Password": "${local.admin_password}"
       },
       "SqlSvcCreds": {
-        "UserName": "${local.environment_settings.sqlSvcUserName}",
+        "UserName": "${local.deployment_settings.sqlSvcUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${local.environment_settings.spSetupUserName}",
+        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.service_accounts_password}"
       }
     }
@@ -564,12 +560,12 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
       "DomainFQDN": "${var.domain_fqdn}",
       "DCName": "${local.config_machines.vm_dc_name}",
       "SQLName": "${local.config_machines.vm_sql_name}",
-      "SQLAlias": "${local.environment_settings.sqlAlias}",
+      "SQLAlias": "${local.deployment_settings.sqlAlias}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "SharePointSitesAuthority": "${local.sharepoint_settings.sharepoint_sites_authority}",
-      "SharePointCentralAdminPort": "${local.sharepoint_settings.sharepoint_central_admin_port}",
-      "EnableAnalysis": ${local.environment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_selected}
+      "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
+      "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
+      "EnableAnalysis": ${local.deployment_settings.enable_analysis},
+      "SharePointBits": ${local.sharepoint_bits_used}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -585,23 +581,23 @@ SETTINGS
         "Password": "${local.admin_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${local.environment_settings.spSetupUserName}",
+        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPFarmCreds": {
-        "UserName": "${local.environment_settings.spFarmUserName}",
+        "UserName": "${local.deployment_settings.spFarmUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPSvcCreds": {
-        "UserName": "${local.environment_settings.spSvcUserName}",
+        "UserName": "${local.deployment_settings.spSvcUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPAppPoolCreds": {
-        "UserName": "${local.environment_settings.spAppPoolUserName}",
+        "UserName": "${local.deployment_settings.spAppPoolUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPADDirSyncCreds": {
-        "UserName": "${local.environment_settings.spADDirSyncUserName}",
+        "UserName": "${local.deployment_settings.spADDirSyncUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPPassphraseCreds": {
@@ -609,11 +605,11 @@ SETTINGS
         "Password": "${local.service_accounts_password}"
       },
       "SPSuperUserCreds": {
-        "UserName": "${local.environment_settings.spSuperUserName}",
+        "UserName": "${local.deployment_settings.spSuperUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPSuperReaderCreds": {
-        "UserName": "${local.environment_settings.spSuperReaderName}",
+        "UserName": "${local.deployment_settings.spSuperReaderName}",
         "Password": "${local.service_accounts_password}"
       }
     }
@@ -717,11 +713,11 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
       "DomainFQDN": "${var.domain_fqdn}",
       "DCName": "${local.config_machines.vm_dc_name}",
       "SQLName": "${local.config_machines.vm_sql_name}",
-      "SQLAlias": "${local.environment_settings.sqlAlias}",
+      "SQLAlias": "${local.deployment_settings.sqlAlias}",
       "SharePointVersion": "${var.sharepoint_version}",
-      "SharePointSitesAuthority": "${local.sharepoint_settings.sharepoint_sites_authority}",
-      "EnableAnalysis": ${local.environment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_selected}
+      "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
+      "EnableAnalysis": ${local.deployment_settings.enable_analysis},
+      "SharePointBits": ${local.sharepoint_bits_used}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -737,11 +733,11 @@ SETTINGS
         "Password": "${local.admin_password}"
       },
       "SPSetupCreds": {
-        "UserName": "${local.environment_settings.spSetupUserName}",
+        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPFarmCreds": {
-        "UserName": "${local.environment_settings.spFarmUserName}",
+        "UserName": "${local.deployment_settings.spFarmUserName}",
         "Password": "${local.service_accounts_password}"
       },
       "SPPassphraseCreds": {
