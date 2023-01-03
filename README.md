@@ -59,14 +59,13 @@ There are some differences in the configuration, depending on the SharePoint ver
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
-  - As part of the public DNS name of the virtual machines, if a public IP is created.
+  - As part of the public DNS name of the virtual machines, if a public IP is created (variable `addPublicIPAddress`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
   - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits installed.
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
-- Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-), or they can be left empty to use an auto-generated password that will be recorded in the state file.
 - Variables `addPublicIPAddress` and `rdp_traffic_allowed`: See [this section](#remote-access-and-security) for detailed information.
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
@@ -78,8 +77,9 @@ Valuable output variables are returned by the module and recorded in the state f
 ## Remote access and security
 
 The template creates 1 virtual network with 3 subnets (+1 if [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) is enabled), and each subnet is protected by a [Network Security Group](https://docs.microsoft.com/azure/virtual-network/network-security-groups-overview) which denies all incoming traffic by default.  
-Use the following variables to configure how to connect to the virtual machines, and the level of network security:
+The following variables configure how to connect to the virtual machines, and the level of network security:
 
+- Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-) with **at least 8 characters**, or they can be left empty to use an auto-generated password that will be recorded in the state file.
 - Variable `addPublicIPAddress`:
   - if `"SharePointVMsOnly"` (default): Only SharePoint virtual machines get a public IP address with a DNS name and can be reached from Internet.
   - If `"Yes"`: All virtual machines get a public IP address with a DNS name, and can be reached from Internet.
@@ -100,9 +100,9 @@ Here is the default size and storage type per virtual machine role:
 
 - DC: Size [Standard_B2s](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (2 vCPU / 4 GiB RAM) and OS disk is a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
 - SQL Server: Size [Standard_B2ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (2 vCPU / 8 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
-- SharePoint: Size [Standard_B4ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (4 vCPU / 16 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
+- SharePoint: Size [Standard_B4ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (4 vCPU / 16 GiB RAM) and OS disk is either a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription and 2019), or a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2016 and 2013).
 
-You can visit <https://azure.com/e/c86a94bb7e3943fe96e2c71cf8ece33a> to view the monthly cost of the template, assuming it is using the default settings and running 24*7, in the region/currency of your choice.
+You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate the monthly cost of the template in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
 
 ## More information
 
