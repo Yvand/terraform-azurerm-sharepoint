@@ -3,6 +3,7 @@ provider "azurerm" {
 }
 
 locals {
+  resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
   create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
@@ -89,6 +90,7 @@ locals {
     localAdminUserName            = "local-${var.admin_username}"
     enable_analysis               = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
     apply_browser_policies        = true
+    sqlAlias                      = "SQLAlias"
     adfsSvcUserName               = "adfssvc"
     sqlSvcUserName                = "sqlsvc"
     spSetupUserName               = "spsetup"
@@ -98,7 +100,6 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
-    sqlAlias                      = "SQLAlias"
   }
 }
 
@@ -197,7 +198,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
 
 # Create the virtual network, 3 subnets, and associate each subnet with its Network Security Group
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${azurerm_resource_group.rg.name}-vnet"
+  name                = "${local.resourceGroupNameFormatted}-vnet"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = [local.network_settings["vNetPrivatePrefix"]]
@@ -246,7 +247,7 @@ resource "azurerm_public_ip" "pip_dc" {
   name                = "PublicIP-${local.vms_settings.vm_dc_name}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.vms_settings.vm_dc_name)}"
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}"
   allocation_method   = "Dynamic"
   sku                 = "Basic"
   sku_tier            = "Regional"
@@ -272,7 +273,7 @@ resource "azurerm_public_ip" "pip_sql" {
   name                = "PublicIP-${local.vms_settings.vm_sql_name}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.vms_settings.vm_sql_name)}"
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
   allocation_method   = "Dynamic"
   sku                 = "Basic"
   sku_tier            = "Regional"
@@ -297,7 +298,7 @@ resource "azurerm_public_ip" "pip_sp" {
   name                = "PublicIP-${local.vms_settings.vm_sp_name}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.vms_settings.vm_sp_name)}"
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
   allocation_method   = "Dynamic"
   sku                 = "Basic"
   sku_tier            = "Regional"
@@ -369,9 +370,10 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
       "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "SPServerName": "${local.vms_settings.vm_sp_name}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
-      "ApplyBrowserPolicies": "${local.deployment_settings.apply_browser_policies}"
+      "ApplyBrowserPolicies": ${local.deployment_settings.apply_browser_policies}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -459,7 +461,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
 	    "script": "${local.dsc_settings["vm_sql_script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}"
     },
     "privacy": {
@@ -552,10 +554,10 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
 	    "script": "${local.dsc_settings["vm_sp_script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}",
-      "DCName": "${local.vms_settings.vm_dc_name}",
-      "SQLName": "${local.vms_settings.vm_sql_name}",
+      "DCServerName": "${local.vms_settings.vm_dc_name}",
+      "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
       "SharePointVersion": "${var.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
@@ -633,7 +635,7 @@ resource "azurerm_public_ip" "pip_fe" {
   name                = "PublicIP-${local.vms_settings.vm_fe_name}-${count.index}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(var.resource_group_name)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
   allocation_method   = "Dynamic"
   sku                 = "Basic"
   sku_tier            = "Regional"
@@ -705,10 +707,10 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
 	    "script": "${local.dsc_settings["vm_fe_script"]}"
     },
     "configurationArguments": {
-      "DNSServer": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
       "DomainFQDN": "${var.domain_fqdn}",
-      "DCName": "${local.vms_settings.vm_dc_name}",
-      "SQLName": "${local.vms_settings.vm_sql_name}",
+      "DCServerName": "${local.vms_settings.vm_dc_name}",
+      "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
       "SharePointVersion": "${var.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
@@ -946,7 +948,7 @@ resource "azurerm_public_ip" "pip_bastion" {
   name                = "PublicIP-Bastion"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(azurerm_resource_group.rg.name)}-bastion"
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-bastion"
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
