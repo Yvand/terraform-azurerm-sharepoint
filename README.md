@@ -2,7 +2,7 @@
 
 This module is the Terraform version of [this public ARM template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).  
 It creates a SharePoint Subscription / 2019 / 2016 / 2013 farm with an extensive configuration that would take ages to perform manually, including a federated authentication with ADFS, an OAuth trust, the User Profiles service and a web application with 2 zones and multiple path based and host-named site collections.  
-On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is used to install the latest version of Notepad++, Visual Studio Code, Fiddler, ULS Viewer and 7-Zip.
+On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is used to install the latest version of Notepad++, Visual Studio Code, Azure Data Studio, Fiddler, ULS Viewer and 7-Zip.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 ```terraform
 module "sharepoint" {
   source              = "Yvand/sharepoint/azurerm"
-  version             = ">=3.0.0"
+  version             = ">=3.1.0"
 
   # Below are the main variables, other variables can also be set
   location              = "West Europe"
@@ -72,7 +72,7 @@ There are some differences in the configuration, depending on the SharePoint ver
 
 ### Output variables
 
-Valuable output variables are returned by the module and recorded in the state file, including the login, passwords and the public IP address of each virtual machine.
+The module returns multiple variables to record the logins, passwords and the public IP address of virtual machines.
 
 ## Remote access and security
 
