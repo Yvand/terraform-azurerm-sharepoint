@@ -3,7 +3,7 @@
 > This CHANGELOG covers only the changes related to this Terraform module.  
 The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes specific to DSC.
 
-## [3.1.0] Unreleased
+## [3.1.0] - 23-01-11
 
 * Use a small disk (32 GB) on SharePoint Subscription and SharePoint 2019 VMs.
 * Updated SQL image to use SQL Server 2022 on Windows Server 2022.
