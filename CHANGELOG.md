@@ -3,6 +3,14 @@
 > This CHANGELOG covers only the changes related to this Terraform module.  
 The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes specific to DSC.
 
+## [3.1.0] Unreleased
+
+* Use a small disk (32 GB) on SharePoint Subscription and SharePoint 2019 VMs.
+* Updated SQL image to use SQL Server 2022 on Windows Server 2022.
+* The resource group's name is used in the virtual network and the public IP resources, but now it is formatted to handle the restrictions on the characters allowed.
+* Apply browser policies for Edge and Chrome to get rid of noisy wizards / homepages / new tab content.
+* Reorganize the local variables in the module to be more consistent.
+
 ## [3.0.0] - 22-11-29
 
 ### Changed
