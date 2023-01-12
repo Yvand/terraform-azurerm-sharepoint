@@ -12,6 +12,7 @@ variable "sharepoint_version" {
   description = "Version of SharePoint farm to create."
   validation {
     condition = contains([
+      "Subscription-Latest",
       "Subscription-22H2",
       "Subscription-RTM",
       "2019",

@@ -37,6 +37,17 @@ locals {
           "Checksum" : "247011443AC573D4F03B1622065A7350B8B3DAE04D6A5A6DC64C8270A3BE7636"
         }
       ]
+    },
+    {
+      "Label" : "Latest",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/d/6/d/d6dcc9e7-744e-43e1-b4be-206a6acd4f88/sts-subscription-kb5002331-fullfile-x64-glb.exe"
+        },
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/d/3/5/d354b6e2-fa16-48e0-b3f8-423f7ca279a0/wssloc-subscription-kb5002326-fullfile-x64-glb.exe"
+        }
+      ]
     }
   ]
 
