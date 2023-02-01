@@ -1,15 +1,44 @@
 # Changelog for terraform-azurerm-sharepoint
 
-> This CHANGELOG covers only the changes related to this Terraform module.  
-The DSC files are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/) and you can consult it to see the changes specific to DSC.
+> ~~This CHANGELOG covers only the changes related to this Terraform module.~~  
+> As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
+The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
+
+## [3.2.0] - Unreleased
+
+### Added
+
+- Template
+  - Added value `Subscription-latest` to variable `sharepoint_version`, to install the January 2023 CU on SharePoint Subscription
+- Configuration for DC
+  - Create additional users in AD, in a dedicated OU `AdditionalUsers`
+- Configuration for SQL
+  - Install SQL module `SqlServer` (version 21.1.18256) as it is the preferred option of `SqlServerDsc`
+- Configuration for all SharePoint versions
+  - Create various desktop shortcuts
+  - Configure Windows explorer to always show file extensions and expand the ribbon
+  - Enqueue the creation of the personal sites of the admin and all users in OU `AdditionalUsers`, for both Windows and trusted authentication modes
+  - Add the OU `AdditionalUsers` to the User Profile synchronization connection
+  - Grant the domain administrator `Full Control` to the User Profile service application
+- Configuration for SharePoint Subscription and 2019
+  - Set OneDrive NGSC registry keys to be able to sync sites under NySite path
+
+### Changed
+
+- Template
+  - Revert SQL image to SQL Server 2019, due to reliability issues with SQL Server 2022 (SQL PowerShell modules not ready yet)
+- Configuration for DC
+  - Review the logic to allow the VM to restart after the AD FS farm was configured (as required), and before the other VMs attempt to join the domain
+- Configuration for all VMs except DC
+  - Review the logic to join the AD domain only after it is guaranteed that the DC is ready. This fixes the most common cause of random deployment errors
 
 ## [3.1.0] - 23-01-11
 
-* Use a small disk (32 GB) on SharePoint Subscription and SharePoint 2019 VMs.
-* Updated SQL image to use SQL Server 2022 on Windows Server 2022.
-* The resource group's name is used in the virtual network and the public IP resources, but now it is formatted to handle the restrictions on the characters allowed.
-* Apply browser policies for Edge and Chrome to get rid of noisy wizards / homepages / new tab content.
-* Reorganize the local variables in the module to be more consistent.
+- Use a small disk (32 GB) on SharePoint Subscription and SharePoint 2019 VMs.
+- Updated SQL image to use SQL Server 2022 on Windows Server 2022.
+- The resource group's name is used in the virtual network and the public IP resources, but now it is formatted to handle the restrictions on the characters allowed.
+- Apply browser policies for Edge and Chrome to get rid of noisy wizards / homepages / new tab content.
+- Reorganize the local variables in the module to be more consistent.
 
 ## [3.0.0] - 22-11-29
 
