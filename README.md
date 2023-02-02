@@ -110,6 +110,6 @@ You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate
 Additional notes:
 
 - Using the default options, the complete deployment takes about 1h (but it is worth it).
-- Choosing any post-RTM SharePoint Subscription adds only an extra 5-15 minutes to the total deployment time (compared to RTM), partly because the updates are installed before the farm is created.
+- Deploying any post-RTM SharePoint Subscription build adds only an extra 5-10 minutes to the total deployment time (compared to RTM), partly because the updates are installed before the farm is created.
 - Once it is completed, the template will return valuable information in the 'Outputs' of the deployment.
 - For various (very good) reasons, in SQL and SharePoint VMs, the name of the local (not domain) administrator is in format `"local-[admin_username]"`. It is recorded in the 'Outputs' and in the state file.
