@@ -37,6 +37,17 @@ locals {
           "Checksum" : "247011443AC573D4F03B1622065A7350B8B3DAE04D6A5A6DC64C8270A3BE7636"
         }
       ]
+    },
+    {
+      "Label" : "Latest",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/d/6/d/d6dcc9e7-744e-43e1-b4be-206a6acd4f88/sts-subscription-kb5002331-fullfile-x64-glb.exe"
+        },
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/d/3/5/d354b6e2-fa16-48e0-b3f8-423f7ca279a0/wssloc-subscription-kb5002326-fullfile-x64-glb.exe"
+        }
+      ]
     }
   ]
 
@@ -62,7 +73,7 @@ locals {
     vm_sp_name           = "SP"
     vm_fe_name           = "FE"
     vm_dc_image          = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
+    vm_sql_image         = var.sharepoint_version == "2013" ? "MicrosoftSQLServer:sql2014sp3-ws2012r2:sqldev:latest" : "MicrosoftSQLServer:sql2019-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
   }
 
@@ -88,7 +99,7 @@ locals {
     sharepoint_sites_authority    = "spsites"
     sharepoint_central_admin_port = 5000
     localAdminUserName            = "local-${var.admin_username}"
-    enable_analysis               = true # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
+    enable_analysis               = false # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
     apply_browser_policies        = true
     sqlAlias                      = "SQLAlias"
     adfsSvcUserName               = "adfssvc"

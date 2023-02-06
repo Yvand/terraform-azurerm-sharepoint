@@ -8,10 +8,11 @@ variable "resource_group_name" {
 }
 
 variable "sharepoint_version" {
-  default     = "Subscription-22H2"
+  default     = "Subscription-Latest"
   description = "Version of SharePoint farm to create."
   validation {
     condition = contains([
+      "Subscription-Latest",
       "Subscription-22H2",
       "Subscription-RTM",
       "2019",

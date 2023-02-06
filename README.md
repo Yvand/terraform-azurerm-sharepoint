@@ -13,12 +13,12 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 ```terraform
 module "sharepoint" {
   source              = "Yvand/sharepoint/azurerm"
-  version             = ">=3.1.0"
+  version             = ">=3.2.0"
 
   # Below are the main variables, other variables can also be set
   location              = "West Europe"
   resource_group_name   = "<resourceGroupName>"
-  sharepoint_version    = "Subscription-22H2"
+  sharepoint_version    = "Subscription-Latest"
   admin_username        = "yvand"
   admin_password        = "<password>"
   add_public_ip_address = "SharePointVMsOnly"
@@ -61,11 +61,12 @@ There are some differences in the configuration, depending on the SharePoint ver
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `addPublicIPAddress`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-22H2` (default): Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed, and then the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU) is also downloaded and installed. Installing this update adds an extra 12-15 minutes to the total deployment time.
+  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing: January 2023 ([KB 5002331](https://support.microsoft.com/help/5002331) and [KB 5002326](https://support.microsoft.com/help/5002326)) for version `3.2.0`.
+  - `Subscription-22H2`: Same as `Subscription-RTM`, then install the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU).
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
-  - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits installed.
-  - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits installed.
-  - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits installed.
+  - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
+  - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
+  - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits already installed.
 - Variables `addPublicIPAddress` and `rdp_traffic_allowed`: See [this section](#remote-access-and-security) for detailed information.
 - Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
@@ -109,5 +110,6 @@ You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate
 Additional notes:
 
 - Using the default options, the complete deployment takes about 1h (but it is worth it).
+- Deploying any post-RTM SharePoint Subscription build adds only an extra 5-10 minutes to the total deployment time (compared to RTM), partly because the updates are installed before the farm is created.
 - Once it is completed, the template will return valuable information in the 'Outputs' of the deployment.
 - For various (very good) reasons, in SQL and SharePoint VMs, the name of the local (not domain) administrator is in format `"local-[admin_username]"`. It is recorded in the 'Outputs' and in the state file.
