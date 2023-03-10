@@ -42,10 +42,10 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/d/6/d/d6dcc9e7-744e-43e1-b4be-206a6acd4f88/sts-subscription-kb5002331-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/c/a/7/ca70a0b2-5d56-45bd-aa1c-78a04bde1c76/wssloc-subscription-kb5002352-fullfile-x64-glb.exe"
         },
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/d/3/5/d354b6e2-fa16-48e0-b3f8-423f7ca279a0/wssloc-subscription-kb5002326-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/7/6/6/766f3a1b-c0ed-4f49-8bce-160942c1d34b/sts-subscription-kb5002353-fullfile-x64-glb.exe"
         }
       ]
     }
