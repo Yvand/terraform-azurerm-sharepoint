@@ -61,7 +61,7 @@ There are some differences in the configuration, depending on the SharePoint ver
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `addPublicIPAddress`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing: January 2023 ([KB 5002331](https://support.microsoft.com/help/5002331) and [KB 5002326](https://support.microsoft.com/help/5002326)) for version `3.2.0`.
+  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing: February 2023 ([KB 5002353](https://support.microsoft.com/help/5002353) and [KB 5002352](https://support.microsoft.com/help/5002352)) for version `3.3.0`.
   - `Subscription-22H2`: Same as `Subscription-RTM`, then install the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU).
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
@@ -104,6 +104,10 @@ Here is the default size and storage type per virtual machine role:
 - SharePoint: Size [Standard_B4ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (4 vCPU / 16 GiB RAM) and OS disk is either a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription and 2019), or a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2016 and 2013).
 
 You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate the monthly cost of the template in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
+
+## Known issues
+
+- The password of the directory synchronization connection (set in parameter `service_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise SharePoint is somehow unable to decrypt it and the import fails.
 
 ## More information
 
