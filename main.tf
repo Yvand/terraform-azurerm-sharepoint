@@ -39,13 +39,18 @@ locals {
       ]
     },
     {
+      "Label" : "23H1",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/c/6/a/c6a17105-3d86-42ad-888d-49b22383bfa1/uber-subscription-kb5002355-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/c/a/7/ca70a0b2-5d56-45bd-aa1c-78a04bde1c76/wssloc-subscription-kb5002352-fullfile-x64-glb.exe"
-        },
-        {
-          "DownloadUrl" : "https://download.microsoft.com/download/7/6/6/766f3a1b-c0ed-4f49-8bce-160942c1d34b/sts-subscription-kb5002353-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/c/6/a/c6a17105-3d86-42ad-888d-49b22383bfa1/uber-subscription-kb5002355-fullfile-x64-glb.exe"
         }
       ]
     }

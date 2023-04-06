@@ -59,10 +59,11 @@ There are some differences in the configuration, depending on the SharePoint ver
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
-  - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `addPublicIPAddress`).
+  - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing: February 2023 ([KB 5002353](https://support.microsoft.com/help/5002353) and [KB 5002352](https://support.microsoft.com/help/5002352)) for version `3.3.0`.
-  - `Subscription-22H2`: Same as `Subscription-RTM`, then install the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU).
+  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing: 23H1 / March 2023 ([KB 5002355](https://support.microsoft.com/help/5002355)) for current module version `3.4.0`.
+  - `Subscription-23H1`: Same as `Subscription-RTM`, then install the [Feature Update 23H1](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 CU / [KB 5002355](https://support.microsoft.com/help/5002355)).
+  - `Subscription-22H2`: Same as `Subscription-RTM`, then install the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU / [KB 5002270](https://support.microsoft.com/help/5002270) and [KB 5002271](https://support.microsoft.com/help/5002271)).
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
