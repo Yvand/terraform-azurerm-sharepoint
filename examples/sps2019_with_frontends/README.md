@@ -9,7 +9,7 @@ This examples provisions SharePoint 2019 with the following configuration:
 ```hcl
 module "sharepoint" {
   source  = "Yvand/sharepoint/azurerm"
-  version = ">=3.3.0"
+  version = ">=3.4.0"
 
   location                   = "West Europe"
   resource_group_name        = "<resource_group_name>"
