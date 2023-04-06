@@ -4,6 +4,25 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [3.4.0] - 23-04-06
+
+### Added
+
+- Template
+  - Added value `Subscription-23H1` to parameter `sharepoint_version`, to install SharePoint Subscription with 23H1 update
+
+### Changed
+
+- Configuration for SQL
+  - Update SQL module `SqlServer` and DSC module `SqlServerDsc`
+- Configuration for DC
+  - Update DSC module `AdfsDsc`
+- Configuration for all SharePoint versions
+  - Update DSC module `SharePointDsc`
+- Configuration for SharePoint Subscription
+  - Add domain administrator as a SharePoint shell admin (done by cmdlet `Add-SPShellAdmin`)
+  - For OIDC: Change the nonce secret key to a more unique value and rename the certificate used to sign the nonce
+
 ## [3.3.0] - 23-03-10
 
 ### Changed
