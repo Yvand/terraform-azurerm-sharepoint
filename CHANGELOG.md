@@ -9,7 +9,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 ### Changed
 
 - Template
-  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2123 CU for SharePoint Subscription
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2023 CU for SharePoint Subscription
 
 ## [3.4.0] - 23-04-06
 
