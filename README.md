@@ -13,7 +13,7 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 ```terraform
 module "sharepoint" {
   source              = "Yvand/sharepoint/azurerm"
-  version             = ">=3.5.0"
+  version             = ">=3.6.0"
 
   # Below are the main variables, other variables can also be set
   location              = "West Europe"
@@ -61,7 +61,7 @@ There are some differences in the configuration, depending on the SharePoint ver
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing this version: April 2023 ([KB 5002375](https://support.microsoft.com/help/5002375)).
+  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then install the latest cumulative update available at the time of publishing this version: May 2023 ([KB 5002390](https://support.microsoft.com/help/5002390)).
   - `Subscription-23H1`: Same as `Subscription-RTM`, then install the [Feature Update 23H1](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 CU / [KB 5002355](https://support.microsoft.com/help/5002355)).
   - `Subscription-22H2`: Same as `Subscription-RTM`, then install the [Feature Update 22H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU / [KB 5002270](https://support.microsoft.com/help/5002270) and [KB 5002271](https://support.microsoft.com/help/5002271)).
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
