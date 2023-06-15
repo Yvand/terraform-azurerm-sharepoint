@@ -17,6 +17,8 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
   - Update DSC module `SqlServerDsc`
 - Configuration for SPSE and FESE
   - Update DSC module `StorageDsc`
+- Configuration for DC
+  - Update DSC module `AdfsDsc`
 
 ## [3.6.0] - 23-06-01
 
