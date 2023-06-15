@@ -4,6 +4,20 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [3.7.0] - Unreleased
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the June 2023 CU for SharePoint Subscription
+  - Updated SQL image to use SQL Server 2022 on Windows Server 2022.
+- Configuration for all virtual machines
+  - Update DSC module `ComputerManagementDsc`
+- Configuration for all VMs except DC
+  - Update DSC module `SqlServerDsc`
+- Configuration for SPSE and FESE
+  - Update DSC module `StorageDsc`
+
 ## [3.6.0] - 23-06-01
 
 ### Changed
