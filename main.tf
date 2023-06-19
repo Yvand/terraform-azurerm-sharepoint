@@ -50,7 +50,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/3/a/3/3a3a9292-3462-42c8-93de-9230cd6525f1/uber-subscription-kb5002390-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/7/8/1/7815f490-772c-42a9-9751-e19f12fbb50c/uber-subscription-kb5002416-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -78,7 +78,7 @@ locals {
     vm_sp_name           = "SP"
     vm_fe_name           = "FE"
     vm_dc_image          = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image         = var.sharepoint_version == "2013" ? "MicrosoftSQLServer:sql2014sp3-ws2012r2:sqldev:latest" : "MicrosoftSQLServer:sql2019-ws2022:sqldev-gen2:latest"
+    vm_sql_image         = var.sharepoint_version == "2013" ? "MicrosoftSQLServer:sql2014sp3-ws2012r2:sqldev:latest" : "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
   }
 
