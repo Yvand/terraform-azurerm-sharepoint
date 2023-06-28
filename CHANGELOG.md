@@ -8,7 +8,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 
 ### Fixed
 
-- Fixed the deployment error on front-end servers for SharePoint 2019/2016/2013, caused by DSC resource cChocoInstaller
+- Fixed the deployment error on SharePoint 2019/2016/2013 VMs, caused by DSC resource cChocoInstaller
 
 ## [3.7.0] - 23-06-19
 
