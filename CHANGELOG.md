@@ -8,7 +8,8 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 
 ### Fixed
 
-- Fixed the deployment error on SharePoint 2019/2016/2013 VMs, caused by DSC resource cChocoInstaller
+- Configuration for SP Legacy and FE Legacy (SharePoint 2019 / 2016 / 2013 VMs)
+  - Fixed the deployment error caused by DSC resource cChocoInstaller
 
 ## [3.7.0] - 23-06-19
 
