@@ -4,7 +4,7 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
-## [3.7.1] - Unreleased
+## [3.7.1] - 23-06-30
 
 ### Fixed
 
