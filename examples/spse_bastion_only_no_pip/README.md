@@ -9,9 +9,7 @@ This examples provisions SharePoint Subscription RTM with the following configur
 
 ```hcl
 module "sharepoint" {
-  source  = "Yvand/sharepoint/azurerm"
-  version = ">=3.7.1"
-
+  source                     = "Yvand/sharepoint/azurerm"
   location                   = "West Europe"
   resource_group_name        = "<resource_group_name>"
   sharepoint_version         = "Subscription-RTM"
