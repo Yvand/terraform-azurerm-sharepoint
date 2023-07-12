@@ -4,6 +4,13 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [3.8.0] - 23-07-12
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2023 CU for SharePoint Subscription
+
 ## [3.7.1] - 23-06-30
 
 ### Fixed

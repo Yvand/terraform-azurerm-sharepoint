@@ -8,9 +8,7 @@ This examples provisions SharePoint 2019 with the following configuration:
 
 ```hcl
 module "sharepoint" {
-  source  = "Yvand/sharepoint/azurerm"
-  version = ">=3.7.1"
-
+  source                     = "Yvand/sharepoint/azurerm"
   location                   = "West Europe"
   resource_group_name        = "<resource_group_name>"
   sharepoint_version         = "2019"

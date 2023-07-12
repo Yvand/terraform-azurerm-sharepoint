@@ -12,10 +12,7 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 
 ```terraform
 module "sharepoint" {
-  source              = "Yvand/sharepoint/azurerm"
-  version             = ">=3.7.1"
-
-  # Below are the main variables, other variables can also be set
+  source               = "Yvand/sharepoint/azurerm"
   location              = "West Europe"
   resource_group_name   = "<resourceGroupName>"
   sharepoint_version    = "Subscription-Latest"
