@@ -50,7 +50,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/f/7/6/f76a6f36-d17c-47cf-915e-22f211f17b97/uber-subscription-kb5002424-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/0/e/5/0e538d52-26ab-4f3d-8c84-8716ab49cb25/uber-subscription-kb5002437-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -103,7 +103,7 @@ locals {
   deployment_settings = {
     sharepoint_sites_authority    = "spsites"
     sharepoint_central_admin_port = 5000
-    localAdminUserName            = "local-${var.admin_username}"
+    localAdminUserName            = "l-${var.admin_username}"
     enable_analysis               = false # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
     apply_browser_policies        = true
     sqlAlias                      = "SQLAlias"
