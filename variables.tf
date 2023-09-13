@@ -13,6 +13,7 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-23H2",
       "Subscription-23H1",
       "Subscription-22H2",
       "Subscription-RTM",
