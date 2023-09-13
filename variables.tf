@@ -13,6 +13,7 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-23H2",
       "Subscription-23H1",
       "Subscription-22H2",
       "Subscription-RTM",
@@ -313,5 +314,5 @@ variable "vm_sp_storage_account_type" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/3.9.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/3.10.0/dsc/"
 }
