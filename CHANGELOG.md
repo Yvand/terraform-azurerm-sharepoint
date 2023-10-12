@@ -11,6 +11,10 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2023 CU for SharePoint Subscription
 
+### Fixed
+- All SharePoint configurations
+  - Fixed regression with installation of Chocolatey
+
 ## [3.10.0] - 23-09-13
 
 ### Changed
