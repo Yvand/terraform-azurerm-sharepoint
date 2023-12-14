@@ -12,7 +12,9 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2023 CU for SharePoint Subscription
   - Add a resource to run a script that increases the size of MaxEnvelopeSizeKb on SPSE, so in SPSE the service WS-Management can process the bigger DSC script
 - Configuration for SPSE
-  - XXX
+  - Cosmetic changes
+- Configuration for DC
+  - Bump DSC module AdfsDsc
 
 ## [3.12.1] - 23-11-21
 
@@ -32,7 +34,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
   - Update creation of user profiles to set their PreferredName
   - Format the document
 - Configuration for most VMs
-    - Bump DSC modules ActiveDirectoryDsc and SqlServerDsc
+  - Bump DSC modules ActiveDirectoryDsc and SqlServerDsc
 
 ## [3.11.0] - 23-10-12
 
