@@ -4,6 +4,16 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [3.13.0] - Unreleased
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2023 CU for SharePoint Subscription
+  - Add a resource to run a script that increases the size of MaxEnvelopeSizeKb on SPSE, so in SPSE the service WS-Management can process the bigger DSC script
+- Configuration for SPSE
+  - XXX
+
 ## [3.12.1] - 23-11-21
 
 ### Changed
