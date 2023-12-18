@@ -10,9 +10,10 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2023 CU for SharePoint Subscription
-  - Add a resource to run a script that increases the size of MaxEnvelopeSizeKb on SPSE, so in SPSE the service WS-Management can process the bigger DSC script
+  - Add a resource `azapi_resource` from provider `azapi` to run a script that increases MaxEnvelopeSizeKb on SPSE, so that service WS-Management in SPSE can process the bigger DSC script
 - Configuration for SPSE
-  - Cosmetic changes
+  - Add claim type groupsid to make the switch to SPTrustedBackedByUPAClaimProvider easier. There are remaining steps needed to finalize its configuration
+  - Set registry keys to configure OneDrive NGSC for OIDC authentication
 - Configuration for DC
   - Bump DSC module AdfsDsc
 
