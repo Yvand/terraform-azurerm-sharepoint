@@ -4,6 +4,19 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [3.13.0] - 23-12-18
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2023 CU for SharePoint Subscription
+  - Add a resource `azapi_resource` from provider `azapi` to run a script that increases MaxEnvelopeSizeKb on SPSE, so that service WS-Management in SPSE can process the bigger DSC script
+- Configuration for SPSE
+  - Add claim type groupsid to make the switch to SPTrustedBackedByUPAClaimProvider easier. There are remaining steps needed to finalize its configuration
+  - Set registry keys to configure OneDrive NGSC for OIDC authentication
+- Configuration for DC
+  - Bump DSC module AdfsDsc
+
 ## [3.12.1] - 23-11-21
 
 ### Changed
@@ -22,7 +35,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
   - Update creation of user profiles to set their PreferredName
   - Format the document
 - Configuration for most VMs
-    - Bump DSC modules ActiveDirectoryDsc and SqlServerDsc
+  - Bump DSC modules ActiveDirectoryDsc and SqlServerDsc
 
 ## [3.11.0] - 23-10-12
 

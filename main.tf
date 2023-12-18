@@ -2,6 +2,9 @@ provider "azurerm" {
   features {}
 }
 
+provider "azapi" {
+}
+
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
@@ -58,7 +61,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/c/7/b/c7b21b38-a4ff-4060-99b1-edb2e1edc69a/uber-subscription-kb5002527-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/2/9/0/2906b701-2c8e-4fce-abdb-e69c3f82b5cc/uber-subscription-kb5002533-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -556,10 +559,28 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   }
 }
 
+resource "azapi_resource" "vm_sp_runcommand_increasemaxenvelopesizequota" {
+  # count                      = 0
+  type      = "Microsoft.Compute/virtualMachines/runCommands@2023-03-01"
+  name      = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
+  location  = azurerm_resource_group.rg.location
+  parent_id = azurerm_windows_virtual_machine.vm_sp.id
+  body = jsonencode({
+    properties = {
+      source = {
+        script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
+      }
+      timeoutInSeconds                = 90
+      treatFailureAsDeploymentFailure = false
+    }
+  })
+}
+
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   # count                      = 0
   name                       = "VM-${local.vms_settings.vm_sp_name}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
+  depends_on                 = [azapi_resource.vm_sp_runcommand_increasemaxenvelopesizequota]
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
