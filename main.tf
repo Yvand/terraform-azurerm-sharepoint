@@ -6,15 +6,16 @@ provider "azapi" {
 }
 
 locals {
-  resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
-  admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
-  license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
-  _artifactsLocation         = var._artifactsLocation
-  _artifactsLocationSasToken = ""
-  is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
-  sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
+  resourceGroupNameFormatted   = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
+  admin_password               = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
+  service_accounts_password    = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
+  OutboundInternetAccessMethod = "AzureFirewallProxy"
+  create_rdp_rule              = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  license_type                 = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  _artifactsLocation           = var._artifactsLocation
+  _artifactsLocationSasToken   = ""
+  is_sharepoint_subscription   = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
+  sharepoint_bits_used         = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
     {
       "Label" : "RTM",
@@ -73,7 +74,9 @@ locals {
     vNetPrivateSubnetSQLPrefix     = "10.1.2.0/24"
     vNetPrivateSubnetSPPrefix      = "10.1.3.0/24"
     vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
+    vNetAzureFirewallPrefix        = "10.1.5.0/24"
     vmDCPrivateIPAddress           = "10.1.1.4"
+    azureFirewallIPAddress         = "10.1.5.4"
   }
 
   sharepoint_images_list = {
@@ -257,10 +260,11 @@ resource "azurerm_subnet_network_security_group_association" "nsg_subnetsql_asso
 }
 
 resource "azurerm_subnet" "subnet_sp" {
-  name                 = "Subnet-${local.vms_settings.vm_sp_name}"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings["vNetPrivateSubnetSPPrefix"]]
+  name                                      = "Subnet-${local.vms_settings.vm_sp_name}"
+  resource_group_name                       = azurerm_resource_group.rg.name
+  virtual_network_name                      = azurerm_virtual_network.vnet.name
+  address_prefixes                          = [local.network_settings["vNetPrivateSubnetSPPrefix"]]
+  private_endpoint_network_policies_enabled = false
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_association" {
@@ -321,7 +325,8 @@ resource "azurerm_network_interface" "nic_sql_0" {
 
 # Create artifacts for VM SP
 resource "azurerm_public_ip" "pip_sp" {
-  count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? 1 : 0
+  #count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? 1 : 0
+  count = 0
   name                = "PublicIP-${local.vms_settings.vm_sp_name}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -340,7 +345,7 @@ resource "azurerm_network_interface" "nic_sp_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].id : null
+    #public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].id : null
   }
 }
 
@@ -1009,5 +1014,85 @@ resource "azurerm_bastion_host" "Bastion" {
     name                 = "configuration"
     subnet_id            = azurerm_subnet.subnet_bastion[0].id
     public_ip_address_id = azurerm_public_ip.pip_bastion[0].id
+  }
+}
+
+# Resources for Azure Firewall
+resource "azurerm_subnet" "subnet_azfirewall" {
+  count                                     = local.OutboundInternetAccessMethod == "AzureFirewallProxy" ? 1 : 0
+  name                                      = "AzureFirewallSubnet"
+  resource_group_name                       = azurerm_resource_group.rg.name
+  virtual_network_name                      = azurerm_virtual_network.vnet.name
+  address_prefixes                          = [local.network_settings["vNetAzureFirewallPrefix"]]
+  private_endpoint_network_policies_enabled = false
+}
+
+resource "azurerm_public_ip" "pip_azfirewall" {
+  count               = local.OutboundInternetAccessMethod == "AzureFirewallProxy" ? 1 : 0
+  name                = "PublicIP-azfirewall"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-azfirewall"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
+}
+
+resource "azurerm_firewall" "azfirewall" {
+  count               = local.OutboundInternetAccessMethod == "AzureFirewallProxy" ? 1 : 0
+  name                = "Azure-Firewall-Proxy"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku_name            = "AZFW_VNet"
+  sku_tier            = "Standard"
+  firewall_policy_id  = azurerm_firewall_policy.azfirewall_policy[0].id
+
+  ip_configuration {
+    name                 = "configuration"
+    subnet_id            = azurerm_subnet.subnet_azfirewall[0].id
+    public_ip_address_id = azurerm_public_ip.pip_azfirewall[0].id
+  }
+}
+
+resource "azurerm_firewall_policy" "azfirewall_policy" {
+  count               = local.OutboundInternetAccessMethod == "AzureFirewallProxy" ? 1 : 0
+  name                = "Azure_Firewall_policy"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  explicit_proxy {
+    enabled         = true
+    http_port       = 8080
+    https_port      = 8443
+    enable_pac_file = false
+  }
+}
+
+resource "azurerm_firewall_policy_rule_collection_group" "azfirewall_proxy_rules" {
+  count              = local.OutboundInternetAccessMethod == "AzureFirewallProxy" ? 1 : 0
+  name               = "proxy-rules-collection"
+  firewall_policy_id = azurerm_firewall_policy.azfirewall_policy[0].id
+  priority           = 100
+
+  application_rule_collection {
+    name     = "proxy-rules"
+    priority = 100
+    action   = "Allow"
+    rule {
+      name = "proxy-allow-all-outbound"
+      source_addresses = [
+        "*",
+      ]
+      destination_fqdns = [
+        "*",
+      ]
+      protocols {
+        port = "443"
+        type = "Https"
+      }
+      protocols {
+        port = "80"
+        type = "Http"
+      }
+    }
   }
 }
