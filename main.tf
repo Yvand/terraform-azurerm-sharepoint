@@ -557,11 +557,10 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
 
 resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increasemaxenvelopesizequota" {
   # count                      = 0
-  type               = "Microsoft.Compute/virtualMachines/runCommands@2023-03-01"
   name               = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
-  source = {
+  source {
     script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
   }
 }
