@@ -2,9 +2,6 @@ provider "azurerm" {
   features {}
 }
 
-provider "azapi" {
-}
-
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
@@ -559,28 +556,22 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   }
 }
 
-resource "azapi_resource" "vm_sp_runcommand_increasemaxenvelopesizequota" {
+resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increasemaxenvelopesizequota" {
   # count                      = 0
-  type      = "Microsoft.Compute/virtualMachines/runCommands@2023-03-01"
-  name      = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
-  location  = azurerm_resource_group.rg.location
-  parent_id = azurerm_windows_virtual_machine.vm_sp.id
-  body = jsonencode({
-    properties = {
-      source = {
-        script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
-      }
-      timeoutInSeconds                = 90
-      treatFailureAsDeploymentFailure = false
-    }
-  })
+  type               = "Microsoft.Compute/virtualMachines/runCommands@2023-03-01"
+  name               = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
+  source = {
+    script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
+  }
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   # count                      = 0
   name                       = "VM-${local.vms_settings.vm_sp_name}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
-  depends_on                 = [azapi_resource.vm_sp_runcommand_increasemaxenvelopesizequota]
+  depends_on                 = [azurerm_virtual_machine_run_command.vm_sp_runcommand_increasemaxenvelopesizequota]
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
