@@ -4,6 +4,20 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [4.0.0] - Unreleased
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2024 CU for SharePoint Subscription
+  - Remove provider `azure/azapi`, and use new `resource azurerm_virtual_machine_run_command` added recently to provider `azurerm`
+  - Remove SharePoint 2013
+- Configuration for SPSE
+  - Update the registry keys required to allow OneDrive on OIDC authentication
+  - Update claims provider to LDAPCPSE
+  - It is no longer needed to restart the VM to be able to create the SPTrustedIdentityTokenIssuer
+- Configuration for SPLE
+  - Update claims provider to LDAPCPSE
+  - It is no longer needed to restart the VM to be able to create the SPTrustedIdentityTokenIssuer
+
 ## [3.14.0] - 24-01-11
 
 - Template

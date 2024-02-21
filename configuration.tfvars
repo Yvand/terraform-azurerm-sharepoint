@@ -1,5 +1,5 @@
 location                   = "France Central"
-sharepoint_version         = "2016" #"Subscription-Latest"
+sharepoint_version         = "Subscription-Latest" #"2019"
 number_additional_frontend = 2
 enable_azure_bastion       = false
 auto_shutdown_time         = "1830"
