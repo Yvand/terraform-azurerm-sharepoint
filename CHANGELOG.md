@@ -4,6 +4,11 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [4.0.1] - 24-02-26
+
+- Template
+  - Set the minimum version required for provider `azurerm` to 3.88, which is the one that introduced resource `azurerm_virtual_machine_run_command`
+
 ## [4.0.0] - 24-02-26
 
 - Template
