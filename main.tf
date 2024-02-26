@@ -2,9 +2,6 @@ provider "azurerm" {
   features {}
 }
 
-provider "azapi" {
-}
-
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
@@ -61,7 +58,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/9/0/5/905528a4-306a-40f6-ab99-6155b31c84a3/uber-subscription-kb5002540-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/8/7/9/8798c828-1d2c-442d-9a98-e6ce59166690/uber-subscription-kb5002560-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -80,7 +77,6 @@ locals {
     "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
     "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
     "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
-    "2013"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2013:latest"
   }
 
   vms_settings = {
@@ -89,7 +85,7 @@ locals {
     vm_sp_name           = "SP"
     vm_fe_name           = "FE"
     vm_dc_image          = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image         = var.sharepoint_version == "2013" ? "MicrosoftSQLServer:sql2014sp3-ws2012r2:sqldev:latest" : "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
+    vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
   }
 
@@ -559,28 +555,21 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   }
 }
 
-resource "azapi_resource" "vm_sp_runcommand_increasemaxenvelopesizequota" {
+resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increasemaxenvelopesizequota" {
   # count                      = 0
-  type      = "Microsoft.Compute/virtualMachines/runCommands@2023-03-01"
-  name      = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
-  location  = azurerm_resource_group.rg.location
-  parent_id = azurerm_windows_virtual_machine.vm_sp.id
-  body = jsonencode({
-    properties = {
-      source = {
-        script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
-      }
-      timeoutInSeconds                = 90
-      treatFailureAsDeploymentFailure = false
-    }
-  })
+  name               = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
+  source {
+    script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
+  }
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
   # count                      = 0
   name                       = "VM-${local.vms_settings.vm_sp_name}-DSC"
   virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
-  depends_on                 = [azapi_resource.vm_sp_runcommand_increasemaxenvelopesizequota]
+  depends_on                 = [azurerm_virtual_machine_run_command.vm_sp_runcommand_increasemaxenvelopesizequota]
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"

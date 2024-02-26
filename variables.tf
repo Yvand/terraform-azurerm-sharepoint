@@ -18,8 +18,7 @@ variable "sharepoint_version" {
       "Subscription-22H2",
       "Subscription-RTM",
       "2019",
-      "2016",
-      "2013"
+      "2016"
     ], var.sharepoint_version)
     error_message = "Invalid SharePoint farm version."
   }
@@ -314,5 +313,5 @@ variable "vm_sp_storage_account_type" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/3.14.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/4.0.0/dsc/"
 }
