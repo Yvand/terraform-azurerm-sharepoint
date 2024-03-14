@@ -4,6 +4,11 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [4.1.0] - 24-03-15
+
+- Template
+  - Added value `Subscription-24H1` to parameter `sharePointVersion`, which installs the March 2024 CU (24H1) for SharePoint Subscription
+
 ## [4.0.1] - 24-02-26
 
 - Template
