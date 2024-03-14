@@ -55,6 +55,14 @@ locals {
       ]
     },
     {
+      "Label" : "24H1",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/b/a/b/bab0c7cc-0454-474b-8538-7927f75e6486/uber-subscription-kb5002564-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
