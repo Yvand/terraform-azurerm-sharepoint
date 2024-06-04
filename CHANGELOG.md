@@ -8,6 +8,10 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2024 CU for SharePoint Subscription
+- DSC configurations
+  - Updated DSC module `ActiveDirectoryDsc` to 6.4.0
+  - Updated DSC module `ComputerManagementDsc` to 9.1.0
+  - Updated DSC module `SharePointDSC` to 5.5.0
 
 ## [4.2.0] - 24-04-10
 
