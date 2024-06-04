@@ -1,8 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
-> ~~This CHANGELOG covers only the changes related to this Terraform module.~~  
-> As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
-The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
+## [4.3.0] - 24-06-04
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2024 CU for SharePoint Subscription
+- DSC configurations
+  - Updated DSC module `ActiveDirectoryDsc` to 6.4.0
+  - Updated DSC module `ComputerManagementDsc` to 9.1.0
+  - Updated DSC module `SharePointDSC` to 5.5.0
 
 ## [4.2.0] - 24-04-10
 
