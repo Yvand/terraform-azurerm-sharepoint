@@ -314,5 +314,5 @@ variable "vm_sp_storage_account_type" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/4.3.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/4.4.0/dsc/"
 }
