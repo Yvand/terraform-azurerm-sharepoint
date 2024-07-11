@@ -66,7 +66,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/5/8/f/58fcfd0c-a364-4e96-a4f2-95c421279785/uber-subscription-kb5002603-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/c/2/0/c20b87cc-da05-4793-bd7b-c424a6a6df33/uber-subscription-kb5002606-fullfile-x64-glb.exe"
         }
       ]
     }
