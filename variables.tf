@@ -220,22 +220,21 @@ variable "number_additional_frontend" {
   }
 }
 
+variable "internet_access_method" {
+  default     = "PublicIPAddress"
+  description = "Select how the virtual machines connect to internet."
+  validation {
+    condition = contains([
+      "PublicIPAddress",
+      "AzureFirewallProxy"
+    ], var.internet_access_method)
+    error_message = "Invalid value for internet_access_method."
+  }
+}
+
 variable "rdp_traffic_allowed" {
   default     = "No"
   description = "Specify if RDP traffic is allowed:<br>- If 'No' (default): Firewall denies all incoming RDP traffic.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) or IP address (e.g. 192.168.99.0 or 2001:1234::): Firewall accepts incoming RDP traffic from the IP addresses specified."
-}
-
-variable "add_public_ip_address" {
-  default     = "SharePointVMsOnly"
-  description = "Specify if a public IP address should be added."
-  validation {
-    condition = contains([
-      "Yes",
-      "No",
-      "SharePointVMsOnly"
-    ], var.add_public_ip_address)
-    error_message = "Invalid value specified for add_public_ip_address."
-  }
 }
 
 variable "enable_azure_bastion" {

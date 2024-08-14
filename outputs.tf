@@ -9,17 +9,17 @@ output "resource_group_id" {
 }
 
 output "vm_dc_dns" {
-  value       = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_dc[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_dc[0].fqdn : null
   description = "Public DNS name of the DC VM"
 }
 
 output "vm_sql_dns" {
-  value       = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_sql[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_sql[0].fqdn : null
   description = "Public DNS name of the SQL VM"
 }
 
 output "vm_sp_dns" {
-  value       = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_sp[0].fqdn : null
   description = "Public DNS name of the SP VM"
 }
 
