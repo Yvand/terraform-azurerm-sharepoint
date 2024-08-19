@@ -73,9 +73,7 @@ locals {
     vNetPrivateSubnetSQLPrefix     = "10.1.2.0/24"
     vNetPrivateSubnetSPPrefix      = "10.1.3.0/24"
     vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
-    vNetAzureFirewallPrefix        = "10.1.5.0/24"
     vmDCPrivateIPAddress           = "10.1.1.4"
-    azureFirewallIPAddress         = "10.1.5.4"
   }
 
   sharepoint_images_list = {
@@ -129,6 +127,13 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
+  }
+
+  firewall_proxy_settings = {
+    vNetAzureFirewallPrefix = "10.1.5.0/24"
+    azureFirewallIPAddress  = "10.1.5.4"
+    http_port               = 8080
+    https_port              = 8443
   }
 }
 
@@ -230,7 +235,7 @@ resource "azurerm_virtual_network" "vnet" {
   name                = "${local.resourceGroupNameFormatted}-vnet"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  address_space       = [local.network_settings["vNetPrivatePrefix"]]
+  address_space       = [local.network_settings.vNetPrivatePrefix]
 }
 
 # Subnet and NSG for DC
@@ -238,7 +243,7 @@ resource "azurerm_subnet" "subnet_dc" {
   name                            = "Subnet-${local.vms_settings.vm_dc_name}"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings["vNetPrivateSubnetDCPrefix"]]
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetDCPrefix]
   default_outbound_access_enabled = false
 }
 
@@ -251,7 +256,7 @@ resource "azurerm_subnet" "subnet_sql" {
   name                            = "Subnet-${local.vms_settings.vm_sql_name}"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings["vNetPrivateSubnetSQLPrefix"]]
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetSQLPrefix]
   default_outbound_access_enabled = false
 }
 
@@ -264,7 +269,7 @@ resource "azurerm_subnet" "subnet_sp" {
   name                            = "Subnet-${local.vms_settings.vm_sp_name}"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings["vNetPrivateSubnetSPPrefix"]]
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetSPPrefix]
   default_outbound_access_enabled = false
 }
 
@@ -294,7 +299,7 @@ resource "azurerm_network_interface" "nic_dc_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_dc.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = local.network_settings["vmDCPrivateIPAddress"]
+    private_ip_address            = local.network_settings.vmDCPrivateIPAddress
     public_ip_address_id          = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_dc[0].id : null
   }
 }
@@ -384,7 +389,23 @@ resource "azurerm_virtual_machine_run_command" "vm_dc_runcommand_setproxy" {
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = azurerm_windows_virtual_machine.vm_dc.id
   source {
-    script = "param([string]$proxyIp = '10.1.5.4',[string]$proxyHttpPort = '8080',[string]$proxyHttpsPort = '8443',[string]$localDomainFqdn = 'contoso.local') $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+    script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
   }
 }
 
@@ -412,7 +433,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     },
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
-      "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "PrivateIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "SPServerName": "${local.vms_settings.vm_sp_name}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
@@ -488,7 +509,23 @@ resource "azurerm_virtual_machine_run_command" "vm_sql_runcommand_setproxy" {
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = azurerm_windows_virtual_machine.vm_sql.id
   source {
-    script = "param([string]$proxyIp = '10.1.5.4',[string]$proxyHttpPort = '8080',[string]$proxyHttpsPort = '8443',[string]$localDomainFqdn = 'contoso.local') $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+    script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
   }
 }
 
@@ -515,7 +552,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
 	    "script": "${local.dsc_settings["vm_sql_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}"
     },
     "privacy": {
@@ -592,7 +629,23 @@ resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_setproxy" {
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
   source {
-    script = "param([string]$proxyIp = '10.1.5.4',[string]$proxyHttpPort = '8080',[string]$proxyHttpsPort = '8443',[string]$localDomainFqdn = 'contoso.local') $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+    script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
   }
 }
 
@@ -629,7 +682,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
 	    "script": "${local.dsc_settings["vm_sp_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}",
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
@@ -759,7 +812,35 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   }
 }
 
+resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
+  # count                      = 0
+  count              = var.number_additional_frontend
+  name               = "VM-${local.vms_settings.vm_fe_name}-${count.index}-runcommand-runcommand-setproxy"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe.*.id, count.index)
+  source {
+    script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
+  }
+}
+
 resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
+  depends_on = [azurerm_virtual_machine_run_command.vm_fe_runcommand_setproxy]
   # count                      = 0
   count                      = var.number_additional_frontend
   name                       = "VM-${local.vms_settings.vm_fe_name}-${count.index}-DSC"
@@ -782,7 +863,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
 	    "script": "${local.dsc_settings["vm_fe_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}",
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
@@ -1012,11 +1093,11 @@ resource "azurerm_subnet" "subnet_bastion" {
   address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
 }
 
-# resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
-#   count                     = var.enable_azure_bastion ? 1 : 0
-#   subnet_id                 = azurerm_subnet.subnet_bastion[0].id
-#   network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
-# }
+resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
+  count                     = var.enable_azure_bastion ? 1 : 0
+  subnet_id                 = azurerm_subnet.subnet_bastion[0].id
+  network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
+}
 
 resource "azurerm_public_ip" "pip_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0
@@ -1048,7 +1129,7 @@ resource "azurerm_subnet" "subnet_azfirewall" {
   name                            = "AzureFirewallSubnet"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings["vNetAzureFirewallPrefix"]]
+  address_prefixes                = [local.firewall_proxy_settings.vNetAzureFirewallPrefix]
   default_outbound_access_enabled = false
 }
 
@@ -1065,12 +1146,12 @@ resource "azurerm_public_ip" "pip_azfirewall" {
 
 resource "azurerm_firewall" "azfirewall" {
   count               = var.internet_access_method == "AzureFirewallProxy" ? 1 : 0
-  name                = "Azure-Firewall-Proxy"
+  name                = "Azure-Firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   sku_name            = "AZFW_VNet"
   sku_tier            = "Standard"
-  firewall_policy_id  = azurerm_firewall_policy.azfirewall_policy[0].id
+  firewall_policy_id  = azurerm_firewall_policy.azfirewall_enable_proxy[0].id
 
   ip_configuration {
     name                 = "configuration"
@@ -1079,23 +1160,23 @@ resource "azurerm_firewall" "azfirewall" {
   }
 }
 
-resource "azurerm_firewall_policy" "azfirewall_policy" {
+resource "azurerm_firewall_policy" "azfirewall_enable_proxy" {
   count               = var.internet_access_method == "AzureFirewallProxy" ? 1 : 0
-  name                = "Azure_Firewall_policy"
+  name                = "Configure-explicit-proxy"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   explicit_proxy {
     enabled         = true
-    http_port       = 8080
-    https_port      = 8443
+    http_port       = local.firewall_proxy_settings.http_port
+    https_port      = local.firewall_proxy_settings.https_port
     enable_pac_file = false
   }
 }
 
 resource "azurerm_firewall_policy_rule_collection_group" "azfirewall_proxy_rules" {
   count              = var.internet_access_method == "AzureFirewallProxy" ? 1 : 0
-  name               = "proxy-rules-collection"
-  firewall_policy_id = azurerm_firewall_policy.azfirewall_policy[0].id
+  name               = "Proxy-rules-collection"
+  firewall_policy_id = azurerm_firewall_policy.azfirewall_enable_proxy[0].id
   priority           = 100
 
   application_rule_collection {
