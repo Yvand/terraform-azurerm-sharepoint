@@ -222,7 +222,7 @@ variable "number_additional_frontend" {
 
 variable "internet_access_method" {
   default     = "PublicIPAddress"
-  description = "Select how the virtual machines connect to internet. IMPORTANT: If you choose AzureFirewallProxy, you will need to either enable Azure Bastion, or manually add a public IP address to a VM to be able to connect to it."
+  description = "Select how the virtual machines connect to internet. IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it."
   validation {
     condition = contains([
       "PublicIPAddress",

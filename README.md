@@ -6,7 +6,7 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 
 ## Prerequisites
 
-- Access to an **Azure subscription**.
+- Access to an Azure subscription.
 
 ## Usage
 
@@ -49,6 +49,15 @@ There are some differences in the configuration, depending on the SharePoint ver
 - SharePoint virtual machines are created using a disk image built and maintained by SharePoint Engineering.
 - The HTTPS site certificate is positioned by the DSC script.
 - Federated authentication with ADFS is configured using SAML 1.1.
+
+## Outbound access to internet
+
+During the provisionning, virtual machines require an outbound access to internet to be able to download and apply their configuration.  
+The outbound access method is set by the variable `internet_access_method`, and can be either of the following:
+- `PublicIPAddress`: A [Public IP](https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/virtual-network-public-ip-address) is associated to each virtual machine's network card.
+- `AzureFirewallProxy`: An [Azure Firewall](https://azure.microsoft.com/en-us/products/azure-firewall/) service is created and the [explicit proxy](https://learn.microsoft.com/en-us/azure/firewall/explicit-proxy) configured. On the virtual machines, the proxy is set so they can connect to internet through the Azure Firewall's proxy.
+  > [!IMPORTANT]  
+  > With `AzureFirewallProxy`, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it.
 
 ## Key variables
 
