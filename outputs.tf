@@ -9,22 +9,22 @@ output "resource_group_id" {
 }
 
 output "vm_dc_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_dc[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].fqdn : null
   description = "Public DNS name of the DC VM"
 }
 
 output "vm_sql_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_sql[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].fqdn : null
   description = "Public DNS name of the SQL VM"
 }
 
 output "vm_sp_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.pip_sp[0].fqdn : null
+  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].fqdn : null
   description = "Public DNS name of the SP VM"
 }
 
 output "vm_fe_dns" {
-  value       = azurerm_public_ip.pip_fe[*].fqdn
+  value       = azurerm_public_ip.vm_fe_pip[*].fqdn
   description = "Public DNS names of the FE VMs"
 }
 
@@ -39,7 +39,7 @@ output "domain_admin_account_format_bastion" {
 }
 
 output "local_admin_username" {
-  value       = azurerm_windows_virtual_machine.vm_sp.admin_username
+  value       = azurerm_windows_virtual_machine.vm_sp_def.admin_username
   description = "Local (not domain) administrator of SQL and SharePoint VMs"
 }
 
