@@ -220,15 +220,15 @@ variable "number_additional_frontend" {
   }
 }
 
-variable "internet_access_method" {
+variable "outbound_access_method" {
   default     = "PublicIPAddress"
   description = "Select how the virtual machines connect to internet. IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it."
   validation {
     condition = contains([
       "PublicIPAddress",
       "AzureFirewallProxy"
-    ], var.internet_access_method)
-    error_message = "Invalid value for internet_access_method."
+    ], var.outbound_access_method)
+    error_message = "Invalid value for outbound_access_method."
   }
 }
 

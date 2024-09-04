@@ -53,7 +53,7 @@ There are some differences in the configuration, depending on the SharePoint ver
 ## Outbound access to internet
 
 During the provisionning, virtual machines require an outbound access to internet to be able to download and apply their configuration.  
-The outbound access method is set by the variable `internet_access_method`, and can be either of the following:
+The outbound access method is set by the variable `outbound_access_method`, and can be either of the following:
 - `PublicIPAddress`: A [Public IP](https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/virtual-network-public-ip-address) is associated to each virtual machine's network card.
 - `AzureFirewallProxy`: An [Azure Firewall](https://azure.microsoft.com/en-us/products/azure-firewall/) service is created and the [explicit proxy](https://learn.microsoft.com/en-us/azure/firewall/explicit-proxy) configured. On the virtual machines, the proxy is set so they can connect to internet through the Azure Firewall's proxy.
   > [!IMPORTANT]  

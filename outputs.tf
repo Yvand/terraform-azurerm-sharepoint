@@ -9,17 +9,17 @@ output "resource_group_id" {
 }
 
 output "vm_dc_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].fqdn : null
+  value       = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].fqdn : null
   description = "Public DNS name of the DC VM"
 }
 
 output "vm_sql_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].fqdn : null
+  value       = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].fqdn : null
   description = "Public DNS name of the SQL VM"
 }
 
 output "vm_sp_dns" {
-  value       = var.internet_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].fqdn : null
+  value       = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].fqdn : null
   description = "Public DNS name of the SP VM"
 }
 
