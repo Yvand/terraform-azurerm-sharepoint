@@ -2,9 +2,6 @@ provider "azurerm" {
   features {}
 }
 
-provider "azapi" {
-}
-
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
@@ -13,6 +10,7 @@ locals {
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
+
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
@@ -87,7 +85,7 @@ locals {
     vm_sql_name          = "SQL"
     vm_sp_name           = "SP"
     vm_fe_name           = "FE"
-    vm_dc_image          = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
+    vm_dc_image          = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
     vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
   }
@@ -158,15 +156,15 @@ resource "random_password" "random_service_accounts_password" {
   min_special      = 1
 }
 
-# Create a resource group
+# Start creating resources
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
 }
 
-# Create the network security groups
+# Create the network security groups for each subnet
 resource "azurerm_network_security_group" "nsg_subnet_dc" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_dc_name}"
+  name                = "vnet-subnet-dc-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -188,7 +186,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sql" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_sql_name}"
+  name                = "vnet-subnet-sql-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -210,7 +208,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sp" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_sp_name}"
+  name                = "vnet-subnet-sp-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -233,7 +231,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
 
 # Create the virtual network, 3 subnets, and associate each subnet with its Network Security Group
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${local.resourceGroupNameFormatted}-vnet"
+  name                = "vnet-${local.resourceGroupNameFormatted}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = [local.network_settings.vNetPrivatePrefix]
@@ -248,7 +246,7 @@ resource "azurerm_subnet" "subnet_dc" {
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetdc_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_dc_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_dc.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_dc.id
 }
@@ -261,7 +259,7 @@ resource "azurerm_subnet" "subnet_sql" {
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetsql_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_sql_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_sql.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_sql.id
 }
@@ -274,7 +272,7 @@ resource "azurerm_subnet" "subnet_sp" {
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_sp_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_sp.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_sp.id
 }
