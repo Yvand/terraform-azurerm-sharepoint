@@ -191,7 +191,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 ### Fixed
 
 - Fixed the random error `NetworkSecurityGroupNotCompliantForAzureBastionSubnet` when deploying Azure Bastion by updating the rules in the network security group attached to Bastion's subnet
-- For variables `admin_password` and `service_accounts_password`, fixed the auto-generated password that may not be valid ([issue terraform-provider-random #337](https://github.com/hashicorp/terraform-provider-random/issues/337))
+- For variables `admin_password` and `other_accounts_password`, fixed the auto-generated password that may not be valid ([issue terraform-provider-random #337](https://github.com/hashicorp/terraform-provider-random/issues/337))
 
 ## [2.1.0] - 22-10-18
 
@@ -214,9 +214,9 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 ### Changed
 
 - Now, only variable `resource_group_name` requires to be explicitly set
-- Password variables `admin_password` and `service_accounts_password` can now be auto-generated, if they are left empty
+- Password variables `admin_password` and `other_accounts_password` can now be auto-generated, if they are left empty
 - Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
-- Added a condition in variable `number_additional_frontend` as value can only be between 0 and 4 included
+- Added a condition in variable `front_end_server_count` as value can only be between 0 and 4 included
 - Default storage account type of all virtual machines is now standard SSD disks instead of standard HDD (deployment time goes down from 1h30 to 1h)
 - Increase timeout of resource azurerm_virtual_machine_extension for SharePoint VM to 120 minutes (necessary when using HDD disks instead of SSD)
 

@@ -49,8 +49,8 @@ output "admin_password" {
   description = "Password of the local and domain administrator"
 }
 
-output "service_accounts_password" {
-  value       = local.service_accounts_password
+output "other_accounts_password" {
+  value       = local.other_accounts_password
   sensitive   = true
   description = "Password of all Active Directory service accounts"
 }

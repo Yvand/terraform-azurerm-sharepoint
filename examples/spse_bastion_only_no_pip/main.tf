@@ -6,6 +6,6 @@ module "sharepoint" {
   admin_username             = "yvand"
   admin_password             = "<admin_password>"
   add_public_ip_address      = "No"
-  rdp_traffic_allowed        = "No"
+  rdp_traffic_rule        = "No"
   enable_azure_bastion       = true
 }

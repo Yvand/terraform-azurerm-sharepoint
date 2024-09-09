@@ -1,10 +1,10 @@
+variable "resource_group_name" {
+  description = "Name of the ARM resource group to create"
+}
+
 variable "location" {
   default     = "West Europe"
   description = "Location where resources will be provisioned"
-}
-
-variable "resource_group_name" {
-  description = "Name of the ARM resource group to create"
 }
 
 variable "sharepoint_version" {
@@ -25,6 +25,20 @@ variable "sharepoint_version" {
   }
 }
 
+variable "domain_fqdn" {
+  default     = "contoso.local"
+  description = "FQDN of the AD forest to create"
+}
+
+variable "front_end_server_count" {
+  default     = 0
+  description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
+  validation {
+    condition     = var.front_end_server_count >= 0 && var.front_end_server_count <= 4
+    error_message = "The front_end_server_count value must be between 0 and 4 included."
+  }
+}
+
 variable "admin_username" {
   default     = "yvand"
   description = "Name of the AD and SharePoint administrator. 'admin' and 'administrator' are not allowed."
@@ -42,14 +56,38 @@ variable "admin_password" {
   description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
-variable "service_accounts_password" {
+variable "other_accounts_password" {
   default     = ""
   description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
-variable "domain_fqdn" {
-  default     = "contoso.local"
-  description = "FQDN of the AD forest to create"
+variable "rdp_traffic_rule" {
+  default     = "No"
+  description = "Specify if RDP traffic is allowed:<br>- If 'No' (default): Firewall denies all incoming RDP traffic.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) or IP address (e.g. 192.168.99.0 or 2001:1234::): Firewall accepts incoming RDP traffic from the IP addresses specified."
+}
+
+variable "outbound_access_method" {
+  default     = "PublicIPAddress"
+  description = "Select how the virtual machines connect to internet. IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it."
+  validation {
+    condition = contains([
+      "PublicIPAddress",
+      "AzureFirewallProxy"
+    ], var.outbound_access_method)
+    error_message = "Invalid value for outbound_access_method."
+  }
+}
+
+variable "enable_azure_bastion" {
+  default     = false
+  type        = bool
+  description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
+}
+
+variable "enable_hybrid_benefit_server_licenses" {
+  default     = false
+  type        = bool
+  description = "Enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information."
 }
 
 variable "time_zone" {
@@ -211,50 +249,12 @@ variable "auto_shutdown_time" {
   }
 }
 
-variable "number_additional_frontend" {
-  default     = 0
-  description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
-  validation {
-    condition     = var.number_additional_frontend >= 0 && var.number_additional_frontend <= 4
-    error_message = "The number_additional_frontend value must be between 0 and 4 included."
-  }
-}
-
-variable "outbound_access_method" {
-  default     = "PublicIPAddress"
-  description = "Select how the virtual machines connect to internet. IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it."
-  validation {
-    condition = contains([
-      "PublicIPAddress",
-      "AzureFirewallProxy"
-    ], var.outbound_access_method)
-    error_message = "Invalid value for outbound_access_method."
-  }
-}
-
-variable "rdp_traffic_allowed" {
-  default     = "No"
-  description = "Specify if RDP traffic is allowed:<br>- If 'No' (default): Firewall denies all incoming RDP traffic.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) or IP address (e.g. 192.168.99.0 or 2001:1234::): Firewall accepts incoming RDP traffic from the IP addresses specified."
-}
-
-variable "enable_azure_bastion" {
-  default     = false
-  type        = bool
-  description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
-}
-
-variable "enable_hybrid_benefit_server_licenses" {
-  default     = false
-  type        = bool
-  description = "Enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information."
-}
-
 variable "vm_dc_size" {
   default     = "Standard_B2s"
   description = "Size of the DC VM."
 }
 
-variable "vm_dc_storage_account_type" {
+variable "vm_dc_storage" {
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
   validation {
@@ -265,7 +265,7 @@ variable "vm_dc_storage_account_type" {
       "Premium_ZRS",
       "StandardSSD_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_dc_storage_account_type)
+    ], var.vm_dc_storage)
     error_message = "Invalid storage account type value."
   }
 }
@@ -275,7 +275,7 @@ variable "vm_sql_size" {
   description = "Size of the SQL VM."
 }
 
-variable "vm_sql_storage_account_type" {
+variable "vm_sql_storage" {
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
   validation {
@@ -286,7 +286,7 @@ variable "vm_sql_storage_account_type" {
       "Premium_ZRS",
       "StandardSSD_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_sql_storage_account_type)
+    ], var.vm_sql_storage)
     error_message = "Invalid storage account type value."
   }
 }
@@ -296,7 +296,7 @@ variable "vm_sp_size" {
   description = "Size of the SP VM."
 }
 
-variable "vm_sp_storage_account_type" {
+variable "vm_sp_storage" {
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
   validation {
@@ -307,7 +307,7 @@ variable "vm_sp_storage_account_type" {
       "Premium_ZRS",
       "StandardSSD_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_sp_storage_account_type)
+    ], var.vm_sp_storage)
     error_message = "Invalid storage account type value."
   }
 }

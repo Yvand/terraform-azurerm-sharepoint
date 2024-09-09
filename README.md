@@ -19,7 +19,7 @@ module "sharepoint" {
   admin_username        = "yvand"
   admin_password        = "<password>"
   add_public_ip_address = "SharePointVMsOnly"
-  rdp_traffic_allowed   = "<yourInternetPublicIP>"
+  rdp_traffic_rule   = "<yourInternetPublicIP>"
 }
 ```
 
@@ -75,8 +75,8 @@ The outbound access method is set by the variable `outbound_access_method`, and 
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits already installed.
-- Variables `addPublicIPAddress` and `rdp_traffic_allowed`: See [this section](#remote-access-and-security) for detailed information.
-- Variable `number_additional_frontend` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
+- Variables `addPublicIPAddress` and `rdp_traffic_rule`: See [this section](#remote-access-and-security) for detailed information.
+- Variable `front_end_server_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
 ### Output variables
@@ -88,13 +88,13 @@ The module returns multiple variables to record the logins, passwords and the pu
 The template creates 1 virtual network with 3 subnets (+1 if [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) is enabled), and each subnet is protected by a [Network Security Group](https://docs.microsoft.com/azure/virtual-network/network-security-groups-overview) which denies all incoming traffic by default.  
 The following variables configure how to connect to the virtual machines, and the level of network security:
 
-- Variables `admin_password` and `service_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-) with **at least 8 characters**, or they can be left empty to use an auto-generated password that will be recorded in the state file.
+- Variables `admin_password` and `other_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-) with **at least 8 characters**, or they can be left empty to use an auto-generated password that will be recorded in the state file.
 - Variable `addPublicIPAddress`:
   - if `"SharePointVMsOnly"` (default): Only SharePoint virtual machines get a public IP address with a DNS name and can be reached from Internet.
   - If `"Yes"`: All virtual machines get a public IP address with a DNS name, and can be reached from Internet.
   - if `"No"`: No public IP resource is created.
   - The DNS name format of virtual machines is `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"` and is recorded as output in the state file.
-- Variable `rdp_traffic_allowed` specifies if RDP traffic is allowed:
+- Variable `rdp_traffic_rule` specifies if RDP traffic is allowed:
   - If `"No"` (default): Firewall denies all incoming RDP traffic.
   - If `"*"` or `"Internet"`: Firewall accepts all incoming RDP traffic from Internet (very, very much not recommended) (but hey you are the boss).
   - If CIDR notation (e.g. `"192.168.99.0/24"` or `"2001:1234::/64"`) or IP address (e.g. `"192.168.99.0"` or `"2001:1234::"`): Firewall accepts incoming RDP traffic from the IP addresses specified.
@@ -115,7 +115,7 @@ You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate
 
 ## Known issues
 
-- The password for the User Profile directory synchronization connection (value of parameter `service_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the import fails (password decryption error).
+- The password for the User Profile directory synchronization connection (value of parameter `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the import fails (password decryption error).
 
 ## More information
 

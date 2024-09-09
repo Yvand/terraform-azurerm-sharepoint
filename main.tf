@@ -5,8 +5,8 @@ provider "azurerm" {
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  other_accounts_password    = var.other_accounts_password == "" ? random_password.random_service_accounts_password.result : var.other_accounts_password
+  create_rdp_rule            = lower(var.rdp_traffic_rule) == "no" ? 0 : 1
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
@@ -176,7 +176,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -198,7 +198,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -220,7 +220,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -319,7 +319,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc_def" {
 
   os_disk {
     name                 = "vm-dc-disk-os"
-    storage_account_type = var.vm_dc_storage_account_type
+    storage_account_type = var.vm_dc_storage
     caching              = "ReadWrite"
   }
 
@@ -402,7 +402,7 @@ SETTINGS
       },
       "AdfsSvcCreds": {
         "UserName": "${local.deployment_settings.adfsSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
@@ -464,7 +464,7 @@ resource "azurerm_windows_virtual_machine" "vm_sql_def" {
 
   os_disk {
     name                 = "vm-sql-disk-os"
-    storage_account_type = var.vm_sql_storage_account_type
+    storage_account_type = var.vm_sql_storage
     caching              = "ReadWrite"
   }
 
@@ -543,11 +543,11 @@ SETTINGS
       },
       "SqlSvcCreds": {
         "UserName": "${local.deployment_settings.sqlSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
@@ -610,7 +610,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp_def" {
 
   os_disk {
     name                 = "vm-sp-disk-os"
-    storage_account_type = var.vm_sp_storage_account_type
+    storage_account_type = var.vm_sp_storage
     caching              = "ReadWrite"
   }
 
@@ -707,35 +707,35 @@ SETTINGS
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.deployment_settings.spFarmUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSvcCreds": {
         "UserName": "${local.deployment_settings.spSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPAppPoolCreds": {
         "UserName": "${local.deployment_settings.spAppPoolUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPADDirSyncCreds": {
         "UserName": "${local.deployment_settings.spADDirSyncUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSuperUserCreds": {
         "UserName": "${local.deployment_settings.spSuperUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSuperReaderCreds": {
         "UserName": "${local.deployment_settings.spSuperReaderName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
@@ -758,7 +758,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_autoshutdown" {
 
 // Create resources for VMs FEs
 resource "azurerm_public_ip" "vm_fe_pip" {
-  count               = var.outbound_access_method == "PublicIPAddress" ? var.number_additional_frontend : 0
+  count               = var.outbound_access_method == "PublicIPAddress" ? var.front_end_server_count : 0
   name                = "vm-fe${count.index}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -769,7 +769,7 @@ resource "azurerm_public_ip" "vm_fe_pip" {
 }
 
 resource "azurerm_network_interface" "vm_fe_nic" {
-  count               = var.number_additional_frontend
+  count               = var.front_end_server_count
   name                = "vm-fe${count.index}-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -783,7 +783,7 @@ resource "azurerm_network_interface" "vm_fe_nic" {
 }
 
 resource "azurerm_windows_virtual_machine" "vm_fe_def" {
-  count                    = var.number_additional_frontend
+  count                    = var.front_end_server_count
   name                     = "vm-fe${count.index}"
   location                 = azurerm_resource_group.rg.location
   computer_name            = "${local.vms_settings.vm_fe_name}-${count.index}"
@@ -799,7 +799,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
 
   os_disk {
     name                 = "vm-fe${count.index}-disk-os"
-    storage_account_type = var.vm_sp_storage_account_type
+    storage_account_type = var.vm_sp_storage
     caching              = "ReadWrite"
   }
 
@@ -813,7 +813,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
 
 resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
   # count                      = 0
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? var.number_additional_frontend : 0
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? var.front_end_server_count : 0
   name               = "runcommand-setproxy"
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
@@ -841,7 +841,7 @@ resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
 resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
   depends_on = [azurerm_virtual_machine_run_command.vm_fe_runcommand_setproxy]
   # count                      = 0
-  count                      = var.number_additional_frontend
+  count                      = var.front_end_server_count
   name                       = "apply-dsc"
   virtual_machine_id         = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   publisher                  = "Microsoft.Powershell"
@@ -887,15 +887,15 @@ SETTINGS
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.deployment_settings.spFarmUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
@@ -903,7 +903,7 @@ PROTECTED_SETTINGS
 }
 
 resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_autoshutdown" {
-  count              = var.number_additional_frontend > 0 && var.auto_shutdown_time != "9999" ? var.number_additional_frontend : 0
+  count              = var.front_end_server_count > 0 && var.auto_shutdown_time != "9999" ? var.front_end_server_count : 0
   virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   location           = azurerm_resource_group.rg.location
   enabled            = true
