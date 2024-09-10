@@ -14,12 +14,13 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 module "sharepoint" {
   source                 = "Yvand/sharepoint/azurerm"
   location               = "France Central"
-  resource_group_name    = "<resourceGroupName>"
+  subscription_id        = "<your_azure_subscription_id>"
+  resource_group_name    = "<resource_group_name>"
   sharepoint_version     = "Subscription-Latest"
   admin_username         = "yvand"
   admin_password         = "<password>"
   outbound_access_method = "PublicIPAddress"
-  rdp_traffic_rule       = "<yourInternetPublicIP>"
+  rdp_traffic_rule       = "<your_internet_public_ip>"
 }
 ```
 

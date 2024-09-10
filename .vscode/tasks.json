@@ -32,7 +32,7 @@
             "dependsOn": ["remove state file"]
         },
         {
-            "label": "Upgrade providers",
+            "label": "upgrade providers",
             "type": "shell",
             "command": "terraform",
             "args": ["init", "-upgrade"],

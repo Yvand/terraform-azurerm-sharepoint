@@ -9,11 +9,13 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 ### Added
 
 - Template
+  - Add variable `subscription_id`, required after upgrading provider `azurerm` to version 4.1
   - Add variable `outbound_access_method`, to choose how the virtual machines connect to internet. Now, they can connect through either a public IP, or using Azure Firewall as an HTTP proxy
 
 ### Changed
 
 - Template
+  - Upgrade provider `azurerm` to version 4.1
   - Change the SKU of the public IP resources from Basic to Standard, due to Basic SKU being deprecated - https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance
   - Rename most of the variables
   - Update the display name of most of the resources to be more consistent and reflect their relationship with each other

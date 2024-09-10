@@ -1,3 +1,7 @@
+variable "subscription_id" {
+  description = "ID of the Azure subscription where the resources will be deployed."
+}
+
 variable "resource_group_name" {
   description = "Name of the Azure resource group."
 }
