@@ -2,7 +2,7 @@
 
 This examples provisions SharePoint Subscription 22H2 with the following configuration:
 
-- Variable `front_end_server_count` is set to `0`: SharePoint farm will have 1 server running everything.
+- Variable `front_end_servers_count` is set to `0`: SharePoint farm will have 1 server running everything.
 - Variable `rdp_traffic_rule` is set to `10.20.30.40`: A rule is created on the network security groups to allow RDP traffic from incoming IP `10.20.30.40`.
 - Variable `enable_azure_bastion` is set to `true`: [Azure Bastion](https://learn.microsoft.com/azure/bastion/bastion-overview) is configured.
 
@@ -19,7 +19,7 @@ module "sharepoint" {
   domain_fqdn                = "contoso.local"
   time_zone                  = "Romance Standard Time"
   auto_shutdown_time         = "1900"
-  front_end_server_count = 0
+  front_end_servers_count = 0
   add_public_ip_address      = "SharePointVMsOnly"
   rdp_traffic_rule        = "10.20.30.40"
   enable_azure_bastion       = true

@@ -4,6 +4,20 @@
 > As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
 The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
 
+## [4.0] - Unreleased
+
+### Added
+
+- Template
+  - Add variable `outbound_access_method`, to choose how the virtual machines connect to internet. Now, they can connect through either a public IP, or using Azure Firewall as an HTTP proxy
+
+### Changed
+
+- Template
+  - Change the SKU of the public IP resources from Basic to Standard, due to Basic SKU being deprecated - https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance
+  - Rename most of the variables
+  - Update the display name of most of the resources to be more consistent and reflect their relationship with each other
+
 ## [3.13.0] - 23-12-18
 
 ### Changed
@@ -216,7 +230,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 - Now, only variable `resource_group_name` requires to be explicitly set
 - Password variables `admin_password` and `other_accounts_password` can now be auto-generated, if they are left empty
 - Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
-- Added a condition in variable `front_end_server_count` as value can only be between 0 and 4 included
+- Added a condition in variable `front_end_servers_count` as value can only be between 0 and 4 included
 - Default storage account type of all virtual machines is now standard SSD disks instead of standard HDD (deployment time goes down from 1h30 to 1h)
 - Increase timeout of resource azurerm_virtual_machine_extension for SharePoint VM to 120 minutes (necessary when using HDD disks instead of SSD)
 

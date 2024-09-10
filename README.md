@@ -12,14 +12,14 @@ On the SharePoint virtual machines, [Chocolatey](https://chocolatey.org/) is use
 
 ```terraform
 module "sharepoint" {
-  source               = "Yvand/sharepoint/azurerm"
-  location              = "West Europe"
-  resource_group_name   = "<resourceGroupName>"
-  sharepoint_version    = "Subscription-Latest"
-  admin_username        = "yvand"
-  admin_password        = "<password>"
-  add_public_ip_address = "SharePointVMsOnly"
-  rdp_traffic_rule   = "<yourInternetPublicIP>"
+  source                 = "Yvand/sharepoint/azurerm"
+  location               = "France Central"
+  resource_group_name    = "<resourceGroupName>"
+  sharepoint_version     = "Subscription-Latest"
+  admin_username         = "yvand"
+  admin_password         = "<password>"
+  outbound_access_method = "PublicIPAddress"
+  rdp_traffic_rule       = "<yourInternetPublicIP>"
 }
 ```
 
@@ -76,7 +76,7 @@ The outbound access method is set by the variable `outbound_access_method`, and 
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
   - `2013`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2013 bits already installed.
 - Variables `addPublicIPAddress` and `rdp_traffic_rule`: See [this section](#remote-access-and-security) for detailed information.
-- Variable `front_end_server_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
+- Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server) (except on SharePoint 2013, which does not support MinRole).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
 ### Output variables

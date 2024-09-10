@@ -284,8 +284,8 @@ resource "azurerm_public_ip" "vm_dc_pip" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
@@ -430,8 +430,8 @@ resource "azurerm_public_ip" "vm_sql_pip" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
@@ -576,8 +576,8 @@ resource "azurerm_public_ip" "vm_sp_pip" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
@@ -758,18 +758,18 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_autoshutdown" {
 
 // Create resources for VMs FEs
 resource "azurerm_public_ip" "vm_fe_pip" {
-  count               = var.outbound_access_method == "PublicIPAddress" ? var.front_end_server_count : 0
+  count               = var.outbound_access_method == "PublicIPAddress" ? var.front_end_servers_count : 0
   name                = "vm-fe${count.index}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
 resource "azurerm_network_interface" "vm_fe_nic" {
-  count               = var.front_end_server_count
+  count               = var.front_end_servers_count
   name                = "vm-fe${count.index}-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -783,7 +783,7 @@ resource "azurerm_network_interface" "vm_fe_nic" {
 }
 
 resource "azurerm_windows_virtual_machine" "vm_fe_def" {
-  count                    = var.front_end_server_count
+  count                    = var.front_end_servers_count
   name                     = "vm-fe${count.index}"
   location                 = azurerm_resource_group.rg.location
   computer_name            = "${local.vms_settings.vm_fe_name}-${count.index}"
@@ -813,7 +813,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
 
 resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
   # count                      = 0
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? var.front_end_server_count : 0
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? var.front_end_servers_count : 0
   name               = "runcommand-setproxy"
   location           = azurerm_resource_group.rg.location
   virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
@@ -841,7 +841,7 @@ resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
 resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
   depends_on = [azurerm_virtual_machine_run_command.vm_fe_runcommand_setproxy]
   # count                      = 0
-  count                      = var.front_end_server_count
+  count                      = var.front_end_servers_count
   name                       = "apply-dsc"
   virtual_machine_id         = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   publisher                  = "Microsoft.Powershell"
@@ -903,7 +903,7 @@ PROTECTED_SETTINGS
 }
 
 resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_autoshutdown" {
-  count              = var.front_end_server_count > 0 && var.auto_shutdown_time != "9999" ? var.front_end_server_count : 0
+  count              = var.front_end_servers_count > 0 && var.auto_shutdown_time != "9999" ? var.front_end_servers_count : 0
   virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   location           = azurerm_resource_group.rg.location
   enabled            = true
