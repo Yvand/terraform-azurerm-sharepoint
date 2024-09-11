@@ -25,7 +25,6 @@ variable "sharepoint_version" {
       "Subscription-RTM",
       "2019",
       "2016"
-      "2016"
     ], var.sharepoint_version)
     error_message = "Invalid SharePoint farm version."
   }
