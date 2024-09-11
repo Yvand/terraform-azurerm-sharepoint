@@ -57,10 +57,26 @@ locals {
       ]
     },
     {
+      "Label" : "24H1",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/b/a/b/bab0c7cc-0454-474b-8538-7927f75e6486/uber-subscription-kb5002564-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
+      "Label" : "24H2",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/6/6/a/66a0057f-79af-4307-8263-103ee75ef5c6/uber-subscription-kb5002640-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/2/9/0/2906b701-2c8e-4fce-abdb-e69c3f82b5cc/uber-subscription-kb5002533-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/6/6/a/66a0057f-79af-4307-8263-103ee75ef5c6/uber-subscription-kb5002640-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -920,7 +936,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_autoshutdown" {
 # Resources for Azure Bastion
 resource "azurerm_network_security_group" "bastion_subnet_nsg" {
   count               = var.enable_azure_bastion ? 1 : 0
-  name                = "NSG-Subnet-AzureBastion"
+  name                = "bastion-subnet-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }

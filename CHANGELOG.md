@@ -11,6 +11,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
 - Template
   - [BREAKING CHANGE] Add variable `subscription_id`, required after upgrading provider `azurerm` to version 4.1
   - [BREAKING CHANGE] Add variable `outbound_access_method`, to choose how the virtual machines connect to internet. Now, they can connect through either a public IP, or using Azure Firewall as an HTTP proxy
+  - Add value `Subscription-24H2` to parameter `sharepoint_version`, to install SharePoint Subscription with 24H2 update
 
 ### Changed
 
@@ -20,6 +21,7 @@ The DSC files (virtual machines configuration) are copied from [this Azure templ
   - [BREAKING CHANGE] Rename most of the variables
   - Change the SKU of the public IP resources from Basic to Standard, due to Basic SKU being deprecated - https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance
   - Update the display name of most of the resources to be more consistent and reflect their relationship with each other
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2024 CU for SharePoint Subscription
 - All DSC configurations
   - Add a firewall rule to all virtual machines to allow remote event viewer connections
 

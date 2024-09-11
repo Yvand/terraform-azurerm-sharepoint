@@ -17,13 +17,14 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-24H2",
+      "Subscription-24H1",
       "Subscription-23H2",
       "Subscription-23H1",
       "Subscription-22H2",
       "Subscription-RTM",
       "2019",
-      "2016",
-      "2013"
+      "2016"
     ], var.sharepoint_version)
     error_message = "Invalid SharePoint farm version."
   }
