@@ -1,8 +1,64 @@
 # Changelog for terraform-azurerm-sharepoint
 
-> ~~This CHANGELOG covers only the changes related to this Terraform module.~~  
-> As the changes in virtual machines configuration are significant each time, starting with `3.2.0` I decided to include all the changes in this CHANGELOG.  
-The DSC files (virtual machines configuration) are copied from [this Azure template](https://azure.microsoft.com/en-us/resources/templates/sharepoint-adfs/).
+## [4.6.0] - 24-08-20
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the August 2024 CU for SharePoint Subscription
+
+## [4.5.0] - 24-07-11
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2024 CU for SharePoint Subscription
+
+## [4.4.0] - 24-06-18
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the June 2024 CU for SharePoint Subscription
+
+## [4.3.0] - 24-06-04
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2024 CU for SharePoint Subscription
+- DSC configurations
+  - Updated DSC module `ActiveDirectoryDsc` to 6.4.0
+  - Updated DSC module `ComputerManagementDsc` to 9.1.0
+  - Updated DSC module `SharePointDSC` to 5.5.0
+
+## [4.2.0] - 24-04-10
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2024 CU for SharePoint Subscription
+
+## [4.1.0] - 24-03-15
+
+- Template
+  - Added value `Subscription-24H1` to parameter `sharePointVersion`, which installs the March 2024 CU (24H1) for SharePoint Subscription
+
+## [4.0.1] - 24-02-26
+
+- Template
+  - Set the minimum version required for provider `azurerm` to 3.88, which is the one that introduced resource `azurerm_virtual_machine_run_command`
+
+## [4.0.0] - 24-02-26
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2024 CU for SharePoint Subscription
+  - Remove provider `azure/azapi`, and use new `resource azurerm_virtual_machine_run_command` added recently to provider `azurerm`
+  - Remove SharePoint 2013
+- All SharePoint configurations
+  - Add network share `SPLOGS` on folder `C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\LOGS`
+- Configuration for SPSE
+  - Update the registry keys required to allow OneDrive on OIDC authentication
+  - Update claims provider to LDAPCPSE
+  - It is no longer needed to restart the VM to be able to create the SPTrustedIdentityTokenIssuer, which saves a few minutes
+- Configuration for SPLE
+  - Update claims provider to LDAPCPSE
+  - It is no longer needed to restart the VM to be able to create the SPTrustedIdentityTokenIssuer, which saves a few minutes
+
+## [3.14.0] - 24-01-11
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the January 2024 CU for SharePoint Subscription
 
 ## [5.0] - Unreleased
 
