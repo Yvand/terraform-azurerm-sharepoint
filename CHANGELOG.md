@@ -1,5 +1,26 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [5.0.0] - 24-09-11
+
+### Added
+
+- Template
+  - [BREAKING CHANGE] Add variable `subscription_id`, required after upgrading provider `azurerm` to version 4.1
+  - [BREAKING CHANGE] Add variable `outbound_access_method`, to choose how the virtual machines connect to internet. Now, they can connect through either a public IP, or using Azure Firewall as an HTTP proxy
+  - Add value `Subscription-24H2` to parameter `sharepoint_version`, to install SharePoint Subscription with 24H2 update
+
+### Changed
+
+- Template
+  - [BREAKING CHANGE] Upgrade provider `azurerm` to version 4.1
+  - [BREAKING CHANGE] Minimim version required for terraform core is now 1.9.5
+  - [BREAKING CHANGE] Rename most of the variables
+  - Change the SKU of the public IP resources from Basic to Standard, due to Basic SKU being deprecated - https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance
+  - Update the display name of most of the resources to be more consistent and reflect their relationship with each other
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2024 CU for SharePoint Subscription
+- All DSC configurations
+  - Add a firewall rule to all virtual machines to allow remote event viewer connections
+
 ## [4.6.0] - 24-08-20
 
 - Template
@@ -247,7 +268,7 @@
 ### Fixed
 
 - Fixed the random error `NetworkSecurityGroupNotCompliantForAzureBastionSubnet` when deploying Azure Bastion by updating the rules in the network security group attached to Bastion's subnet
-- For variables `admin_password` and `service_accounts_password`, fixed the auto-generated password that may not be valid ([issue terraform-provider-random #337](https://github.com/hashicorp/terraform-provider-random/issues/337))
+- For variables `admin_password` and `other_accounts_password`, fixed the auto-generated password that may not be valid ([issue terraform-provider-random #337](https://github.com/hashicorp/terraform-provider-random/issues/337))
 
 ## [2.1.0] - 22-10-18
 
@@ -270,9 +291,9 @@
 ### Changed
 
 - Now, only variable `resource_group_name` requires to be explicitly set
-- Password variables `admin_password` and `service_accounts_password` can now be auto-generated, if they are left empty
+- Password variables `admin_password` and `other_accounts_password` can now be auto-generated, if they are left empty
 - Added a condition in variable `admin_username` to prevent values 'admin' or 'administrator', which are not allowed by Azure
-- Added a condition in variable `number_additional_frontend` as value can only be between 0 and 4 included
+- Added a condition in variable `front_end_servers_count` as value can only be between 0 and 4 included
 - Default storage account type of all virtual machines is now standard SSD disks instead of standard HDD (deployment time goes down from 1h30 to 1h)
 - Increase timeout of resource azurerm_virtual_machine_extension for SharePoint VM to 120 minutes (necessary when using HDD disks instead of SSD)
 

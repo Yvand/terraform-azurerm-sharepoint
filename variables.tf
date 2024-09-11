@@ -1,10 +1,14 @@
-variable "location" {
-  default     = "West Europe"
-  description = "Location where resources will be provisioned"
+variable "subscription_id" {
+  description = "ID of the Azure subscription where the resources will be deployed."
 }
 
 variable "resource_group_name" {
-  description = "Name of the ARM resource group to create"
+  description = "Name of the Azure resource group."
+}
+
+variable "location" {
+  default     = "France Central"
+  description = "Location for all the resources."
 }
 
 variable "sharepoint_version" {
@@ -13,6 +17,7 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-24H2",
       "Subscription-24H1",
       "Subscription-23H2",
       "Subscription-23H1",
@@ -25,9 +30,23 @@ variable "sharepoint_version" {
   }
 }
 
+variable "domain_fqdn" {
+  default     = "contoso.local"
+  description = "FQDN of the Active Directory forest."
+}
+
+variable "front_end_servers_count" {
+  default     = 0
+  description = "Number of servers with MinRole Front-end to add to the farm."
+  validation {
+    condition     = var.front_end_servers_count >= 0 && var.front_end_servers_count <= 4
+    error_message = "The front_end_servers_count value must be between 0 and 4 included."
+  }
+}
+
 variable "admin_username" {
   default     = "yvand"
-  description = "Name of the AD and SharePoint administrator. 'admin' and 'administrator' are not allowed."
+  description = "Name of the Active Directory and SharePoint administrator. 'admin' and 'administrator' are not allowed."
   validation {
     condition = !contains([
       "admin",
@@ -39,22 +58,54 @@ variable "admin_username" {
 
 variable "admin_password" {
   default     = ""
-  description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  description = "Password for the admin account. Leave empty to auto-generate a password that will be recorded in the state file. If set, the input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
-variable "service_accounts_password" {
+variable "other_accounts_password" {
   default     = ""
-  description = "Leave empty to use an auto-generated password that will be recorded in the state file. Input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  description = "Password for all the other accounts and the SharePoint passphrase. Leave empty to auto-generate a password that will be recorded in the state file. If set, the input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
 }
 
-variable "domain_fqdn" {
-  default     = "contoso.local"
-  description = "FQDN of the AD forest to create"
+variable "rdp_traffic_rule" {
+  default     = "No"
+  description = <<EOF
+    Specify if a rule in the network security groups should allow the inbound RDP traffic:
+    - "No" (default): No rule is created, RDP traffic is blocked.
+    - "*" or "Internet": RDP traffic is allowed from everywhere.
+    - CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) or an IP address (e.g. 192.168.99.0 or 2001:1234::): RDP traffic is allowed from the IP address / pattern specified.
+  EOF
+}
+
+variable "outbound_access_method" {
+  default     = "PublicIPAddress"
+  description = <<EOF
+    Select how the virtual machines connect to internet.
+    IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to be able to connect to it.
+  EOF
+  validation {
+    condition = contains([
+      "PublicIPAddress",
+      "AzureFirewallProxy"
+    ], var.outbound_access_method)
+    error_message = "Invalid value for outbound_access_method."
+  }
+}
+
+variable "enable_azure_bastion" {
+  default     = false
+  type        = bool
+  description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
+}
+
+variable "enable_hybrid_benefit_server_licenses" {
+  default     = false
+  type        = bool
+  description = "Enable the Azure Hybrid Benefit on virtual machines, to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information.'"
 }
 
 variable "time_zone" {
   default     = "Romance Standard Time"
-  description = "Time zone of the virtual machines."
+  description = "Time zone of the virtual machines. Type '[TimeZoneInfo]::GetSystemTimeZones().Id' in PowerShell to get the list."
   validation {
     condition = contains([
       "Dateline Standard Time",
@@ -204,115 +255,79 @@ variable "time_zone" {
 variable "auto_shutdown_time" {
   default     = "1900"
   type        = string
-  description = "The time at which VMs will be automatically shutdown (24h HHmm format). Set value to '9999' to NOT configure the auto shutdown."
+  description = "The time (24h HHmm format) at which the virtual machines will automatically be shutdown and deallocated. Set value to '9999' to NOT configure the auto shutdown."
   validation {
     condition     = can(regex("^\\d{4}$", var.auto_shutdown_time))
     error_message = "The auto_shutdown_time value must contain 4 digits."
   }
 }
 
-variable "number_additional_frontend" {
-  default     = 0
-  description = "Number of MinRole Front-end to add to the farm. The MinRole type can be changed later as needed."
-  validation {
-    condition     = var.number_additional_frontend >= 0 && var.number_additional_frontend <= 4
-    error_message = "The number_additional_frontend value must be between 0 and 4 included."
-  }
-}
-
-variable "rdp_traffic_allowed" {
-  default     = "No"
-  description = "Specify if RDP traffic is allowed:<br>- If 'No' (default): Firewall denies all incoming RDP traffic.<br>- If '*' or 'Internet': Firewall accepts all incoming RDP traffic from Internet.<br>- If CIDR notation (e.g. 192.168.99.0/24 or 2001:1234::/64) or IP address (e.g. 192.168.99.0 or 2001:1234::): Firewall accepts incoming RDP traffic from the IP addresses specified."
-}
-
-variable "add_public_ip_address" {
-  default     = "SharePointVMsOnly"
-  description = "Specify if a public IP address should be added."
-  validation {
-    condition = contains([
-      "Yes",
-      "No",
-      "SharePointVMsOnly"
-    ], var.add_public_ip_address)
-    error_message = "Invalid value specified for add_public_ip_address."
-  }
-}
-
-variable "enable_azure_bastion" {
-  default     = false
-  type        = bool
-  description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
-}
-
-variable "enable_hybrid_benefit_server_licenses" {
-  default     = false
-  type        = bool
-  description = "Enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information."
-}
-
 variable "vm_dc_size" {
   default     = "Standard_B2s"
-  description = "Size of the DC VM."
+  description = "Size of the DC virtual machine."
 }
 
-variable "vm_dc_storage_account_type" {
+variable "vm_dc_storage" {
   default     = "StandardSSD_LRS"
-  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
     condition = contains([
       "Standard_LRS",
       "StandardSSD_LRS",
-      "Premium_LRS",
-      "Premium_ZRS",
       "StandardSSD_ZRS",
+      "Premium_LRS",
+      "PremiumV2_LRS",
+      "Premium_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_dc_storage_account_type)
-    error_message = "Invalid storage account type value."
+    ], var.vm_dc_storage)
+    error_message = "Invalid storage type."
   }
 }
 
 variable "vm_sql_size" {
   default     = "Standard_B2ms"
-  description = "Size of the SQL VM."
+  description = "Size of the SQL virtual machine."
 }
 
-variable "vm_sql_storage_account_type" {
+variable "vm_sql_storage" {
   default     = "StandardSSD_LRS"
-  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
     condition = contains([
       "Standard_LRS",
       "StandardSSD_LRS",
-      "Premium_LRS",
-      "Premium_ZRS",
       "StandardSSD_ZRS",
+      "Premium_LRS",
+      "PremiumV2_LRS",
+      "Premium_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_sql_storage_account_type)
-    error_message = "Invalid storage account type value."
+    ], var.vm_sql_storage)
+    error_message = "Invalid storage type."
   }
 }
 
 variable "vm_sp_size" {
   default     = "Standard_B4ms"
-  description = "Size of the SP VM."
+  description = "Size of the SharePoint virtual machine(s)."
 }
 
-variable "vm_sp_storage_account_type" {
+variable "vm_sp_storage" {
   default     = "StandardSSD_LRS"
-  description = "Type of storage for the managed disks. Visit 'https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes' for more information."
+  description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
     condition = contains([
       "Standard_LRS",
       "StandardSSD_LRS",
-      "Premium_LRS",
-      "Premium_ZRS",
       "StandardSSD_ZRS",
+      "Premium_LRS",
+      "PremiumV2_LRS",
+      "Premium_ZRS",
       "UltraSSD_LRS"
-    ], var.vm_sp_storage_account_type)
-    error_message = "Invalid storage account type value."
+    ], var.vm_sp_storage)
+    error_message = "Invalid storage type."
   }
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/4.6.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/5.0.0/dsc/"
 }

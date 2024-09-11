@@ -1,15 +1,17 @@
 provider "azurerm" {
   features {}
+  subscription_id = var.subscription_id
 }
 
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
-  service_accounts_password  = var.service_accounts_password == "" ? random_password.random_service_accounts_password.result : var.service_accounts_password
-  create_rdp_rule            = lower(var.rdp_traffic_allowed) == "no" ? 0 : 1
+  other_accounts_password    = var.other_accounts_password == "" ? random_password.random_service_accounts_password.result : var.other_accounts_password
+  create_rdp_rule            = lower(var.rdp_traffic_rule) == "no" ? 0 : 1
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
+
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
@@ -63,10 +65,18 @@ locals {
       ]
     },
     {
+      "Label" : "24H2",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/6/6/a/66a0057f-79af-4307-8263-103ee75ef5c6/uber-subscription-kb5002640-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/9/0/b/90b9d2b0-0f76-408d-950f-b3b2f3c50c83/uber-subscription-kb5002629-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/6/6/a/66a0057f-79af-4307-8263-103ee75ef5c6/uber-subscription-kb5002640-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -92,7 +102,7 @@ locals {
     vm_sql_name          = "SQL"
     vm_sp_name           = "SP"
     vm_fe_name           = "FE"
-    vm_dc_image          = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
+    vm_dc_image          = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
     vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
   }
@@ -132,6 +142,15 @@ locals {
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
   }
+
+  firewall_proxy_settings = {
+    vNetAzureFirewallPrefix = "10.1.5.0/24"
+    azureFirewallIPAddress  = "10.1.5.4"
+    http_port               = 8080
+    https_port              = 8443
+  }
+
+  set_proxy_script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
 }
 
 resource "random_password" "random_admin_password" {
@@ -154,15 +173,15 @@ resource "random_password" "random_service_accounts_password" {
   min_special      = 1
 }
 
-# Create a resource group
+# Start creating resources
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
 }
 
-# Create the network security groups
+# Create the network security groups for each subnet
 resource "azurerm_network_security_group" "nsg_subnet_dc" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_dc_name}"
+  name                = "vnet-subnet-dc-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -174,7 +193,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -184,7 +203,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sql" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_sql_name}"
+  name                = "vnet-subnet-sql-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -196,7 +215,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -206,7 +225,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
 }
 
 resource "azurerm_network_security_group" "nsg_subnet_sp" {
-  name                = "NSG-Subnet-${local.vms_settings.vm_sp_name}"
+  name                = "vnet-subnet-sp-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -218,7 +237,7 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_allowed
+  source_address_prefix       = var.rdp_traffic_rule
   destination_address_prefix  = "*"
   access                      = "Allow"
   priority                    = 100
@@ -229,63 +248,66 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
 
 # Create the virtual network, 3 subnets, and associate each subnet with its Network Security Group
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${local.resourceGroupNameFormatted}-vnet"
+  name                = "vnet-${local.resourceGroupNameFormatted}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  address_space       = [local.network_settings["vNetPrivatePrefix"]]
+  address_space       = [local.network_settings.vNetPrivatePrefix]
 }
 
 # Subnet and NSG for DC
 resource "azurerm_subnet" "subnet_dc" {
-  name                 = "Subnet-${local.vms_settings.vm_dc_name}"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings["vNetPrivateSubnetDCPrefix"]]
+  name                            = "Subnet-${local.vms_settings.vm_dc_name}"
+  resource_group_name             = azurerm_resource_group.rg.name
+  virtual_network_name            = azurerm_virtual_network.vnet.name
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetDCPrefix]
+  default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetdc_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_dc_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_dc.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_dc.id
 }
 
 resource "azurerm_subnet" "subnet_sql" {
-  name                 = "Subnet-${local.vms_settings.vm_sql_name}"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings["vNetPrivateSubnetSQLPrefix"]]
+  name                            = "Subnet-${local.vms_settings.vm_sql_name}"
+  resource_group_name             = azurerm_resource_group.rg.name
+  virtual_network_name            = azurerm_virtual_network.vnet.name
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetSQLPrefix]
+  default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetsql_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_sql_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_sql.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_sql.id
 }
 
 resource "azurerm_subnet" "subnet_sp" {
-  name                 = "Subnet-${local.vms_settings.vm_sp_name}"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings["vNetPrivateSubnetSPPrefix"]]
+  name                            = "Subnet-${local.vms_settings.vm_sp_name}"
+  resource_group_name             = azurerm_resource_group.rg.name
+  virtual_network_name            = azurerm_virtual_network.vnet.name
+  address_prefixes                = [local.network_settings.vNetPrivateSubnetSPPrefix]
+  default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "nsg_subnetsp_association" {
+resource "azurerm_subnet_network_security_group_association" "subnet_sp_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet_sp.id
   network_security_group_id = azurerm_network_security_group.nsg_subnet_sp.id
 }
 
-# Create artifacts for VM DC
-resource "azurerm_public_ip" "pip_dc" {
-  count               = var.add_public_ip_address == "Yes" ? 1 : 0
-  name                = "PublicIP-${local.vms_settings.vm_dc_name}"
+// Create resources for VM DC
+resource "azurerm_public_ip" "vm_dc_pip" {
+  count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
+  name                = "vm-dc-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
-resource "azurerm_network_interface" "nic_dc_0" {
-  name                = "NIC-${local.vms_settings.vm_dc_name}-0"
+resource "azurerm_network_interface" "vm_dc_nic" {
+  name                = "vm-dc-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -293,68 +315,17 @@ resource "azurerm_network_interface" "nic_dc_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_dc.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = local.network_settings["vmDCPrivateIPAddress"]
-    public_ip_address_id          = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_dc[0].id : null
+    private_ip_address            = local.network_settings.vmDCPrivateIPAddress
+    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].id : null
   }
 }
 
-# Create artifacts for VM SQL
-resource "azurerm_public_ip" "pip_sql" {
-  count               = var.add_public_ip_address == "Yes" ? 1 : 0
-  name                = "PublicIP-${local.vms_settings.vm_sql_name}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
-  sku_tier            = "Regional"
-}
-
-resource "azurerm_network_interface" "nic_sql_0" {
-  name                = "NIC-${local.vms_settings.vm_sql_name}-0"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sql.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_address == "Yes" ? azurerm_public_ip.pip_sql[0].id : null
-  }
-}
-
-# Create artifacts for VM SP
-resource "azurerm_public_ip" "pip_sp" {
-  count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? 1 : 0
-  name                = "PublicIP-${local.vms_settings.vm_sp_name}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
-  sku_tier            = "Regional"
-}
-
-resource "azurerm_network_interface" "nic_sp_0" {
-  name                = "NIC-${local.vms_settings.vm_sp_name}-0"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  ip_configuration {
-    name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sp.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? azurerm_public_ip.pip_sp[0].id : null
-  }
-}
-
-# Create virtual machines
-resource "azurerm_windows_virtual_machine" "vm_dc" {
-  name                     = local.vms_settings.vm_dc_name
-  computer_name            = local.vms_settings.vm_dc_name
+resource "azurerm_windows_virtual_machine" "vm_dc_def" {
+  name                     = "vm-dc"
   location                 = azurerm_resource_group.rg.location
+  computer_name            = local.vms_settings.vm_dc_name
   resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [azurerm_network_interface.nic_dc_0.id]
+  network_interface_ids    = [azurerm_network_interface.vm_dc_nic.id]
   size                     = var.vm_dc_size
   admin_username           = var.admin_username
   admin_password           = local.admin_password
@@ -364,8 +335,8 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${local.vms_settings.vm_dc_name}-OS"
-    storage_account_type = var.vm_dc_storage_account_type
+    name                 = "vm-dc-disk-os"
+    storage_account_type = var.vm_dc_storage
     caching              = "ReadWrite"
   }
 
@@ -377,10 +348,37 @@ resource "azurerm_windows_virtual_machine" "vm_dc" {
   }
 }
 
-resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
+resource "azurerm_virtual_machine_run_command" "vm_dc_runcommand_setproxy" {
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name               = "runcommand-setproxy"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_dc_def.id
+  source {
+    script = local.set_proxy_script
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
+  depends_on = [azurerm_virtual_machine_run_command.vm_dc_runcommand_setproxy]
   # count                      = 0
-  name                       = "VM-${local.vms_settings.vm_dc_name}-DSC"
-  virtual_machine_id         = azurerm_windows_virtual_machine.vm_dc.id
+  name                       = "apply-dsc"
+  virtual_machine_id         = azurerm_windows_virtual_machine.vm_dc_def.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -400,7 +398,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_dsc" {
     },
     "configurationArguments": {
       "domainFQDN": "${var.domain_fqdn}",
-      "PrivateIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "PrivateIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "SPServerName": "${local.vms_settings.vm_sp_name}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
@@ -421,16 +419,16 @@ SETTINGS
       },
       "AdfsSvcCreds": {
         "UserName": "${local.deployment_settings.adfsSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
 PROTECTED_SETTINGS
 }
 
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_dc_shutdown" {
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_dc_autoshutdown" {
   count              = var.auto_shutdown_time == "9999" ? 0 : 1
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_dc.id
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_dc_def.id
   location           = azurerm_resource_group.rg.location
   enabled            = true
 
@@ -442,12 +440,37 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_dc_shutdown" {
   }
 }
 
-resource "azurerm_windows_virtual_machine" "vm_sql" {
-  name                     = local.vms_settings.vm_sql_name
-  computer_name            = local.vms_settings.vm_sql_name
+// Create resources for VM SQL
+resource "azurerm_public_ip" "vm_sql_pip" {
+  count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
+  name                = "vm-sql-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
+}
+
+resource "azurerm_network_interface" "vm_sql_nic" {
+  name                = "vm-sql-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "ipconfig1"
+    subnet_id                     = azurerm_subnet.subnet_sql.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].id : null
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "vm_sql_def" {
+  name                     = "vm-sql"
   location                 = azurerm_resource_group.rg.location
+  computer_name            = local.vms_settings.vm_sql_name
   resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [azurerm_network_interface.nic_sql_0.id]
+  network_interface_ids    = [azurerm_network_interface.vm_sql_nic.id]
   size                     = var.vm_sql_size
   admin_username           = local.deployment_settings.localAdminUserName
   admin_password           = local.admin_password
@@ -457,8 +480,8 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${local.vms_settings.vm_sql_name}-OS"
-    storage_account_type = var.vm_sql_storage_account_type
+    name                 = "vm-sql-disk-os"
+    storage_account_type = var.vm_sql_storage
     caching              = "ReadWrite"
   }
 
@@ -470,10 +493,37 @@ resource "azurerm_windows_virtual_machine" "vm_sql" {
   }
 }
 
-resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
+resource "azurerm_virtual_machine_run_command" "vm_sql_runcommand_setproxy" {
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name               = "runcommand-setproxy"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql_def.id
+  source {
+    script = local.set_proxy_script
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "vm_sql_ext_applydsc" {
+  depends_on = [azurerm_virtual_machine_run_command.vm_sql_runcommand_setproxy]
   # count                      = 0
-  name                       = "VM-${local.vms_settings.vm_sql_name}-DSC"
-  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql.id
+  name                       = "apply-dsc"
+  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql_def.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -492,7 +542,7 @@ resource "azurerm_virtual_machine_extension" "vm_sql_dsc" {
 	    "script": "${local.dsc_settings["vm_sql_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}"
     },
     "privacy": {
@@ -510,20 +560,20 @@ SETTINGS
       },
       "SqlSvcCreds": {
         "UserName": "${local.deployment_settings.sqlSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
 PROTECTED_SETTINGS
 }
 
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sql_shutdown" {
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sql_autoshutdown" {
   count              = var.auto_shutdown_time == "9999" ? 0 : 1
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql.id
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql_def.id
   location           = azurerm_resource_group.rg.location
   enabled            = true
 
@@ -535,12 +585,38 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sql_shutdown" {
   }
 }
 
-resource "azurerm_windows_virtual_machine" "vm_sp" {
-  name                     = local.vms_settings.vm_sp_name
-  computer_name            = local.vms_settings.vm_sp_name
+
+// Create resources for VM SP
+resource "azurerm_public_ip" "vm_sp_pip" {
+  count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
+  name                = "vm-sp-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
+}
+
+resource "azurerm_network_interface" "vm_sp_nic" {
+  name                = "vm-sp-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "ipconfig1"
+    subnet_id                     = azurerm_subnet.subnet_sp.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].id : null
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "vm_sp_def" {
+  name                     = "vm-sp"
   location                 = azurerm_resource_group.rg.location
+  computer_name            = local.vms_settings.vm_sp_name
   resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [azurerm_network_interface.nic_sp_0.id]
+  network_interface_ids    = [azurerm_network_interface.vm_sp_nic.id]
   size                     = var.vm_sp_size
   admin_username           = local.deployment_settings.localAdminUserName
   admin_password           = local.admin_password
@@ -550,8 +626,8 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${local.vms_settings.vm_sp_name}-OS"
-    storage_account_type = var.vm_sp_storage_account_type
+    name                 = "vm-sp-disk-os"
+    storage_account_type = var.vm_sp_storage
     caching              = "ReadWrite"
   }
 
@@ -563,21 +639,47 @@ resource "azurerm_windows_virtual_machine" "vm_sp" {
   }
 }
 
-resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increasemaxenvelopesizequota" {
-  # count                      = 0
-  name               = "VM-${local.vms_settings.vm_sp_name}-runcommand-IncreaseMaxEnvelopeSizeQuota"
+resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_setproxy" {
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name               = "runcommand-setproxy"
   location           = azurerm_resource_group.rg.location
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
+  source {
+    script = local.set_proxy_script
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
+  }
+}
+
+resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increase_dsc_quota" {
+  # count                      = 0
+  name               = "runcommand-increase-dsc-quota"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
   source {
     script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
   }
 }
 
-resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
+resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
   # count                      = 0
-  name                       = "VM-${local.vms_settings.vm_sp_name}-DSC"
-  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp.id
-  depends_on                 = [azurerm_virtual_machine_run_command.vm_sp_runcommand_increasemaxenvelopesizequota]
+  depends_on                 = [azurerm_virtual_machine_run_command.vm_sp_runcommand_setproxy, azurerm_virtual_machine_run_command.vm_sp_runcommand_increase_dsc_quota]
+  name                       = "apply-dsc"
+  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp_def.id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -596,7 +698,7 @@ resource "azurerm_virtual_machine_extension" "vm_sp_dsc" {
 	    "script": "${local.dsc_settings["vm_sp_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}",
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
@@ -622,44 +724,44 @@ SETTINGS
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.deployment_settings.spFarmUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSvcCreds": {
         "UserName": "${local.deployment_settings.spSvcUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPAppPoolCreds": {
         "UserName": "${local.deployment_settings.spAppPoolUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPADDirSyncCreds": {
         "UserName": "${local.deployment_settings.spADDirSyncUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSuperUserCreds": {
         "UserName": "${local.deployment_settings.spSuperUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPSuperReaderCreds": {
         "UserName": "${local.deployment_settings.spSuperReaderName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
 PROTECTED_SETTINGS
 }
 
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_shutdown" {
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_autoshutdown" {
   count              = var.auto_shutdown_time == "9999" ? 0 : 1
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp.id
+  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
   location           = azurerm_resource_group.rg.location
   enabled            = true
 
@@ -671,21 +773,21 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_shutdown" {
   }
 }
 
-# Can create 0 to var.number_additional_frontend FE VMs
-resource "azurerm_public_ip" "pip_fe" {
-  count               = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? var.number_additional_frontend : 0
-  name                = "PublicIP-${local.vms_settings.vm_fe_name}-${count.index}"
+// Create resources for VMs FEs
+resource "azurerm_public_ip" "vm_fe_pip" {
+  count               = var.outbound_access_method == "PublicIPAddress" ? var.front_end_servers_count : 0
+  name                = "vm-fe${count.index}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
+  allocation_method   = "Static"
+  sku                 = "Standard"
   sku_tier            = "Regional"
 }
 
-resource "azurerm_network_interface" "nic_fe_0" {
-  count               = var.number_additional_frontend
-  name                = "NIC-${local.vms_settings.vm_fe_name}-${count.index}-0"
+resource "azurerm_network_interface" "vm_fe_nic" {
+  count               = var.front_end_servers_count
+  name                = "vm-fe${count.index}-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -693,17 +795,17 @@ resource "azurerm_network_interface" "nic_fe_0" {
     name                          = "ipconfig1"
     subnet_id                     = azurerm_subnet.subnet_sp.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.add_public_ip_address == "Yes" || var.add_public_ip_address == "SharePointVMsOnly" ? element(azurerm_public_ip.pip_fe.*.id, count.index) : null
+    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? element(azurerm_public_ip.vm_fe_pip.*.id, count.index) : null
   }
 }
 
-resource "azurerm_windows_virtual_machine" "vm_fe" {
-  count                    = var.number_additional_frontend
-  name                     = "${local.vms_settings.vm_fe_name}-${count.index}"
-  computer_name            = "${local.vms_settings.vm_fe_name}-${count.index}"
+resource "azurerm_windows_virtual_machine" "vm_fe_def" {
+  count                    = var.front_end_servers_count
+  name                     = "vm-fe${count.index}"
   location                 = azurerm_resource_group.rg.location
+  computer_name            = "${local.vms_settings.vm_fe_name}-${count.index}"
   resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [element(azurerm_network_interface.nic_fe_0.*.id, count.index)]
+  network_interface_ids    = [element(azurerm_network_interface.vm_fe_nic.*.id, count.index)]
   size                     = var.vm_sp_size
   admin_username           = local.deployment_settings.localAdminUserName
   admin_password           = local.admin_password
@@ -713,8 +815,8 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   provision_vm_agent       = true
 
   os_disk {
-    name                 = "Disk-${local.vms_settings.vm_fe_name}-${count.index}-OS"
-    storage_account_type = var.vm_sp_storage_account_type
+    name                 = "vm-fe${count.index}-disk-os"
+    storage_account_type = var.vm_sp_storage
     caching              = "ReadWrite"
   }
 
@@ -726,11 +828,39 @@ resource "azurerm_windows_virtual_machine" "vm_fe" {
   }
 }
 
-resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
+resource "azurerm_virtual_machine_run_command" "vm_fe_runcommand_setproxy" {
   # count                      = 0
-  count                      = var.number_additional_frontend
-  name                       = "VM-${local.vms_settings.vm_fe_name}-${count.index}-DSC"
-  virtual_machine_id         = element(azurerm_windows_virtual_machine.vm_fe.*.id, count.index)
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? var.front_end_servers_count : 0
+  name               = "runcommand-setproxy"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
+  source {
+    script = local.set_proxy_script
+  }
+  parameter {
+    name  = "proxyIp"
+    value = local.firewall_proxy_settings.azureFirewallIPAddress
+  }
+  parameter {
+    name  = "proxyHttpPort"
+    value = local.firewall_proxy_settings.http_port
+  }
+  parameter {
+    name  = "proxyHttpsPort"
+    value = local.firewall_proxy_settings.https_port
+  }
+  parameter {
+    name  = "localDomainFqdn"
+    value = var.domain_fqdn
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
+  depends_on = [azurerm_virtual_machine_run_command.vm_fe_runcommand_setproxy]
+  # count                      = 0
+  count                      = var.front_end_servers_count
+  name                       = "apply-dsc"
+  virtual_machine_id         = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -749,7 +879,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_dsc" {
 	    "script": "${local.dsc_settings["vm_fe_script"]}"
     },
     "configurationArguments": {
-      "DNSServerIP": "${local.network_settings["vmDCPrivateIPAddress"]}",
+      "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
       "DomainFQDN": "${var.domain_fqdn}",
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
@@ -774,24 +904,24 @@ SETTINGS
       },
       "SPSetupCreds": {
         "UserName": "${local.deployment_settings.spSetupUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPFarmCreds": {
         "UserName": "${local.deployment_settings.spFarmUserName}",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       },
       "SPPassphraseCreds": {
         "UserName": "Passphrase",
-        "Password": "${local.service_accounts_password}"
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
 PROTECTED_SETTINGS
 }
 
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_shutdown" {
-  count              = var.number_additional_frontend > 0 && var.auto_shutdown_time != "9999" ? var.number_additional_frontend : 0
-  virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe.*.id, count.index)
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_autoshutdown" {
+  count              = var.front_end_servers_count > 0 && var.auto_shutdown_time != "9999" ? var.front_end_servers_count : 0
+  virtual_machine_id = element(azurerm_windows_virtual_machine.vm_fe_def.*.id, count.index)
   location           = azurerm_resource_group.rg.location
   enabled            = true
 
@@ -803,15 +933,15 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_shutdown" {
   }
 }
 
-# Configuration for Azure Bastion
-resource "azurerm_network_security_group" "nsg_subnet_bastion" {
+# Resources for Azure Bastion
+resource "azurerm_network_security_group" "bastion_subnet_nsg" {
   count               = var.enable_azure_bastion ? 1 : 0
-  name                = "NSG-Subnet-AzureBastion"
+  name                = "bastion-subnet-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_https_inbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_https_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowHttpsInBound"
   description                 = "Allow Https InBound"
@@ -824,10 +954,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_https_in
   priority                    = 100
   direction                   = "Inbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_gatewaymanager_inbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_gatewaymanager_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowGatewayManagerInBound"
   description                 = "Allow Gateway Manager InBound"
@@ -840,10 +970,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_gatewaym
   priority                    = 110
   direction                   = "Inbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_loadbalancer_inbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_loadbalancer_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowLoadBalancerInBound"
   description                 = "Allow Load Balancer InBound"
@@ -856,10 +986,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_loadbala
   priority                    = 120
   direction                   = "Inbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhostcommunication_inbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_bastionhostcommunication_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowBastionHostCommunicationInBound"
   description                 = "Allow Bastion Host Communication InBound"
@@ -872,10 +1002,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionh
   priority                    = 130
   direction                   = "Inbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_inbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_deny_all_inbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "DenyAllInBound"
   description                 = "Deny All InBound"
@@ -888,10 +1018,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_inbou
   priority                    = 1000
   direction                   = "Inbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_sshrdp_outbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_sshrdp_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowSshRdpOutBound"
   description                 = "Allow Ssh Rdp OutBound"
@@ -904,10 +1034,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_sshrdp_o
   priority                    = 100
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_azurecloud_outbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_azurecloud_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowAzureCloudCommunicationOutBound"
   description                 = "Allow Azure Cloud Communication OutBound"
@@ -920,10 +1050,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_azureclo
   priority                    = 110
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionhost_outbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_bastionhost_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowBastionHostCommunicationOutBound"
   description                 = "Allow Bastion Host Communication OutBound"
@@ -936,10 +1066,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_bastionh
   priority                    = 120
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_getsessioninformation_outbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_allow_getsessioninformation_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "AllowGetSessionInformationOutBound"
   description                 = "Allow Get Session Information OutBound"
@@ -952,10 +1082,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_allow_getsessi
   priority                    = 130
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_outbound" {
+resource "azurerm_network_security_rule" "bastion_subnet_nsg_rule_deny_all_outbound" {
   count                       = var.enable_azure_bastion ? 1 : 0
   name                        = "DenyAllOutBound"
   description                 = "Deny All OutBound"
@@ -968,10 +1098,10 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_bastion_deny_all_outbo
   priority                    = 1000
   direction                   = "Outbound"
   resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_bastion[0].name
+  network_security_group_name = azurerm_network_security_group.bastion_subnet_nsg[0].name
 }
 
-resource "azurerm_subnet" "subnet_bastion" {
+resource "azurerm_subnet" "bastion_subnet" {
   count                = var.enable_azure_bastion ? 1 : 0
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -979,15 +1109,15 @@ resource "azurerm_subnet" "subnet_bastion" {
   address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
 }
 
-# resource "azurerm_subnet_network_security_group_association" "nsg_subnet_bastion_association" {
-#   count                     = var.enable_azure_bastion ? 1 : 0
-#   subnet_id                 = azurerm_subnet.subnet_bastion[0].id
-#   network_security_group_id = azurerm_network_security_group.nsg_subnet_bastion[0].id
-# }
+resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_association" {
+  count                     = var.enable_azure_bastion ? 1 : 0
+  subnet_id                 = azurerm_subnet.bastion_subnet[0].id
+  network_security_group_id = azurerm_network_security_group.bastion_subnet_nsg[0].id
+}
 
-resource "azurerm_public_ip" "pip_bastion" {
+resource "azurerm_public_ip" "bastion_pip" {
   count               = var.enable_azure_bastion ? 1 : 0
-  name                = "PublicIP-Bastion"
+  name                = "bastion-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-bastion"
@@ -996,15 +1126,95 @@ resource "azurerm_public_ip" "pip_bastion" {
   sku_tier            = "Regional"
 }
 
-resource "azurerm_bastion_host" "Bastion" {
+resource "azurerm_bastion_host" "bastion_def" {
   count               = var.enable_azure_bastion ? 1 : 0
-  name                = "Bastion"
+  name                = "bastion"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
     name                 = "configuration"
-    subnet_id            = azurerm_subnet.subnet_bastion[0].id
-    public_ip_address_id = azurerm_public_ip.pip_bastion[0].id
+    subnet_id            = azurerm_subnet.bastion_subnet[0].id
+    public_ip_address_id = azurerm_public_ip.bastion_pip[0].id
+  }
+}
+
+# Resources for Azure Firewall
+resource "azurerm_subnet" "firewall_subnet" {
+  count                           = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name                            = "AzureFirewallSubnet"
+  resource_group_name             = azurerm_resource_group.rg.name
+  virtual_network_name            = azurerm_virtual_network.vnet.name
+  address_prefixes                = [local.firewall_proxy_settings.vNetAzureFirewallPrefix]
+  default_outbound_access_enabled = false
+}
+
+resource "azurerm_public_ip" "firewall_pip" {
+  count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name                = "firewall-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-firewall"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  sku_tier            = "Regional"
+}
+
+resource "azurerm_firewall_policy" "firewall_policy_proxy" {
+  count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name                = "firewall-policy-proxy"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  explicit_proxy {
+    enabled         = true
+    http_port       = local.firewall_proxy_settings.http_port
+    https_port      = local.firewall_proxy_settings.https_port
+    enable_pac_file = false
+  }
+}
+
+resource "azurerm_firewall_policy_rule_collection_group" "firewall_proxy_rules" {
+  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name               = "rules"
+  firewall_policy_id = azurerm_firewall_policy.firewall_policy_proxy[0].id
+  priority           = 100
+
+  application_rule_collection {
+    name     = "proxy-rules"
+    priority = 100
+    action   = "Allow"
+    rule {
+      name = "proxy-allow-all-outbound"
+      source_addresses = [
+        "*",
+      ]
+      destination_fqdns = [
+        "*",
+      ]
+      protocols {
+        port = "443"
+        type = "Https"
+      }
+      protocols {
+        port = "80"
+        type = "Http"
+      }
+    }
+  }
+}
+
+resource "azurerm_firewall" "firewall_def" {
+  count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  name                = "firewall"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku_name            = "AZFW_VNet"
+  sku_tier            = "Standard"
+  firewall_policy_id  = azurerm_firewall_policy.firewall_policy_proxy[0].id
+
+  ip_configuration {
+    name                 = "IpConf"
+    subnet_id            = azurerm_subnet.firewall_subnet[0].id
+    public_ip_address_id = azurerm_public_ip.firewall_pip[0].id
   }
 }
