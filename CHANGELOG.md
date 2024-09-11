@@ -1,6 +1,6 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [5.0] - Unreleased
+## [5.0.0] - 24-09-11
 
 ### Added
 
@@ -13,7 +13,7 @@
 
 - Template
   - [BREAKING CHANGE] Upgrade provider `azurerm` to version 4.1
-  - [BREAKING CHANGE] Minimim version required for terraform is now 1.9.5
+  - [BREAKING CHANGE] Minimim version required for terraform core is now 1.9.5
   - [BREAKING CHANGE] Rename most of the variables
   - Change the SKU of the public IP resources from Basic to Standard, due to Basic SKU being deprecated - https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance
   - Update the display name of most of the resources to be more consistent and reflect their relationship with each other
