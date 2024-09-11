@@ -55,15 +55,25 @@ There are some differences in the configuration, depending on the SharePoint ver
 ## Outbound access to internet
 
 During the provisionning, virtual machines require an outbound access to internet to be able to download and apply their configuration.  
-The outbound access method is set by the variable `outbound_access_method`, and can be either of the following:
-- `PublicIPAddress`: A [Public IP](https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/virtual-network-public-ip-address) is associated to each virtual machine's network card.
-- `AzureFirewallProxy`: An [Azure Firewall](https://azure.microsoft.com/en-us/products/azure-firewall/) service is created and the [explicit proxy](https://learn.microsoft.com/en-us/azure/firewall/explicit-proxy) configured. On the virtual machines, the proxy is set so they can connect to internet through the Azure Firewall's proxy.
-  > [!IMPORTANT]  
-  > With `AzureFirewallProxy`, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to do a remote desktop connection to it.
+The outbound access method depends on variable `outbound_access_method`:
+- `PublicIPAddress`: Virtual machines use a [Public IP](https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/virtual-network-public-ip-address), associated to their network card.
+- `AzureFirewallProxy`: Virtual machines use [Azure Firewall](https://azure.microsoft.com/en-us/products/azure-firewall/) as an [HTTP proxy](https://learn.microsoft.com/en-us/azure/firewall/explicit-proxy).
 
-## Key variables
+## Remote access
 
-### Input variables
+The remote access to the virtual machines depends on the following parameters:
+
+- Parameter `rdp_traffic_rule` specifies if a rule in the network security groups should allow the inbound RDP traffic:
+    - `No` (default): No rule is created, RDP traffic is blocked.
+    - `*` or `Internet`: RDP traffic is allowed from everywhere.
+    - CIDR notation (e.g. `192.168.99.0/24` or `2001:1234::/64`) or an IP address (e.g. `192.168.99.0` or `2001:1234::`): RDP traffic is allowed from the IP address / pattern specified.
+- parameter `enable_azure_bastion`:
+  - if `true`: Configure service [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) to allow a secure remote access to virtual machines.
+  - if `false` (default): Service [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) is not created.
+
+IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`, you have to either enable Azure Bastion, or manually add a public IP address later, to be able to connect to a virtual machine.
+
+## Input variables
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
@@ -78,32 +88,12 @@ The outbound access method is set by the variable `outbound_access_method`, and 
   - `Subscription-RTM`: Uses a fresh Windows Server 2022 image, on which SharePoint Subscription RTM is downloaded and installed.
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
-- Variables `addPublicIPAddress` and `rdp_traffic_rule`: See [this section](#remote-access-and-security) for detailed information.
 - Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/en-us/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
-### Output variables
+## Outputs
 
 The module returns multiple variables to record the logins, passwords and the public IP address of virtual machines.
-
-## Remote access and security
-
-The template creates 1 virtual network with 3 subnets (+1 if [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) is enabled), and each subnet is protected by a [Network Security Group](https://docs.microsoft.com/azure/virtual-network/network-security-groups-overview) which denies all incoming traffic by default.  
-The following variables configure how to connect to the virtual machines, and the level of network security:
-
-- Variables `admin_password` and `other_accounts_password` require a [strong password](https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-) with **at least 8 characters**, or they can be left empty to use an auto-generated password that will be recorded in the state file.
-- Variable `addPublicIPAddress`:
-  - if `"SharePointVMsOnly"` (default): Only SharePoint virtual machines get a public IP address with a DNS name and can be reached from Internet.
-  - If `"Yes"`: All virtual machines get a public IP address with a DNS name, and can be reached from Internet.
-  - if `"No"`: No public IP resource is created.
-  - The DNS name format of virtual machines is `"[resource_group_name]-[vm_name].[region].cloudapp.azure.com"` and is recorded as output in the state file.
-- Variable `rdp_traffic_rule` specifies if RDP traffic is allowed:
-  - If `"No"` (default): Firewall denies all incoming RDP traffic.
-  - If `"*"` or `"Internet"`: Firewall accepts all incoming RDP traffic from Internet (very, very much not recommended) (but hey you are the boss).
-  - If CIDR notation (e.g. `"192.168.99.0/24"` or `"2001:1234::/64"`) or IP address (e.g. `"192.168.99.0"` or `"2001:1234::"`): Firewall accepts incoming RDP traffic from the IP addresses specified.
-- Variable `enable_azure_bastion`:
-  - if `true`: Configure service [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) to allow a secure remote access to virtual machines.
-  - if `false` (default): Service [Azure Bastion](https://azure.microsoft.com/services/azure-bastion/) is not created.
 
 ## Cost of the resources deployed
 
@@ -114,7 +104,7 @@ Here is the default size and storage type per virtual machine role:
 - SQL Server: Size [Standard_B2ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (2 vCPU / 8 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
 - SharePoint: Size [Standard_B4ms](https://docs.microsoft.com/azure/virtual-machines/sizes-b-series-burstable) (4 vCPU / 16 GiB RAM) and OS disk is either a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription and 2019), or a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2016).
 
-You can visit <https://azure.com/e/c494029b0b034b8ca356c926dfd2688a> to estimate the monthly cost of the template in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
+You can visit <https://azure.com/e/ec984bb923214cd1b8ee36d7ffc54e8e> to estimate the monthly cost of the template in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
 
 ## Known issues
 
