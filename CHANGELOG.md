@@ -1,6 +1,15 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [5.2.0] - Unreleased
+
+### Changed
+
+- Template
+  - Updated the default virtual machines size to use [Basv2-series](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/b-family#basv2-series). They are part of the new generation 2, have much better performance (partly due to the strong increase of the disk throughput VS generation 1) and are significantly cheaper.
+
 ## [5.1.0] - 24-10-23
+
+### Changed
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2024 CU for SharePoint Subscription
