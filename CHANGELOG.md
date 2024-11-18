@@ -2,11 +2,19 @@
 
 ## [5.1.0] - Unreleased
 
-### Fixed
+### Changed
+
 - Template
-  - It is no longer possible to use the Windows Server's [small disk](https://azure.microsoft.com/en-us/blog/new-smaller-windows-server-iaas-image/) image for SharePoint Subscription VMs, as SharePoint updates no longer have enough free disk space to be installed.
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the November 2024 CU for SharePoint Subscription
+
+### Fixed
+
+- Template
+  - Stopped using the Windows Server's [small disk](https://azure.microsoft.com/en-us/blog/new-smaller-windows-server-iaas-image/) image for SharePoint Subscription VMs, as SharePoint updates no longer have enough free disk space to be installed.
 
 ## [5.1.0] - 24-10-23
+
+### Changed
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2024 CU for SharePoint Subscription
