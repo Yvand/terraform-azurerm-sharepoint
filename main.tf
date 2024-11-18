@@ -76,7 +76,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/b/c/d/bcd4b3cb-25d1-4946-b8fd-b99ee62848bb/uber-subscription-kb5002649-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/4/b/4/4b4d907f-2e25-4972-a7b1-dfe8d1c0fadb/uber-subscription-kb5002651-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -92,7 +92,7 @@ locals {
   }
 
   sharepoint_images_list = {
-    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
     "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
     "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
   }

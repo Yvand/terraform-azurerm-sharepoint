@@ -79,7 +79,7 @@ IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`,
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
 - Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then installs the latest cumulative update available at the time of publishing this version: October 2024 ([KB5002649](https://support.microsoft.com/help/5002649)).
+  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then installs the latest cumulative update available at the time of publishing this version: November 2024 ([KB5002651](https://support.microsoft.com/help/5002651)).
   - `Subscription-24H2`: Same as `Subscription-RTM`, then installs the [Feature Update 24H2](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 CU / [kb5002640](https://support.microsoft.com/help/5002640)).
   - `Subscription-24H1`: Same as `Subscription-RTM`, then installs the [Feature Update 24H1](https://learn.microsoft.com/en-us/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h1-release) (March 2024 CU / [KB5002564](https://support.microsoft.com/help/5002564)).
   - `Subscription-23H2`: Same as `Subscription-RTM`, then installs the [Feature Update 23H2](https://learn.microsoft.com/en-us/SharePoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h2-release) (September 2023 CU / [KB5002474](https://support.microsoft.com/help/5002474)).
@@ -108,7 +108,8 @@ You can visit <https://azure.com/e/ec984bb923214cd1b8ee36d7ffc54e8e> to estimate
 
 ## Known issues
 
-- The password for the User Profile directory synchronization connection (value of parameter `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the import fails (password decryption error).
+- The password for the User Profile directory synchronization connection (parameter `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the profile import fails (password decryption error in the logs).
+- When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey failed to download and are not installed.
 
 ## More information
 
