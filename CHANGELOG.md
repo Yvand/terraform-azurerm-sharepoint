@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [5.2.0] - Unreleased
+
+### Changed
+
+- Template
+  - Update the default size of the virtual machines to use the [Basv2 series](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/basv2-series?tabs=sizebasic). It is newer, cheaper and more performant than the [Bv1 series](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/bv1-series?tabs=sizebasic) used until now.
+
 ## [5.2.0] - 24-11-18
 
 ### Changed
