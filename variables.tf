@@ -263,7 +263,7 @@ variable "auto_shutdown_time" {
 }
 
 variable "vm_dc_size" {
-  default     = "Standard_B2s"
+  default     = "Standard_B2als_v2"
   description = "Size of the DC virtual machine."
 }
 
@@ -285,7 +285,7 @@ variable "vm_dc_storage" {
 }
 
 variable "vm_sql_size" {
-  default     = "Standard_B2ms"
+  default     = "Standard_B2as_v2"
   description = "Size of the SQL virtual machine."
 }
 
@@ -307,7 +307,7 @@ variable "vm_sql_storage" {
 }
 
 variable "vm_sp_size" {
-  default     = "Standard_B4ms"
+  default     = "Standard_B4as_v2"
   description = "Size of the SharePoint virtual machine(s)."
 }
 
@@ -329,5 +329,5 @@ variable "vm_sp_storage" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/5.2.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/5.3.0/dsc/"
 }
