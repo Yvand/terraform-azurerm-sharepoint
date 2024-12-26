@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [5.4.0] - 
+
+### Changed
+
+- Template
+  - Enabled [Trusted launch](https://learn.microsoft.com/azure/virtual-machines/trusted-launch-existing-vm), with secure boot and Virtual Trusted Platform Module, on all virtual machines except SharePoint 2016
+
 ## [5.3.0] - 24-12-11
 
 ### Changed

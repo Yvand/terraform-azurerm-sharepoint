@@ -98,13 +98,14 @@ locals {
   }
 
   vms_settings = {
-    vm_dc_name           = "DC"
-    vm_sql_name          = "SQL"
-    vm_sp_name           = "SP"
-    vm_fe_name           = "FE"
-    vm_dc_image          = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
-    vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
+    vm_dc_name                          = "DC"
+    vm_sql_name                         = "SQL"
+    vm_sp_name                          = "SP"
+    vm_fe_name                          = "FE"
+    vm_dc_image                         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
+    vm_sql_image                        = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
+    vms_sharepoint_image                = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
+    vms_sharepoint_trustedLaunchEnabled = var.sharepoint_version == "2016" ? false : true
   }
 
   dsc_settings = {
@@ -333,6 +334,8 @@ resource "azurerm_windows_virtual_machine" "vm_dc_def" {
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
+  secure_boot_enabled      = true
+  vtpm_enabled             = true
 
   os_disk {
     name                 = "vm-dc-disk-os"
@@ -478,6 +481,8 @@ resource "azurerm_windows_virtual_machine" "vm_sql_def" {
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
+  secure_boot_enabled      = true
+  vtpm_enabled             = true
 
   os_disk {
     name                 = "vm-sql-disk-os"
@@ -624,6 +629,8 @@ resource "azurerm_windows_virtual_machine" "vm_sp_def" {
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
+  secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
 
   os_disk {
     name                 = "vm-sp-disk-os"
@@ -813,6 +820,8 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
+  secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
 
   os_disk {
     name                 = "vm-fe${count.index}-disk-os"
