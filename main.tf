@@ -301,7 +301,7 @@ resource "azurerm_public_ip" "vm_dc_pip" {
   name                = "vm-dc-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -449,7 +449,7 @@ resource "azurerm_public_ip" "vm_sql_pip" {
   name                = "vm-sql-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -597,7 +597,7 @@ resource "azurerm_public_ip" "vm_sp_pip" {
   name                = "vm-sp-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -786,7 +786,7 @@ resource "azurerm_public_ip" "vm_fe_pip" {
   name                = "vm-fe${count.index}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"

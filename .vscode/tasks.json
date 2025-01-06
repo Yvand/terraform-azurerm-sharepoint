@@ -27,7 +27,7 @@
             "label": "remove resources and state file",
             "type": "shell",
             "command": "az",
-            "args": ["group", "delete", "--name", "${input:resourceGrouppName}", "--force-deletion-types", "Microsoft.Compute/virtualMachines", "--no-wait", "--yes"],
+            "args": ["group", "delete", "--name", "${input:resourceGrouppName}", "--force-deletion-types", "Microsoft.Compute/virtualMachines", "--yes"],
             "problemMatcher": [],
             "dependsOn": ["remove state file"]
         },

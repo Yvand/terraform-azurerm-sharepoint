@@ -6,6 +6,7 @@
 
 - Template
   - Enabled [Trusted launch](https://learn.microsoft.com/azure/virtual-machines/trusted-launch-existing-vm), with secure boot and Virtual Trusted Platform Module, on all virtual machines except SharePoint 2016
+  - Added variable `add_name_to_public_ip_addresses`, to decide which virtual machines should have a public name associated to their public IP address. Default value is to add it to SharePoint virtual machines only.
 
 ## [5.3.0] - 24-12-11
 
