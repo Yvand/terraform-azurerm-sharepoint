@@ -92,7 +92,7 @@ locals {
   }
 
   sharepoint_images_list = {
-    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2025-datacenter-azure-edition:latest"
     "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
     "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
   }
@@ -102,7 +102,7 @@ locals {
     vm_sql_name                         = "SQL"
     vm_sp_name                          = "SP"
     vm_fe_name                          = "FE"
-    vm_dc_image                         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
+    vm_dc_image                         = "MicrosoftWindowsServer:WindowsServer:2025-datacenter-azure-edition-smalldisk:latest"
     vm_sql_image                        = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
     vms_sharepoint_image                = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
     vms_sharepoint_trustedLaunchEnabled = var.sharepoint_version == "2016" ? false : true
@@ -333,6 +333,7 @@ resource "azurerm_windows_virtual_machine" "vm_dc_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = "AutomaticByPlatform"
   provision_vm_agent       = true
   secure_boot_enabled      = true
   vtpm_enabled             = true
@@ -628,6 +629,7 @@ resource "azurerm_windows_virtual_machine" "vm_sp_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   provision_vm_agent       = true
   secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
   vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
@@ -819,6 +821,7 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   provision_vm_agent       = true
   secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
   vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
