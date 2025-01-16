@@ -84,9 +84,7 @@ locals {
 
   network_settings = {
     vNetPrivatePrefix              = "10.1.0.0/16"
-    vNetPrivateSubnetDCPrefix      = "10.1.1.0/24"
-    vNetPrivateSubnetSQLPrefix     = "10.1.2.0/24"
-    vNetPrivateSubnetSPPrefix      = "10.1.3.0/24"
+    mainSubnetPrefix               = "10.1.1.0/24"
     vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
     vmDCPrivateIPAddress           = "10.1.1.4"
   }
@@ -180,74 +178,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-# Create the network security groups for each subnet
-resource "azurerm_network_security_group" "nsg_subnet_dc" {
-  name                = "vnet-subnet-dc-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_dc.name
-}
-
-resource "azurerm_network_security_group" "nsg_subnet_sql" {
-  name                = "vnet-subnet-sql-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_sql.name
-}
-
-resource "azurerm_network_security_group" "nsg_subnet_sp" {
-  name                = "vnet-subnet-sp-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_sp.name
-}
-
-# Create the virtual network, 3 subnets, and associate each subnet with its Network Security Group
+# Setup the network
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet-${local.resourceGroupNameFormatted}"
   location            = azurerm_resource_group.rg.location
@@ -255,44 +186,41 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = [local.network_settings.vNetPrivatePrefix]
 }
 
-# Subnet and NSG for DC
-resource "azurerm_subnet" "subnet_dc" {
+# Network security group
+resource "azurerm_network_security_group" "nsg_subnet_main" {
+  name                = "vnet-subnet-dc-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_main" {
+  count                       = local.create_rdp_rule
+  name                        = "allow-rdp-rule"
+  description                 = "Allow RDP"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "3389"
+  source_address_prefix       = var.rdp_traffic_rule
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 100
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_main.name
+}
+
+# Subnet
+resource "azurerm_subnet" "subnet_main" {
   name                            = "Subnet-${local.vms_settings.vm_dc_name}"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetDCPrefix]
+  address_prefixes                = [local.network_settings.mainSubnetPrefix]
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "subnet_dc_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_dc.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_dc.id
-}
-
-resource "azurerm_subnet" "subnet_sql" {
-  name                            = "Subnet-${local.vms_settings.vm_sql_name}"
-  resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetSQLPrefix]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet_sql_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_sql.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_sql.id
-}
-
-resource "azurerm_subnet" "subnet_sp" {
-  name                            = "Subnet-${local.vms_settings.vm_sp_name}"
-  resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetSPPrefix]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet_sp_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_sp.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_sp.id
+resource "azurerm_subnet_network_security_group_association" "subnet_main_nsg_association" {
+  subnet_id                 = azurerm_subnet.subnet_main.id
+  network_security_group_id = azurerm_network_security_group.nsg_subnet_main.id
 }
 
 // Create resources for VM DC
@@ -314,7 +242,7 @@ resource "azurerm_network_interface" "vm_dc_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_dc.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Static"
     private_ip_address            = local.network_settings.vmDCPrivateIPAddress
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].id : null
@@ -460,10 +388,11 @@ resource "azurerm_network_interface" "vm_sql_nic" {
   name                = "vm-sql-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sql.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].id : null
   }
@@ -608,10 +537,11 @@ resource "azurerm_network_interface" "vm_sp_nic" {
   name                = "vm-sp-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sp.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].id : null
   }
@@ -799,10 +729,11 @@ resource "azurerm_network_interface" "vm_fe_nic" {
   name                = "vm-fe${count.index}-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sp.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? element(azurerm_public_ip.vm_fe_pip.*.id, count.index) : null
   }
