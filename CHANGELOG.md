@@ -1,6 +1,6 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [5.4.0] - 
+## [6.0.0] - 
 
 ### Changed
 
@@ -9,6 +9,9 @@
   - Added variable `add_name_to_public_ip_addresses`, to decide which virtual machines should have a public name associated to their public IP address. Default value is to add it to SharePoint virtual machines only.
   - Upgraded the virtual machines DC and SharePoint Subscription to Windows Server 2025.
   - Changed the network configuration to use a single subnet for all the virtual machines. This avoids potential network issues due to Defender network access policies, which may block some traffic between subnets due to a JIT access configuration.
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the January 2025 CU for SharePoint Subscription
+- All DSC configurations
+  - Bumped DSC modules
 - DSC Configuration for SPSE
   - Renamed the root site to "root site"
 

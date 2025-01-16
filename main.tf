@@ -83,10 +83,9 @@ locals {
   ]
 
   network_settings = {
-    vNetPrivatePrefix              = "10.1.0.0/16"
-    mainSubnetPrefix               = "10.1.1.0/24"
-    vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
-    vmDCPrivateIPAddress           = "10.1.1.4"
+    vNetPrivatePrefix    = "10.1.0.0/16"
+    mainSubnetPrefix     = "10.1.1.0/24"
+    vmDCPrivateIPAddress = "10.1.1.4"
   }
 
   sharepoint_images_list = {
@@ -143,8 +142,8 @@ locals {
   }
 
   firewall_proxy_settings = {
-    vNetAzureFirewallPrefix = "10.1.5.0/24"
-    azureFirewallIPAddress  = "10.1.5.4"
+    vNetAzureFirewallPrefix = "10.1.3.0/24"
+    azureFirewallIPAddress  = "10.1.3.4"
     http_port               = 8080
     https_port              = 8443
   }
@@ -1049,7 +1048,7 @@ resource "azurerm_subnet" "bastion_subnet" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
+  address_prefixes     = ["10.1.2.0/24"]
 }
 
 resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_association" {

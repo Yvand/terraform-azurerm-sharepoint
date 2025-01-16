@@ -42,7 +42,7 @@ There are some differences in the configuration, depending on the SharePoint ver
 
 ### Specific to SharePoint Subscription
 
-- SharePoint virtual machines are created using the latest disk image of [Windows Server 2022 Azure Edition](https://learn.microsoft.com/windows-server/get-started/editions-comparison-windows-server-2022) available, and SharePoint binaries (install + cumulative updates) are downloaded and installed from scratch.
+- SharePoint virtual machines are created using the latest disk image of [Windows Server 2025 Azure Edition](https://learn.microsoft.com/en-us/windows-server/get-started/editions-comparison?pivots=windows-server-2025) available, and SharePoint binaries (install + cumulative updates) are downloaded and installed from scratch.
 - The HTTPS site certificate is managed by SharePoint, which has the private key and sets the binding itself in the IIS site.
 - Federated authentication with ADFS is configured using OpenID Connect.
 
