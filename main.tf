@@ -76,35 +76,33 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/c/e/c/ceca0241-efca-4484-9d76-5661806f16c4/uber-subscription-kb5002658-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/1/5/a/15a07d07-02eb-4abb-a3fc-f6ba153fed91/uber-subscription-kb5002676-fullfile-x64-glb.exe"
         }
       ]
     }
   ]
 
   network_settings = {
-    vNetPrivatePrefix              = "10.1.0.0/16"
-    vNetPrivateSubnetDCPrefix      = "10.1.1.0/24"
-    vNetPrivateSubnetSQLPrefix     = "10.1.2.0/24"
-    vNetPrivateSubnetSPPrefix      = "10.1.3.0/24"
-    vNetPrivateSubnetBastionPrefix = "10.1.4.0/24"
-    vmDCPrivateIPAddress           = "10.1.1.4"
+    vNetPrivatePrefix    = "10.1.0.0/16"
+    mainSubnetPrefix     = "10.1.1.0/24"
+    vmDCPrivateIPAddress = "10.1.1.4"
   }
 
   sharepoint_images_list = {
-    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition:latest"
+    "Subscription" = "MicrosoftWindowsServer:WindowsServer:2025-datacenter-azure-edition:latest"
     "2019"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2019gen2smalldisk:latest"
     "2016"         = "MicrosoftSharePoint:MicrosoftSharePointServer:sp2016:latest"
   }
 
   vms_settings = {
-    vm_dc_name           = "DC"
-    vm_sql_name          = "SQL"
-    vm_sp_name           = "SP"
-    vm_fe_name           = "FE"
-    vm_dc_image          = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest" #"MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image         = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
-    vms_sharepoint_image = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
+    vm_dc_name                          = "DC"
+    vm_sql_name                         = "SQL"
+    vm_sp_name                          = "SP"
+    vm_fe_name                          = "FE"
+    vm_dc_image                         = "MicrosoftWindowsServer:WindowsServer:2025-datacenter-azure-edition-smalldisk:latest"
+    vm_sql_image                        = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
+    vms_sharepoint_image                = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
+    vms_sharepoint_trustedLaunchEnabled = var.sharepoint_version == "2016" ? false : true
   }
 
   dsc_settings = {
@@ -144,8 +142,8 @@ locals {
   }
 
   firewall_proxy_settings = {
-    vNetAzureFirewallPrefix = "10.1.5.0/24"
-    azureFirewallIPAddress  = "10.1.5.4"
+    vNetAzureFirewallPrefix = "10.1.3.0/24"
+    azureFirewallIPAddress  = "10.1.3.4"
     http_port               = 8080
     https_port              = 8443
   }
@@ -179,74 +177,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-# Create the network security groups for each subnet
-resource "azurerm_network_security_group" "nsg_subnet_dc" {
-  name                = "vnet-subnet-dc-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_dc" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_dc.name
-}
-
-resource "azurerm_network_security_group" "nsg_subnet_sql" {
-  name                = "vnet-subnet-sql-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_sql" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_sql.name
-}
-
-resource "azurerm_network_security_group" "nsg_subnet_sp" {
-  name                = "vnet-subnet-sp-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_sp" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_sp.name
-}
-
-# Create the virtual network, 3 subnets, and associate each subnet with its Network Security Group
+# Setup the network
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet-${local.resourceGroupNameFormatted}"
   location            = azurerm_resource_group.rg.location
@@ -254,44 +185,41 @@ resource "azurerm_virtual_network" "vnet" {
   address_space       = [local.network_settings.vNetPrivatePrefix]
 }
 
-# Subnet and NSG for DC
-resource "azurerm_subnet" "subnet_dc" {
+# Network security group
+resource "azurerm_network_security_group" "nsg_subnet_main" {
+  name                = "vnet-subnet-dc-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_network_security_rule" "rdp_rule_subnet_main" {
+  count                       = local.create_rdp_rule
+  name                        = "allow-rdp-rule"
+  description                 = "Allow RDP"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "3389"
+  source_address_prefix       = var.rdp_traffic_rule
+  destination_address_prefix  = "*"
+  access                      = "Allow"
+  priority                    = 100
+  direction                   = "Inbound"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_main.name
+}
+
+# Subnet
+resource "azurerm_subnet" "subnet_main" {
   name                            = "Subnet-${local.vms_settings.vm_dc_name}"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetDCPrefix]
+  address_prefixes                = [local.network_settings.mainSubnetPrefix]
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_subnet_network_security_group_association" "subnet_dc_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_dc.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_dc.id
-}
-
-resource "azurerm_subnet" "subnet_sql" {
-  name                            = "Subnet-${local.vms_settings.vm_sql_name}"
-  resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetSQLPrefix]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet_sql_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_sql.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_sql.id
-}
-
-resource "azurerm_subnet" "subnet_sp" {
-  name                            = "Subnet-${local.vms_settings.vm_sp_name}"
-  resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.vNetPrivateSubnetSPPrefix]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet_sp_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_sp.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_sp.id
+resource "azurerm_subnet_network_security_group_association" "subnet_main_nsg_association" {
+  subnet_id                 = azurerm_subnet.subnet_main.id
+  network_security_group_id = azurerm_network_security_group.nsg_subnet_main.id
 }
 
 // Create resources for VM DC
@@ -300,7 +228,7 @@ resource "azurerm_public_ip" "vm_dc_pip" {
   name                = "vm-dc-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -313,7 +241,7 @@ resource "azurerm_network_interface" "vm_dc_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_dc.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Static"
     private_ip_address            = local.network_settings.vmDCPrivateIPAddress
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].id : null
@@ -332,7 +260,10 @@ resource "azurerm_windows_virtual_machine" "vm_dc_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = "AutomaticByPlatform"
   provision_vm_agent       = true
+  secure_boot_enabled      = true
+  vtpm_enabled             = true
 
   os_disk {
     name                 = "vm-dc-disk-os"
@@ -446,7 +377,7 @@ resource "azurerm_public_ip" "vm_sql_pip" {
   name                = "vm-sql-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -456,10 +387,11 @@ resource "azurerm_network_interface" "vm_sql_nic" {
   name                = "vm-sql-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sql.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].id : null
   }
@@ -478,6 +410,8 @@ resource "azurerm_windows_virtual_machine" "vm_sql_def" {
   timezone                 = var.time_zone
   enable_automatic_updates = true
   provision_vm_agent       = true
+  secure_boot_enabled      = true
+  vtpm_enabled             = true
 
   os_disk {
     name                 = "vm-sql-disk-os"
@@ -592,7 +526,7 @@ resource "azurerm_public_ip" "vm_sp_pip" {
   name                = "vm-sp-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -602,10 +536,11 @@ resource "azurerm_network_interface" "vm_sp_nic" {
   name                = "vm-sp-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sp.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].id : null
   }
@@ -623,7 +558,10 @@ resource "azurerm_windows_virtual_machine" "vm_sp_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   provision_vm_agent       = true
+  secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
 
   os_disk {
     name                 = "vm-sp-disk-os"
@@ -779,7 +717,7 @@ resource "azurerm_public_ip" "vm_fe_pip" {
   name                = "vm-fe${count.index}-pip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}"
+  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_fe_name)}-${count.index}" : null
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
@@ -790,10 +728,11 @@ resource "azurerm_network_interface" "vm_fe_nic" {
   name                = "vm-fe${count.index}-nic"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on          = [azurerm_network_interface.vm_dc_nic]
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_sp.id
+    subnet_id                     = azurerm_subnet.subnet_main.id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? element(azurerm_public_ip.vm_fe_pip.*.id, count.index) : null
   }
@@ -812,7 +751,10 @@ resource "azurerm_windows_virtual_machine" "vm_fe_def" {
   license_type             = local.license_type
   timezone                 = var.time_zone
   enable_automatic_updates = true
+  patch_mode               = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   provision_vm_agent       = true
+  secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
 
   os_disk {
     name                 = "vm-fe${count.index}-disk-os"
@@ -1106,7 +1048,7 @@ resource "azurerm_subnet" "bastion_subnet" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [local.network_settings.vNetPrivateSubnetBastionPrefix]
+  address_prefixes     = ["10.1.2.0/24"]
 }
 
 resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_association" {

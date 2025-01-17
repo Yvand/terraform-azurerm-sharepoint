@@ -91,6 +91,19 @@ variable "outbound_access_method" {
   }
 }
 
+variable "add_name_to_public_ip_addresses" {
+  default     = "SharePointVMsOnly"
+  description = "Set if the Public IP addresses of virtual machines should have a name label."
+  validation {
+    condition = contains([
+      "No",
+      "SharePointVMsOnly",
+      "Yes"
+    ], var.add_name_to_public_ip_addresses)
+    error_message = "Invalid value selected."
+  }
+}
+
 variable "enable_azure_bastion" {
   default     = false
   type        = bool
@@ -329,5 +342,5 @@ variable "vm_sp_storage" {
 }
 
 variable "_artifactsLocation" {
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/5.3.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/6.0.0/dsc/"
 }
