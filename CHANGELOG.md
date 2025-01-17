@@ -6,14 +6,20 @@
 
 - Template
   - Enabled [Trusted launch](https://learn.microsoft.com/azure/virtual-machines/trusted-launch-existing-vm), with secure boot and Virtual Trusted Platform Module, on all virtual machines except SharePoint 2016
-  - Added variable `add_name_to_public_ip_addresses`, to decide which virtual machines should have a public name associated to their public IP address. Default value is to add it to SharePoint virtual machines only.
+  - Added variable `add_name_to_public_ip_addresses`, to set which virtual machines have a public name associated to their public IP address.
+  - [BREAKING CHANGE] With the default value of new variable `add_name_to_public_ip_addresses` set to `SharePointVMsOnly`, now, only SharePoint VMs have a public name by default. Other VMs only have a public IP.
   - Upgraded the virtual machines DC and SharePoint Subscription to Windows Server 2025.
   - Changed the network configuration to use a single subnet for all the virtual machines. This avoids potential network issues due to Defender network access policies, which may block some traffic between subnets due to a JIT access configuration.
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the January 2025 CU for SharePoint Subscription
+
 - All DSC configurations
   - Bumped DSC modules
+
 - DSC Configuration for SPSE
   - Renamed the root site to "root site"
+
+- DSC Configuration for DC
+  - Set the network interface as a private connection
 
 ## [5.3.0] - 24-12-11
 
