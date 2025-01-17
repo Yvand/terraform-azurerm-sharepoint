@@ -1,8 +1,8 @@
 location                        = "France Central"
-sharepoint_version              = "2019"            #"Subscription-Latest" #"2019"
+sharepoint_version              = "Subscription-Latest" #"2019"
 outbound_access_method          = "PublicIPAddress" #"AzureFirewallProxy"
-front_end_servers_count         = 1
-enable_azure_bastion            = true
+front_end_servers_count         = 0
+enable_azure_bastion            = false
 auto_shutdown_time              = "1830"
 vm_dc_size                      = "Standard_B2als_v2"
 vm_sql_size                     = "Standard_B2as_v2"
