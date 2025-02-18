@@ -1,11 +1,17 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [6.1.0] - 25-02-14
+## [6.1.0] - Unreleased
 
 ### Changed
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2025 CU for SharePoint Subscription
+
+### Fixed
+
+- DSC Configuration for DC
+  - Removed NetConnectionProfile (to set the network interface as private) as it randomly causes errors
+
 
 ## [6.0.0] - 25-01-17
 
