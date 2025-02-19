@@ -11,7 +11,9 @@
 
 - DSC Configuration for DC
   - Removed NetConnectionProfile (to set the network interface as private) as it randomly causes errors
-
+- DSC Configuration for SPSE
+  - Install the LDAPCP solution as domain admin instead of setup account to improve the reliability
+  - Do not generate an error if creating LDAPCP configuration fails
 
 ## [6.0.0] - 25-01-17
 
