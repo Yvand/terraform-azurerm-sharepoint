@@ -109,9 +109,10 @@ You can visit <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate
 ## Known issues
 
 - The password for the User Profile directory synchronization connection (variable `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the profile import fails (password decryption error in the logs).
-- When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey failed to download and are not installed.
+- When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey fail to download and are not installed.
 - When deploying SharePoint 2016 or 2019, the trial enterprise license has already expired, so you must enter your own in the central administration, then run iisreset and restart the SPTimerV4 service on all the servers.
 - When deploying SharePoint 2016 or 2019, the installation of softwares through Chocolatey fails for most of them.
+- The first time you connect to a SharePoint Subscription VM, it restarts a few seconds later.
 
 ## More information
 
