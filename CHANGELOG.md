@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [6.2.0] - 
+
+### Fixed
+
+- Template
+  - Fixed connecting to VMs through Azure Bastion
+
 ## [6.1.0] - 25-02-24
 
 ### Changed
