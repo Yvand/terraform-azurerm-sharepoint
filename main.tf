@@ -235,9 +235,10 @@ resource "azurerm_public_ip" "vm_dc_pip" {
 }
 
 resource "azurerm_network_interface" "vm_dc_nic" {
-  name                = "vm-dc-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                           = "vm-dc-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -384,10 +385,11 @@ resource "azurerm_public_ip" "vm_sql_pip" {
 }
 
 resource "azurerm_network_interface" "vm_sql_nic" {
-  name                = "vm-sql-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  name                           = "vm-sql-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -533,10 +535,11 @@ resource "azurerm_public_ip" "vm_sp_pip" {
 }
 
 resource "azurerm_network_interface" "vm_sp_nic" {
-  name                = "vm-sp-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  name                           = "vm-sp-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -724,11 +727,12 @@ resource "azurerm_public_ip" "vm_fe_pip" {
 }
 
 resource "azurerm_network_interface" "vm_fe_nic" {
-  count               = var.front_end_servers_count
-  name                = "vm-fe${count.index}-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  count                          = var.front_end_servers_count
+  name                           = "vm-fe${count.index}-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
