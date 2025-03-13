@@ -9,6 +9,7 @@
   - Added value `Subscription-25H1` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H1
   - Enabled accelerated networking on all the virtual machines
 - DSC Configuration for all VMs
+  - Replace Write-Host with Write-Verbose, to print the log nessage in both the log file and the console
   - Updated DSC module ComputerManagementDsc to 10.0.0
 - DSC Configuration for SharePoint
   - Updated DSC module SharePointDsc to 5.6.1
