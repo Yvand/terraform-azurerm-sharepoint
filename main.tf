@@ -73,10 +73,18 @@ locals {
       ]
     },
     {
+      "Label" : "25H1",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/0b131072-7ee6-41ea-b33a-b3410865f3a0/uber-subscription-kb5002698-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/6/d/8/6d81a11e-567d-4527-bfc7-e2cbf890254b/uber-subscription-kb5002681-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/0b131072-7ee6-41ea-b33a-b3410865f3a0/uber-subscription-kb5002698-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -235,9 +243,10 @@ resource "azurerm_public_ip" "vm_dc_pip" {
 }
 
 resource "azurerm_network_interface" "vm_dc_nic" {
-  name                = "vm-dc-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                           = "vm-dc-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -384,10 +393,11 @@ resource "azurerm_public_ip" "vm_sql_pip" {
 }
 
 resource "azurerm_network_interface" "vm_sql_nic" {
-  name                = "vm-sql-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  name                           = "vm-sql-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -533,10 +543,11 @@ resource "azurerm_public_ip" "vm_sp_pip" {
 }
 
 resource "azurerm_network_interface" "vm_sp_nic" {
-  name                = "vm-sp-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  name                           = "vm-sp-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -724,11 +735,12 @@ resource "azurerm_public_ip" "vm_fe_pip" {
 }
 
 resource "azurerm_network_interface" "vm_fe_nic" {
-  count               = var.front_end_servers_count
-  name                = "vm-fe${count.index}-nic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  depends_on          = [azurerm_network_interface.vm_dc_nic]
+  count                          = var.front_end_servers_count
+  name                           = "vm-fe${count.index}-nic"
+  location                       = azurerm_resource_group.rg.location
+  resource_group_name            = azurerm_resource_group.rg.name
+  depends_on                     = [azurerm_network_interface.vm_dc_nic]
+  accelerated_networking_enabled = true
 
   ip_configuration {
     name                          = "ipconfig1"
