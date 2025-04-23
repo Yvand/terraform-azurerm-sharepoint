@@ -887,45 +887,14 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_fe_autoshutdown" {
   }
 }
 
-# Resources for Azure Bastion
-resource "azurerm_subnet" "bastion_subnet" {
-  count                = var.enable_azure_bastion ? 1 : 0
-  name                 = "AzureBastionSubnet"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.1.2.0/26"]
-}
-
-resource "azurerm_public_ip" "bastion_pip" {
-  count               = var.enable_azure_bastion ? 1 : 0
-  name                = "bastion-pip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-bastion"
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  sku_tier            = "Regional"
-}
-
+# Resources for Azure Bastion Developer SKU
 resource "azurerm_bastion_host" "bastion_def" {
   count               = var.enable_azure_bastion ? 1 : 0
   name                = "bastion"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-
-  sku                    = "Basic"
-  scale_units            = 2
-  tunneling_enabled      = false
-  ip_connect_enabled     = false
-  copy_paste_enabled     = true
-  shareable_link_enabled = false
-  kerberos_enabled       = false
-
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = azurerm_subnet.bastion_subnet[0].id
-    public_ip_address_id = azurerm_public_ip.bastion_pip[0].id
-  }
+  virtual_network_id  = azurerm_virtual_network.vnet.id
+  sku                 = "Developer"
 }
 
 # Resources for Azure Firewall
