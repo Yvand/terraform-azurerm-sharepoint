@@ -2,6 +2,8 @@
 
 ## [6.4.0] - Unreleased
 
+### Changed
+
 - Template
   - Value `enable_azure_bastion` now deploys Azure Bastion Developer, which is available at no extra cost
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2025 CU for SharePoint Subscription

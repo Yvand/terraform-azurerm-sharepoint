@@ -344,5 +344,5 @@ variable "vm_sp_storage" {
 
 variable "_artifactsLocation" {
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/6.3.0/dsc/"
+  default = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/6.4.0/dsc/"
 }
