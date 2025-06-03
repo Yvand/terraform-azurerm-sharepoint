@@ -1,6 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [6.4.0] - Unreleased
+## [6.5.0] - 25-06-03
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2025 CU for SharePoint Subscription
+
+## [6.4.0] - 25-04-23
 
 ### Changed
 
