@@ -1,6 +1,18 @@
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+    key_vault {
+      purge_soft_delete_on_destroy = true
+    }
+  }
   subscription_id = var.subscription_id
+}
+
+module "naming" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4"
 }
 
 locals {
@@ -186,11 +198,24 @@ resource "azurerm_resource_group" "rg" {
 }
 
 # Setup the network
-resource "azurerm_virtual_network" "vnet" {
-  name                = "vnet-${local.resourceGroupNameFormatted}"
+module "vnet" {
+  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version = "=0.8.1"
+
+  address_space       = [local.network_settings.vNetPrivatePrefix]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  address_space       = [local.network_settings.vNetPrivatePrefix]
+  name                = module.naming.virtual_network.name_unique
+  subnets = {
+    vm_subnet_1 = {
+      name                            = "${module.naming.subnet.name_unique}-1"
+      address_prefixes                = [local.network_settings.mainSubnetPrefix]
+      default_outbound_access_enabled = false
+      network_security_group = {
+        id = azurerm_network_security_group.nsg_subnet_main.id
+      }
+    }
+  }
 }
 
 # Network security group
@@ -216,20 +241,6 @@ resource "azurerm_network_security_rule" "rdp_rule_subnet_main" {
   network_security_group_name = azurerm_network_security_group.nsg_subnet_main.name
 }
 
-# Subnet
-resource "azurerm_subnet" "subnet_main" {
-  name                            = "Subnet-${local.vms_settings.vm_dc_name}"
-  resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
-  address_prefixes                = [local.network_settings.mainSubnetPrefix]
-  default_outbound_access_enabled = false
-}
-
-resource "azurerm_subnet_network_security_group_association" "subnet_main_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet_main.id
-  network_security_group_id = azurerm_network_security_group.nsg_subnet_main.id
-}
-
 // Create resources for VM DC
 resource "azurerm_public_ip" "vm_dc_pip" {
   count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
@@ -250,7 +261,7 @@ resource "azurerm_network_interface" "vm_dc_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_main.id
+    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
     private_ip_address_allocation = "Static"
     private_ip_address            = local.network_settings.vmDCPrivateIPAddress
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_dc_pip[0].id : null
@@ -401,7 +412,7 @@ resource "azurerm_network_interface" "vm_sql_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_main.id
+    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].id : null
   }
@@ -551,7 +562,7 @@ resource "azurerm_network_interface" "vm_sp_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_main.id
+    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].id : null
   }
@@ -744,7 +755,7 @@ resource "azurerm_network_interface" "vm_fe_nic" {
 
   ip_configuration {
     name                          = "ipconfig1"
-    subnet_id                     = azurerm_subnet.subnet_main.id
+    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? element(azurerm_public_ip.vm_fe_pip.*.id, count.index) : null
   }
@@ -893,16 +904,17 @@ resource "azurerm_bastion_host" "bastion_def" {
   name                = "bastion"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  virtual_network_id  = azurerm_virtual_network.vnet.id
+  virtual_network_id  = module.vnet.resource_id
   sku                 = "Developer"
 }
 
 # Resources for Azure Firewall
 resource "azurerm_subnet" "firewall_subnet" {
+  depends_on                      = [module.vnet]
   count                           = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   name                            = "AzureFirewallSubnet"
   resource_group_name             = azurerm_resource_group.rg.name
-  virtual_network_name            = azurerm_virtual_network.vnet.name
+  virtual_network_name            = module.vnet.name
   address_prefixes                = [local.firewall_proxy_settings.vNetAzureFirewallPrefix]
   default_outbound_access_enabled = false
 }
