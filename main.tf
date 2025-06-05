@@ -19,7 +19,7 @@ locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
   other_accounts_password    = var.other_accounts_password == "" ? random_password.random_service_accounts_password.result : var.other_accounts_password
-  create_rdp_rule            = lower(var.rdp_traffic_rule) == "no" ? 0 : 1
+  create_rdp_rule            = lower(var.rdp_traffic_rule) == "no" ? false : true
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
@@ -212,33 +212,32 @@ module "vnet" {
       address_prefixes                = [local.network_settings.mainSubnetPrefix]
       default_outbound_access_enabled = false
       network_security_group = {
-        id = azurerm_network_security_group.nsg_subnet_main.id
+        id = module.nsg_subnet_main.resource_id
       }
     }
   }
 }
 
 # Network security group
-resource "azurerm_network_security_group" "nsg_subnet_main" {
-  name                = "vnet-subnet-dc-nsg"
+module "nsg_subnet_main" {
+  source              = "Azure/avm-res-network-networksecuritygroup/azurerm"
+  name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-}
-
-resource "azurerm_network_security_rule" "rdp_rule_subnet_main" {
-  count                       = local.create_rdp_rule
-  name                        = "allow-rdp-rule"
-  description                 = "Allow RDP"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "3389"
-  source_address_prefix       = var.rdp_traffic_rule
-  destination_address_prefix  = "*"
-  access                      = "Allow"
-  priority                    = 100
-  direction                   = "Inbound"
-  resource_group_name         = azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.nsg_subnet_main.name
+  security_rules = local.create_rdp_rule ? {
+    allow_rdp_rule = {
+      name                       = "allow-rdp-rule"
+      description                = "Allow RDP"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "3389"
+      source_address_prefix      = var.rdp_traffic_rule
+      destination_address_prefix = "*"
+      access                     = "Allow"
+      priority                   = 100
+      direction                  = "Inbound"
+    }
+  } : {}
 }
 
 // Create resources for VM DC
