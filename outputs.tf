@@ -8,10 +8,10 @@ output "resource_group_id" {
   description = "Id of the resource group created"
 }
 
-output "vm_dc_dns" {
-  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? azurerm_public_ip.vm_dc_pip[0].fqdn : azurerm_public_ip.vm_dc_pip[0].ip_address : null
-  description = "Public DNS name of the DC VM"
-}
+# output "vm_dc_dns" {
+#   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? azurerm_public_ip.vm_dc_pip[0].fqdn : azurerm_public_ip.vm_dc_pip[0].ip_address : null
+#   description = "Public DNS name of the DC VM"
+# }
 
 output "vm_sql_dns" {
   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? azurerm_public_ip.vm_sql_pip[0].fqdn : azurerm_public_ip.vm_sql_pip[0].ip_address : null
