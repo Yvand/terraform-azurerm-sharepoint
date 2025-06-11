@@ -294,17 +294,15 @@ module "nsg_subnet_main" {
 
 // Create resources for VM DC
 module "vm_dc_def" {
-  source  = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version = "0.19.3"
-
-  location                   = azurerm_resource_group.rg.location
+  source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
   name                       = "vm-dc"
+  location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   computer_name              = local.vms_settings.vm_dc_name
-  license_type               = local.license_type
   os_type                    = "Windows"
   sku_size                   = var.vm_dc_size
   timezone                   = var.time_zone
+  license_type               = local.license_type
   enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
   encryption_at_host_enabled = false
@@ -313,15 +311,15 @@ module "vm_dc_def" {
   vtpm_enabled               = true
   network_interfaces = {
     network_interface_1 = {
-      name = module.naming.network_interface.name_unique
+      name = "vm-dc-${module.naming.network_interface.name_unique}"
       ip_configurations = {
         ip_configuration_1 = {
-          name                          = "${module.naming.network_interface.name_unique}-ipconfig1"
+          name                          = "vm-dc-${module.naming.network_interface.name_unique}-ipconfig1"
           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
           private_ip_address_allocation = "Static"
           private_ip_address            = local.network_settings.vmDCPrivateIPAddress
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
-          public_ip_address_name        = module.naming.public_ip.name_unique
+          public_ip_address_name        = "vm-dc-${module.naming.public_ip.name_unique}"
         }
       }
     }
@@ -334,6 +332,7 @@ module "vm_dc_def" {
     }
   }
   os_disk = {
+    name                 = "vm-dc-${module.naming.os_disk.name_unique}"
     storage_account_type = var.vm_dc_storage
     caching              = "ReadWrite"
   }
@@ -357,8 +356,7 @@ module "vm_dc_def" {
 }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
-  depends_on = [module.vm_dc_def]
-  # count                      = 0
+  depends_on                 = [module.vm_dc_def]
   name                       = "apply-dsc"
   virtual_machine_id         = module.vm_dc_def.resource_id
   publisher                  = "Microsoft.Powershell"
@@ -409,92 +407,71 @@ PROTECTED_SETTINGS
 }
 
 // Create resources for VM SQL
-resource "azurerm_public_ip" "vm_sql_pip" {
-  count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
-  name                = "vm-sql-pip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}" : null
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  sku_tier            = "Regional"
-}
-
-resource "azurerm_network_interface" "vm_sql_nic" {
-  name                           = "vm-sql-nic"
-  location                       = azurerm_resource_group.rg.location
-  resource_group_name            = azurerm_resource_group.rg.name
-  accelerated_networking_enabled = true
-
-  ip_configuration {
-    name                          = "ipconfig1"
-    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sql_pip[0].id : null
+module "vm_sql_def" {
+  source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  name                       = "vm-sql"
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
+  computer_name              = local.vms_settings.vm_sql_name
+  os_type                    = "Windows"
+  sku_size                   = var.vm_sql_size
+  timezone                   = var.time_zone
+  license_type               = local.license_type
+  enable_telemetry           = local.enable_telemetry
+  zone                       = random_integer.zone_index.result
+  encryption_at_host_enabled = false
+  patch_mode                 = "AutomaticByOS"
+  secure_boot_enabled        = true
+  vtpm_enabled               = true
+  network_interfaces = {
+    network_interface_1 = {
+      name = "vm-sql-${module.naming.network_interface.name_unique}"
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "vm-sql-${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          private_ip_address_allocation = "Dynamic"
+          create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
+          public_ip_address_name        = "vm-sql-${module.naming.public_ip.name_unique}"
+        }
+      }
+    }
   }
-}
-
-resource "azurerm_windows_virtual_machine" "vm_sql_def" {
-  name                     = "vm-sql"
-  location                 = azurerm_resource_group.rg.location
-  computer_name            = local.vms_settings.vm_sql_name
-  resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [azurerm_network_interface.vm_sql_nic.id]
-  size                     = var.vm_sql_size
-  admin_username           = local.deployment_settings.localAdminUserName
-  admin_password           = local.admin_password
-  license_type             = local.license_type
-  timezone                 = var.time_zone
-  enable_automatic_updates = true
-  provision_vm_agent       = true
-  secure_boot_enabled      = true
-  vtpm_enabled             = true
-
-  os_disk {
-    name                 = "vm-sql-disk-os"
+  account_credentials = {
+    admin_credentials = {
+      username                           = local.deployment_settings.localAdminUserName
+      password                           = local.admin_password
+      generate_admin_password_or_ssh_key = false
+    }
+  }
+  os_disk = {
+    name                 = "vm-sql-${module.naming.os_disk.name_unique}"
     storage_account_type = var.vm_sql_storage
     caching              = "ReadWrite"
   }
-
-  source_image_reference {
+  source_image_reference = {
     publisher = split(":", local.vms_settings.vm_sql_image)[0]
     offer     = split(":", local.vms_settings.vm_sql_image)[1]
     sku       = split(":", local.vms_settings.vm_sql_image)[2]
     version   = split(":", local.vms_settings.vm_sql_image)[3]
   }
-}
-
-resource "azurerm_virtual_machine_run_command" "vm_sql_runcommand_setproxy" {
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name               = "runcommand-setproxy"
-  location           = azurerm_resource_group.rg.location
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql_def.id
-  source {
-    script = local.set_proxy_script
+  shutdown_schedules = {
+    auto_shutdown = {
+      daily_recurrence_time = var.auto_shutdown_time
+      enabled               = var.auto_shutdown_time == "9999" ? false : true
+      timezone              = var.time_zone
+      notification_settings = {
+        enabled = false
+      }
+    }
   }
-  parameter {
-    name  = "proxyIp"
-    value = local.firewall_proxy_settings.azureFirewallIPAddress
-  }
-  parameter {
-    name  = "proxyHttpPort"
-    value = local.firewall_proxy_settings.http_port
-  }
-  parameter {
-    name  = "proxyHttpsPort"
-    value = local.firewall_proxy_settings.https_port
-  }
-  parameter {
-    name  = "localDomainFqdn"
-    value = var.domain_fqdn
-  }
+  run_commands = local.run_commands_virtual_machines
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sql_ext_applydsc" {
-  depends_on = [azurerm_virtual_machine_run_command.vm_sql_runcommand_setproxy]
-  # count                      = 0
+  depends_on                 = [module.vm_sql_def]
   name                       = "apply-dsc"
-  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sql_def.id
+  virtual_machine_id         = module.vm_sql_def.resource_id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -541,21 +518,6 @@ SETTINGS
   }
 PROTECTED_SETTINGS
 }
-
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sql_autoshutdown" {
-  count              = var.auto_shutdown_time == "9999" ? 0 : 1
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sql_def.id
-  location           = azurerm_resource_group.rg.location
-  enabled            = true
-
-  daily_recurrence_time = var.auto_shutdown_time
-  timezone              = var.time_zone
-
-  notification_settings {
-    enabled = false
-  }
-}
-
 
 // Create resources for VM SP
 resource "azurerm_public_ip" "vm_sp_pip" {
