@@ -320,10 +320,12 @@ module "vm_dc_def" {
           private_ip_address            = local.network_settings.vmDCPrivateIPAddress
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-dc-${module.naming.public_ip.name_unique}"
-          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
         }
       }
     }
+  }
+  public_ip_configuration_details = {
+    domain_name_label = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_dc_name)}" : null
   }
   account_credentials = {
     admin_credentials = {
@@ -434,10 +436,12 @@ module "vm_sql_def" {
           private_ip_address_allocation = "Dynamic"
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-sql-${module.naming.public_ip.name_unique}"
-          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
         }
       }
     }
+  }
+  public_ip_configuration_details = {
+    domain_name_label = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sql_name)}" : null
   }
   account_credentials = {
     admin_credentials = {
@@ -548,10 +552,12 @@ module "vm_sp_def" {
           private_ip_address_allocation = "Dynamic"
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-sp-${module.naming.public_ip.name_unique}"
-          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
         }
       }
     }
+  }
+  public_ip_configuration_details = {
+    domain_name_label = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
   }
   account_credentials = {
     admin_credentials = {
