@@ -803,13 +803,16 @@ PROTECTED_SETTINGS
 }
 
 # Resources for Azure Bastion Developer SKU
-resource "azurerm_bastion_host" "bastion_def" {
+module "azure_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0
-  name                = "bastion"
+  source              = "Azure/avm-res-network-bastionhost/azurerm"
+  name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   virtual_network_id  = module.vnet.resource_id
   sku                 = "Developer"
+  enable_telemetry    = local.enable_telemetry
+  zones               = []
 }
 
 # Resources for Azure Firewall
