@@ -320,6 +320,7 @@ module "vm_dc_def" {
           private_ip_address            = local.network_settings.vmDCPrivateIPAddress
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-dc-${module.naming.public_ip.name_unique}"
+          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
         }
       }
     }
@@ -332,7 +333,7 @@ module "vm_dc_def" {
     }
   }
   os_disk = {
-    name                 = "vm-dc-${module.naming.os_disk.name_unique}"
+    name                 = "vm-dc-${module.naming.managed_disk.name_unique}"
     storage_account_type = var.vm_dc_storage
     caching              = "ReadWrite"
   }
@@ -433,6 +434,7 @@ module "vm_sql_def" {
           private_ip_address_allocation = "Dynamic"
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-sql-${module.naming.public_ip.name_unique}"
+          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
         }
       }
     }
@@ -445,7 +447,7 @@ module "vm_sql_def" {
     }
   }
   os_disk = {
-    name                 = "vm-sql-${module.naming.os_disk.name_unique}"
+    name                 = "vm-sql-${module.naming.managed_disk.name_unique}"
     storage_account_type = var.vm_sql_storage
     caching              = "ReadWrite"
   }
@@ -520,103 +522,72 @@ PROTECTED_SETTINGS
 }
 
 // Create resources for VM SP
-resource "azurerm_public_ip" "vm_sp_pip" {
-  count               = var.outbound_access_method == "PublicIPAddress" ? 1 : 0
-  name                = "vm-sp-pip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  sku_tier            = "Regional"
-}
-
-resource "azurerm_network_interface" "vm_sp_nic" {
-  name                           = "vm-sp-nic"
-  location                       = azurerm_resource_group.rg.location
-  resource_group_name            = azurerm_resource_group.rg.name
-  accelerated_networking_enabled = true
-
-  ip_configuration {
-    name                          = "ipconfig1"
-    subnet_id                     = module.vnet.subnets["vm_subnet_1"].resource_id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.outbound_access_method == "PublicIPAddress" ? azurerm_public_ip.vm_sp_pip[0].id : null
+module "vm_sp_def" {
+  source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  name                       = "vm-sp"
+  location                   = azurerm_resource_group.rg.location
+  resource_group_name        = azurerm_resource_group.rg.name
+  computer_name              = local.vms_settings.vm_sp_name
+  os_type                    = "Windows"
+  sku_size                   = var.vm_sp_size
+  timezone                   = var.time_zone
+  license_type               = local.license_type
+  enable_telemetry           = local.enable_telemetry
+  zone                       = random_integer.zone_index.result
+  encryption_at_host_enabled = false
+  patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
+  secure_boot_enabled        = true
+  vtpm_enabled               = true
+  network_interfaces = {
+    network_interface_1 = {
+      name = "vm-sp-${module.naming.network_interface.name_unique}"
+      ip_configurations = {
+        ip_configuration_1 = {
+          name                          = "vm-sp-${module.naming.network_interface.name_unique}-ipconfig1"
+          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          private_ip_address_allocation = "Dynamic"
+          create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
+          public_ip_address_name        = "vm-sp-${module.naming.public_ip.name_unique}"
+          domain_name_label             = var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? "${lower(local.resourceGroupNameFormatted)}-${lower(local.vms_settings.vm_sp_name)}" : null
+        }
+      }
+    }
   }
-}
-
-resource "azurerm_windows_virtual_machine" "vm_sp_def" {
-  name                     = "vm-sp"
-  location                 = azurerm_resource_group.rg.location
-  computer_name            = local.vms_settings.vm_sp_name
-  resource_group_name      = azurerm_resource_group.rg.name
-  network_interface_ids    = [azurerm_network_interface.vm_sp_nic.id]
-  size                     = var.vm_sp_size
-  admin_username           = local.deployment_settings.localAdminUserName
-  admin_password           = local.admin_password
-  license_type             = local.license_type
-  timezone                 = var.time_zone
-  enable_automatic_updates = true
-  patch_mode               = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
-  provision_vm_agent       = true
-  secure_boot_enabled      = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
-  vtpm_enabled             = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
-
-  os_disk {
-    name                 = "vm-sp-disk-os"
-    storage_account_type = var.vm_sp_storage
+  account_credentials = {
+    admin_credentials = {
+      username                           = local.deployment_settings.localAdminUserName
+      password                           = local.admin_password
+      generate_admin_password_or_ssh_key = false
+    }
+  }
+  os_disk = {
+    name                 = "vm-sp-${module.naming.managed_disk.name_unique}"
+    storage_account_type = var.vm_sql_storage
     caching              = "ReadWrite"
   }
-
-  source_image_reference {
+  source_image_reference = {
     publisher = split(":", local.vms_settings.vms_sharepoint_image)[0]
     offer     = split(":", local.vms_settings.vms_sharepoint_image)[1]
     sku       = split(":", local.vms_settings.vms_sharepoint_image)[2]
     version   = split(":", local.vms_settings.vms_sharepoint_image)[3]
   }
-}
-
-resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_setproxy" {
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name               = "runcommand-setproxy"
-  location           = azurerm_resource_group.rg.location
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
-  source {
-    script = local.set_proxy_script
+  shutdown_schedules = {
+    auto_shutdown = {
+      daily_recurrence_time = var.auto_shutdown_time
+      enabled               = var.auto_shutdown_time == "9999" ? false : true
+      timezone              = var.time_zone
+      notification_settings = {
+        enabled = false
+      }
+    }
   }
-  parameter {
-    name  = "proxyIp"
-    value = local.firewall_proxy_settings.azureFirewallIPAddress
-  }
-  parameter {
-    name  = "proxyHttpPort"
-    value = local.firewall_proxy_settings.http_port
-  }
-  parameter {
-    name  = "proxyHttpsPort"
-    value = local.firewall_proxy_settings.https_port
-  }
-  parameter {
-    name  = "localDomainFqdn"
-    value = var.domain_fqdn
-  }
-}
-
-resource "azurerm_virtual_machine_run_command" "vm_sp_runcommand_increase_dsc_quota" {
-  # count                      = 0
-  name               = "runcommand-increase-dsc-quota"
-  location           = azurerm_resource_group.rg.location
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
-  source {
-    script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
-  }
+  run_commands = local.run_commands_virtual_machines
 }
 
 resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
-  # count                      = 0
-  depends_on                 = [azurerm_virtual_machine_run_command.vm_sp_runcommand_setproxy, azurerm_virtual_machine_run_command.vm_sp_runcommand_increase_dsc_quota]
+  depends_on                 = [module.vm_sp_def]
   name                       = "apply-dsc"
-  virtual_machine_id         = azurerm_windows_virtual_machine.vm_sp_def.id
+  virtual_machine_id         = module.vm_sp_def.resource_id
   publisher                  = "Microsoft.Powershell"
   type                       = "DSC"
   type_handler_version       = "2.9"
@@ -694,20 +665,6 @@ SETTINGS
     }
   }
 PROTECTED_SETTINGS
-}
-
-resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_sp_autoshutdown" {
-  count              = var.auto_shutdown_time == "9999" ? 0 : 1
-  virtual_machine_id = azurerm_windows_virtual_machine.vm_sp_def.id
-  location           = azurerm_resource_group.rg.location
-  enabled            = true
-
-  daily_recurrence_time = var.auto_shutdown_time
-  timezone              = var.time_zone
-
-  notification_settings {
-    enabled = false
-  }
 }
 
 // Create resources for VMs FEs

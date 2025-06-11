@@ -8,18 +8,18 @@ output "resource_group_id" {
   description = "Id of the resource group created"
 }
 
-# output "vm_dc_dns" {
-#   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? azurerm_public_ip.vm_dc_pip[0].fqdn : azurerm_public_ip.vm_dc_pip[0].ip_address : null
-#   description = "Public DNS name of the DC VM"
-# }
+output "vm_dc_dns" {
+  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
+  description = "Public DNS name of the DC VM"
+}
 
-# output "vm_sql_dns" {
-#   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? azurerm_public_ip.vm_sql_pip[0].fqdn : azurerm_public_ip.vm_sql_pip[0].ip_address : null
-#   description = "Public DNS name of the SQL VM"
-# }
+output "vm_sql_dns" {
+  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
+  description = "Public DNS name of the SQL VM"
+}
 
 output "vm_sp_dns" {
-  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? azurerm_public_ip.vm_sp_pip[0].fqdn : azurerm_public_ip.vm_sp_pip[0].ip_address : null
+  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
   description = "Public DNS name of the SP VM"
 }
 
@@ -39,7 +39,7 @@ output "domain_admin_account_format_bastion" {
 }
 
 output "local_admin_username" {
-  value       = azurerm_windows_virtual_machine.vm_sp_def.admin_username
+  value       = module.vm_sp_def.admin_username
   description = "Local (not domain) administrator of SQL and SharePoint VMs"
 }
 
