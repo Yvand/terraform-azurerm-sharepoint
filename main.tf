@@ -181,6 +181,46 @@ locals {
   }
 
   set_proxy_script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+
+  run_command_set_proxy = {
+    location = azurerm_resource_group.rg.location
+    name     = "runcommand-setproxy"
+    script_source = {
+      script = local.set_proxy_script
+    }
+    parameters = {
+      param1 = {
+        name  = "proxyIp"
+        value = local.firewall_proxy_settings.azureFirewallIPAddress
+      }
+      param2 = {
+        name  = "proxyHttpPort"
+        value = local.firewall_proxy_settings.http_port
+      }
+      param3 = {
+        name  = "proxyHttpsPort"
+        value = local.firewall_proxy_settings.https_port
+      }
+      param4 = {
+        name  = "localDomainFqdn"
+        value = var.domain_fqdn
+      }
+    }
+  }
+
+  run_command_increase_dsc_quota = {
+    location = azurerm_resource_group.rg.location
+    name     = "runcommand-increase-dsc-quota"
+    script_source = {
+      script = "Set-Item -Path WSMan:\\localhost\\MaxEnvelopeSizeKb -Value 2048"
+    }
+  }
+
+  # run_commands_virtual_machines = var.outbound_access_method == "AzureFirewallProxy" ? { run_command_set_proxy = local.run_command_set_proxy } : {}
+  run_commands_virtual_machines = merge(
+    var.outbound_access_method == "AzureFirewallProxy" ? { run_command_set_proxy = local.run_command_set_proxy } : {},
+    { run_command_increase_dsc_quota = local.run_command_increase_dsc_quota }
+  )
 }
 
 resource "random_password" "random_admin_password" {
@@ -253,40 +293,17 @@ module "nsg_subnet_main" {
 }
 
 // Create resources for VM DC
-resource "azurerm_virtual_machine_run_command" "vm_dc_runcommand_setproxy" {
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name               = "runcommand-setproxy"
-  location           = azurerm_resource_group.rg.location
-  virtual_machine_id = module.vm_dc_def.resource_id
-  source {
-    script = local.set_proxy_script
-  }
-  parameter {
-    name  = "proxyIp"
-    value = local.firewall_proxy_settings.azureFirewallIPAddress
-  }
-  parameter {
-    name  = "proxyHttpPort"
-    value = local.firewall_proxy_settings.http_port
-  }
-  parameter {
-    name  = "proxyHttpsPort"
-    value = local.firewall_proxy_settings.https_port
-  }
-  parameter {
-    name  = "localDomainFqdn"
-    value = var.domain_fqdn
-  }
-}
-
 module "vm_dc_def" {
-  source = "Azure/avm-res-compute-virtualmachine/azurerm"
+  source  = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version = "0.19.3"
 
   location                   = azurerm_resource_group.rg.location
   name                       = "vm-dc"
   resource_group_name        = azurerm_resource_group.rg.name
   computer_name              = local.vms_settings.vm_dc_name
   license_type               = local.license_type
+  os_type                    = "Windows"
+  sku_size                   = var.vm_dc_size
   timezone                   = var.time_zone
   enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
@@ -316,13 +333,10 @@ module "vm_dc_def" {
       generate_admin_password_or_ssh_key = false
     }
   }
-
   os_disk = {
     storage_account_type = var.vm_dc_storage
     caching              = "ReadWrite"
   }
-  os_type  = "Windows"
-  sku_size = var.vm_dc_size
   source_image_reference = {
     publisher = split(":", local.vms_settings.vm_dc_image)[0]
     offer     = split(":", local.vms_settings.vm_dc_image)[1]
@@ -339,52 +353,11 @@ module "vm_dc_def" {
       }
     }
   }
-
-  # run_commands = {
-  #   test_example_simple = {
-  #     location = azurerm_resource_group.this_rg.location
-  #     name     = "example-command"
-  #     script_source = {
-  #       script = "echo %param1%"
-  #     }
-  #     parameters = {
-  #       param1 = {
-  #         name  = "param1"
-  #         value = "value1"
-  #       }
-  #     }
-  #   }
-
-  #   test_example_from_storage = {
-  #     location        = azurerm_resource_group.this_rg.location
-  #     name            = "example-command-storage"
-  #     error_blob_uri  = azurerm_storage_blob.example3.url
-  #     output_blob_uri = azurerm_storage_blob.example2.url
-  #     script_source = {
-  #       script_uri = azurerm_storage_blob.example1.url
-  #     }
-
-  #     error_blob_managed_identity = {
-  #       client_id = azurerm_user_assigned_identity.example_identity.client_id
-  #     }
-
-  #     output_blob_managed_identity = {
-  #       client_id = azurerm_user_assigned_identity.example_identity.client_id
-  #     }
-
-  #   }
-  # }
-  # run_commands_secrets = {
-  #   test_example_from_storage = {
-  #     run_as_password = random_password.admin_password.result
-  #     run_as_user     = "azureuser"
-  #   }
-  # }
-
+  run_commands = local.run_commands_virtual_machines
 }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
-  depends_on = [azurerm_virtual_machine_run_command.vm_dc_runcommand_setproxy]
+  depends_on = [module.vm_dc_def]
   # count                      = 0
   name                       = "apply-dsc"
   virtual_machine_id         = module.vm_dc_def.resource_id
@@ -434,20 +407,6 @@ SETTINGS
   }
 PROTECTED_SETTINGS
 }
-
-# resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_dc_autoshutdown" {
-#   count              = var.auto_shutdown_time == "9999" ? 0 : 1
-#   virtual_machine_id = azurerm_windows_virtual_machine.vm_dc_def.id
-#   location           = azurerm_resource_group.rg.location
-#   enabled            = true
-
-#   daily_recurrence_time = var.auto_shutdown_time
-#   timezone              = var.time_zone
-
-#   notification_settings {
-#     enabled = false
-#   }
-# }
 
 // Create resources for VM SQL
 resource "azurerm_public_ip" "vm_sql_pip" {
