@@ -24,7 +24,7 @@ output "vm_sp_dns" {
 }
 
 output "vm_fe_dns" {
-  value       = azurerm_public_ip.vm_fe_pip[*].fqdn
+  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? module.vm_fe_def[*].public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_fe_def[*].public_ips["network_interface_1-ip_configuration_1"].ip_address : null
   description = "Public DNS names of the FE VMs"
 }
 
