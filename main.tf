@@ -817,8 +817,8 @@ module "azure_bastion" {
 
 # Resources for Azure Firewall
 resource "azurerm_subnet" "firewall_subnet" {
-  depends_on                      = [module.vnet]
   count                           = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  depends_on                      = [module.vnet]
   name                            = "AzureFirewallSubnet"
   resource_group_name             = azurerm_resource_group.rg.name
   virtual_network_name            = module.vnet.name
@@ -826,23 +826,24 @@ resource "azurerm_subnet" "firewall_subnet" {
   default_outbound_access_enabled = false
 }
 
-resource "azurerm_public_ip" "firewall_pip" {
+module "firewall_pip" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name                = "firewall-pip"
+  source              = "Azure/avm-res-network-publicipaddress/azurerm"
+  name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  domain_name_label   = "${lower(local.resourceGroupNameFormatted)}-firewall"
   allocation_method   = "Static"
   sku                 = "Standard"
-  sku_tier            = "Regional"
 }
 
-resource "azurerm_firewall_policy" "firewall_policy_proxy" {
+module "firewall_policy" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name                = "firewall-policy-proxy"
-  resource_group_name = azurerm_resource_group.rg.name
+  source              = "Azure/avm-res-network-firewallpolicy/azurerm"
+  name                = module.naming.firewall_policy.name_unique
   location            = azurerm_resource_group.rg.location
-  explicit_proxy {
+  resource_group_name = azurerm_resource_group.rg.name
+  enable_telemetry    = local.enable_telemetry
+  firewall_policy_explicit_proxy = {
     enabled         = true
     http_port       = local.firewall_proxy_settings.http_port
     https_port      = local.firewall_proxy_settings.https_port
@@ -850,48 +851,54 @@ resource "azurerm_firewall_policy" "firewall_policy_proxy" {
   }
 }
 
-resource "azurerm_firewall_policy_rule_collection_group" "firewall_proxy_rules" {
-  count              = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name               = "rules"
-  firewall_policy_id = azurerm_firewall_policy.firewall_policy_proxy[0].id
-  priority           = 100
-
-  application_rule_collection {
-    name     = "proxy-rules"
-    priority = 100
-    action   = "Allow"
-    rule {
-      name = "proxy-allow-all-outbound"
-      source_addresses = [
-        "*",
+module "rule_collection_group" {
+  count                                                    = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  source                                                   = "Azure/avm-res-network-firewallpolicy/azurerm//modules/rule_collection_groups"
+  firewall_policy_rule_collection_group_firewall_policy_id = module.firewall_policy[0].resource_id
+  firewall_policy_rule_collection_group_name               = "NetworkRuleCollectionGroup"
+  firewall_policy_rule_collection_group_priority           = 100
+  firewall_policy_rule_collection_group_application_rule_collection = [
+    {
+      action   = "Allow"
+      name     = "ProxyApplicationRules"
+      priority = 100
+      rule = [
+        {
+          name              = "proxy-allow-all-outbound"
+          description       = "Allow all outbound traffic"
+          destination_fqdns = ["*"]
+          source_addresses  = ["*"]
+          protocols = [
+            {
+              port = 443
+              type = "Https"
+            },
+            {
+              port = 80
+              type = "Http"
+            }
+          ]
+        }
       ]
-      destination_fqdns = [
-        "*",
-      ]
-      protocols {
-        port = "443"
-        type = "Https"
-      }
-      protocols {
-        port = "80"
-        type = "Http"
-      }
     }
-  }
+  ]
 }
 
-resource "azurerm_firewall" "firewall_def" {
+module "firewall_def" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
-  name                = "firewall"
+  source              = "Azure/avm-res-network-azurefirewall/azurerm"
+  name                = module.naming.firewall.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  sku_name            = "AZFW_VNet"
-  sku_tier            = "Standard"
-  firewall_policy_id  = azurerm_firewall_policy.firewall_policy_proxy[0].id
-
-  ip_configuration {
-    name                 = "IpConf"
-    subnet_id            = azurerm_subnet.firewall_subnet[0].id
-    public_ip_address_id = azurerm_public_ip.firewall_pip[0].id
-  }
+  enable_telemetry    = local.enable_telemetry
+  firewall_sku_name   = "AZFW_VNet"
+  firewall_sku_tier   = "Standard"
+  firewall_policy_id  = module.firewall_policy[0].resource_id
+  firewall_ip_configuration = [
+    {
+      name                 = "ipconfig1"
+      subnet_id            = azurerm_subnet.firewall_subnet[0].id
+      public_ip_address_id = module.firewall_pip[0].resource_id
+    }
+  ]
 }
