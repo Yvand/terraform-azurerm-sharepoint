@@ -16,7 +16,7 @@ module "sharepoint" {
   source                 = "Yvand/sharepoint/azurerm"
   location               = "France Central"
   subscription_id        = "<your_azure_subscription_id>"
-  resource_group_name    = "<resource_group_name>"
+  resource_group_name    = "<your_resource_group_name>"
   sharepoint_version     = "Subscription-Latest"
   admin_username         = "yvand"
   admin_password         = "<password>"

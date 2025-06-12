@@ -1,17 +1,24 @@
 variable "subscription_id" {
-  description = "ID of the Azure subscription where the resources will be deployed."
+  type        = string
+  description = "The ID of the Azure subscription where the resources will be deployed."
+  nullable    = false
 }
 
 variable "resource_group_name" {
-  description = "Name of the Azure resource group."
+  type        = string
+  description = "The resource group name of the resource group where the resources will be deployed."
+  nullable    = false
 }
 
 variable "location" {
-  default     = "France Central"
-  description = "Location for all the resources."
+  type        = string
+  default     = "francecentral"
+  description = "The Azure region where this and supporting resources should be deployed."
+  nullable    = false
 }
 
 variable "sharepoint_version" {
+  type        = string
   default     = "Subscription-Latest"
   description = "Version of SharePoint farm to create."
   validation {
@@ -32,11 +39,13 @@ variable "sharepoint_version" {
 }
 
 variable "domain_fqdn" {
+  type        = string
   default     = "contoso.local"
   description = "FQDN of the Active Directory forest."
 }
 
 variable "front_end_servers_count" {
+  type        = number
   default     = 0
   description = "Number of servers with MinRole Front-end to add to the farm."
   validation {
@@ -46,6 +55,7 @@ variable "front_end_servers_count" {
 }
 
 variable "admin_username" {
+  type        = string
   default     = "yvand"
   description = "Name of the Active Directory and SharePoint administrator. 'admin' and 'administrator' are not allowed."
   validation {
@@ -58,16 +68,21 @@ variable "admin_username" {
 }
 
 variable "admin_password" {
+  type        = string
   default     = ""
   description = "Password for the admin account. Leave empty to auto-generate a password that will be recorded in the state file. If set, the input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  nullable    = true
 }
 
 variable "other_accounts_password" {
+  type        = string
   default     = ""
   description = "Password for all the other accounts and the SharePoint passphrase. Leave empty to auto-generate a password that will be recorded in the state file. If set, the input must meet password complexity requirements as documented in https://learn.microsoft.com/azure/virtual-machines/windows/faq#what-are-the-password-requirements-when-creating-a-vm-"
+  nullable    = true
 }
 
 variable "rdp_traffic_rule" {
+  type        = string
   default     = "No"
   description = <<EOF
     Specify if a rule in the network security groups should allow the inbound RDP traffic:
@@ -78,6 +93,7 @@ variable "rdp_traffic_rule" {
 }
 
 variable "outbound_access_method" {
+  type        = string
   default     = "PublicIPAddress"
   description = <<EOF
     Select how the virtual machines connect to internet.
@@ -93,6 +109,7 @@ variable "outbound_access_method" {
 }
 
 variable "add_name_to_public_ip_addresses" {
+  type        = string
   default     = "SharePointVMsOnly"
   description = "Set if the Public IP addresses of virtual machines should have a name label."
   validation {
@@ -106,18 +123,19 @@ variable "add_name_to_public_ip_addresses" {
 }
 
 variable "enable_azure_bastion" {
-  default     = false
   type        = bool
-  description = "Specify if Azure Bastion should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
+  default     = false
+  description = "Specify if Azure Bastion Developer should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
 }
 
 variable "enable_hybrid_benefit_server_licenses" {
-  default     = false
   type        = bool
+  default     = false
   description = "Enable the Azure Hybrid Benefit on virtual machines, to use your on-premises Windows Server licenses and reduce cost. See https://docs.microsoft.com/en-us/azure/virtual-machines/windows/hybrid-use-benefit-licensing for more information.'"
 }
 
 variable "time_zone" {
+  type        = string
   default     = "Romance Standard Time"
   description = "Time zone of the virtual machines. Type '[TimeZoneInfo]::GetSystemTimeZones().Id' in PowerShell to get the list."
   validation {
@@ -267,8 +285,8 @@ variable "time_zone" {
 }
 
 variable "auto_shutdown_time" {
-  default     = "1900"
   type        = string
+  default     = "1900"
   description = "The time (24h HHmm format) at which the virtual machines will automatically be shutdown and deallocated. Set value to '9999' to NOT configure the auto shutdown."
   validation {
     condition     = can(regex("^\\d{4}$", var.auto_shutdown_time))
@@ -277,11 +295,13 @@ variable "auto_shutdown_time" {
 }
 
 variable "vm_dc_size" {
+  type        = string
   default     = "Standard_B2als_v2"
   description = "Size of the DC virtual machine."
 }
 
 variable "vm_dc_storage" {
+  type        = string
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
@@ -299,11 +319,13 @@ variable "vm_dc_storage" {
 }
 
 variable "vm_sql_size" {
+  type        = string
   default     = "Standard_B2as_v2"
   description = "Size of the SQL virtual machine."
 }
 
 variable "vm_sql_storage" {
+  type        = string
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
@@ -321,11 +343,13 @@ variable "vm_sql_storage" {
 }
 
 variable "vm_sp_size" {
+  type        = string
   default     = "Standard_B4as_v2"
   description = "Size of the SharePoint virtual machine(s)."
 }
 
 variable "vm_sp_storage" {
+  type        = string
   default     = "StandardSSD_LRS"
   description = "Type of storage for the managed disk. Visit https://docs.microsoft.com/en-us/rest/api/compute/disks/list#diskstorageaccounttypes for more information."
   validation {
@@ -343,6 +367,7 @@ variable "vm_sp_storage" {
 }
 
 variable "_artifactsLocation" {
+  type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
   default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/6.6.0/dsc/"
 }
