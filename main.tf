@@ -10,22 +10,6 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "~> 0.4"
-}
-
-module "regions" {
-  source                    = "Azure/avm-utl-regions/azurerm"
-  version                   = "0.5.0"
-  availability_zones_filter = true
-}
-
-resource "random_integer" "zone_index" {
-  max = length(module.regions.regions_by_name[var.location].zones)
-  min = 1
-}
-
 locals {
   resourceGroupNameFormatted = replace(replace(replace(replace(var.resource_group_name, ".", "-"), "(", "-"), ")", "-"), "_", "-")
   admin_password             = var.admin_password == "" ? random_password.random_admin_password.result : var.admin_password
@@ -216,11 +200,26 @@ locals {
     }
   }
 
-  # run_commands_virtual_machines = var.outbound_access_method == "AzureFirewallProxy" ? { run_command_set_proxy = local.run_command_set_proxy } : {}
   run_commands_virtual_machines = merge(
     var.outbound_access_method == "AzureFirewallProxy" ? { run_command_set_proxy = local.run_command_set_proxy } : {},
     { run_command_increase_dsc_quota = local.run_command_increase_dsc_quota }
   )
+}
+
+module "naming" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4"
+}
+
+module "regions" {
+  source                    = "Azure/avm-utl-regions/azurerm"
+  version                   = "~> 0.5"
+  availability_zones_filter = true
+}
+
+resource "random_integer" "zone_index" {
+  max = length(module.regions.regions_by_name[var.location].zones)
+  min = 1
 }
 
 resource "random_password" "random_admin_password" {
@@ -251,9 +250,8 @@ resource "azurerm_resource_group" "rg" {
 
 # Setup the network
 module "vnet" {
-  source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "=0.8.1"
-
+  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version             = "~> 0.8"
   address_space       = [local.network_settings.vNetPrivatePrefix]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -273,6 +271,7 @@ module "vnet" {
 # Network security group
 module "nsg_subnet_main" {
   source              = "Azure/avm-res-network-networksecuritygroup/azurerm"
+  version             = "~> 0.4"
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -295,6 +294,7 @@ module "nsg_subnet_main" {
 // Create resources for VM DC
 module "vm_dc_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version                    = "~> 0.19"
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -347,8 +347,8 @@ module "vm_dc_def" {
   }
   shutdown_schedules = {
     auto_shutdown = {
-      daily_recurrence_time = var.auto_shutdown_time
       enabled               = var.auto_shutdown_time == "9999" ? false : true
+      daily_recurrence_time = var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -412,6 +412,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SQL
 module "vm_sql_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version                    = "~> 0.19"
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -463,8 +464,8 @@ module "vm_sql_def" {
   }
   shutdown_schedules = {
     auto_shutdown = {
-      daily_recurrence_time = var.auto_shutdown_time
       enabled               = var.auto_shutdown_time == "9999" ? false : true
+      daily_recurrence_time = var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -528,6 +529,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SP
 module "vm_sp_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version                    = "~> 0.19"
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -579,8 +581,8 @@ module "vm_sp_def" {
   }
   shutdown_schedules = {
     auto_shutdown = {
-      daily_recurrence_time = var.auto_shutdown_time
       enabled               = var.auto_shutdown_time == "9999" ? false : true
+      daily_recurrence_time = var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -677,6 +679,7 @@ PROTECTED_SETTINGS
 module "vm_fe_def" {
   count                      = var.front_end_servers_count
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
+  version                    = "~> 0.19"
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -728,8 +731,8 @@ module "vm_fe_def" {
   }
   shutdown_schedules = {
     auto_shutdown = {
-      daily_recurrence_time = var.auto_shutdown_time
       enabled               = var.auto_shutdown_time == "9999" ? false : true
+      daily_recurrence_time = var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -806,6 +809,7 @@ PROTECTED_SETTINGS
 module "azure_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0
   source              = "Azure/avm-res-network-bastionhost/azurerm"
+  version             = "~> 0.7"
   name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -829,6 +833,7 @@ resource "azurerm_subnet" "firewall_subnet" {
 module "firewall_pip" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-publicipaddress/azurerm"
+  version             = "~> 0.2"
   name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -839,6 +844,7 @@ module "firewall_pip" {
 module "firewall_policy" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-firewallpolicy/azurerm"
+  version             = "~> 0.3"
   name                = module.naming.firewall_policy.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -854,6 +860,7 @@ module "firewall_policy" {
 module "rule_collection_group" {
   count                                                    = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source                                                   = "Azure/avm-res-network-firewallpolicy/azurerm//modules/rule_collection_groups"
+  version                                                  = "~> 0.3"
   firewall_policy_rule_collection_group_firewall_policy_id = module.firewall_policy[0].resource_id
   firewall_policy_rule_collection_group_name               = "NetworkRuleCollectionGroup"
   firewall_policy_rule_collection_group_priority           = 100
@@ -887,6 +894,7 @@ module "rule_collection_group" {
 module "firewall_def" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-azurefirewall/azurerm"
+  version             = "~> 0.3"
   name                = module.naming.firewall.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
