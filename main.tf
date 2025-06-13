@@ -3,6 +3,13 @@ provider "azurerm" {
     resource_group {
       prevent_deletion_if_contains_resources = false
     }
+    virtual_machine {
+      skip_shutdown_and_force_delete = true
+      delete_os_disk_on_deletion     = true
+    }
+    template_deployment {
+      delete_nested_items_during_deletion = true
+    }
     key_vault {
       purge_soft_delete_on_destroy = true
     }
@@ -19,7 +26,6 @@ locals {
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
   enable_telemetry           = true
-
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
@@ -252,10 +258,11 @@ resource "azurerm_resource_group" "rg" {
 module "vnet" {
   source              = "Azure/avm-res-network-virtualnetwork/azurerm"
   version             = "~> 0.8"
-  address_space       = [local.network_settings.vNetPrivatePrefix]
+  name                = module.naming.virtual_network.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  name                = module.naming.virtual_network.name_unique
+  enable_telemetry    = local.enable_telemetry
+  address_space       = [local.network_settings.vNetPrivatePrefix]
   subnets = {
     vm_subnet_1 = {
       name                            = "${module.naming.subnet.name_unique}-1"
@@ -275,6 +282,7 @@ module "nsg_subnet_main" {
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  enable_telemetry    = local.enable_telemetry
   security_rules = local.create_rdp_rule ? {
     allow_rdp_rule = {
       name                       = "allow-rdp-rule"
@@ -298,12 +306,12 @@ module "vm_dc_def" {
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_dc_name
   os_type                    = "Windows"
   sku_size                   = var.vm_dc_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByPlatform"
@@ -348,7 +356,7 @@ module "vm_dc_def" {
   shutdown_schedules = {
     auto_shutdown = {
       enabled               = var.auto_shutdown_time == "9999" ? false : true
-      daily_recurrence_time = var.auto_shutdown_time
+      daily_recurrence_time = var.auto_shutdown_time == "9999" ? "0000" : var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -416,12 +424,12 @@ module "vm_sql_def" {
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_sql_name
   os_type                    = "Windows"
   sku_size                   = var.vm_sql_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByOS"
@@ -465,7 +473,7 @@ module "vm_sql_def" {
   shutdown_schedules = {
     auto_shutdown = {
       enabled               = var.auto_shutdown_time == "9999" ? false : true
-      daily_recurrence_time = var.auto_shutdown_time
+      daily_recurrence_time = var.auto_shutdown_time == "9999" ? "0000" : var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -533,17 +541,17 @@ module "vm_sp_def" {
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_sp_name
   os_type                    = "Windows"
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
-  secure_boot_enabled        = true
-  vtpm_enabled               = true
+  secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled               = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
   network_interfaces = {
     network_interface_1 = {
       name = "vm-sp-${module.naming.network_interface.name_unique}"
@@ -582,7 +590,7 @@ module "vm_sp_def" {
   shutdown_schedules = {
     auto_shutdown = {
       enabled               = var.auto_shutdown_time == "9999" ? false : true
-      daily_recurrence_time = var.auto_shutdown_time
+      daily_recurrence_time = var.auto_shutdown_time == "9999" ? "0000" : var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -683,17 +691,17 @@ module "vm_fe_def" {
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  enable_telemetry           = local.enable_telemetry
   computer_name              = "${local.vms_settings.vm_fe_name}-${count.index}"
   os_type                    = "Windows"
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  enable_telemetry           = local.enable_telemetry
   zone                       = random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
-  secure_boot_enabled        = true
-  vtpm_enabled               = true
+  secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
+  vtpm_enabled               = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
   network_interfaces = {
     network_interface_1 = {
       name = "vm-fe${count.index}-${module.naming.network_interface.name_unique}"
@@ -732,7 +740,7 @@ module "vm_fe_def" {
   shutdown_schedules = {
     auto_shutdown = {
       enabled               = var.auto_shutdown_time == "9999" ? false : true
-      daily_recurrence_time = var.auto_shutdown_time
+      daily_recurrence_time = var.auto_shutdown_time == "9999" ? "0000" : var.auto_shutdown_time
       timezone              = var.time_zone
       notification_settings = {
         enabled = false
@@ -813,9 +821,9 @@ module "azure_bastion" {
   name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  enable_telemetry    = local.enable_telemetry
   virtual_network_id  = module.vnet.resource_id
   sku                 = "Developer"
-  enable_telemetry    = local.enable_telemetry
   zones               = []
 }
 
@@ -837,6 +845,7 @@ module "firewall_pip" {
   name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  enable_telemetry    = local.enable_telemetry
   allocation_method   = "Static"
   sku                 = "Standard"
 }
