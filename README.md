@@ -14,7 +14,7 @@ SharePoint machines have additional fine-tuning to make them immediately usable 
 ```terraform
 module "sharepoint" {
   source                 = "Yvand/sharepoint/azurerm"
-  location               = "France Central"
+  location               = "francecentral"
   subscription_id        = "<your_azure_subscription_id>"
   resource_group_name    = "<your_resource_group_name>"
   sharepoint_version     = "Subscription-Latest"
