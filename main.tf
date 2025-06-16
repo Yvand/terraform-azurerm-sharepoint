@@ -163,6 +163,17 @@ locals {
     spSuperReaderName             = "spSuperReader"
   }
 
+  default_tags = {
+    source            = "https://registry.terraform.io/modules/Yvand/sharepoint/"
+    createdOn         = formatdate("YYYY-MM-DD", timestamp())
+    sharePointVersion = var.sharepoint_version
+  }
+
+  tags = merge(
+    var.add_default_tags ? local.default_tags : {},
+    var.tags != null ? var.tags : {}
+  )
+
   firewall_proxy_settings = {
     vNetAzureFirewallPrefix = "10.1.3.0/24"
     azureFirewallIPAddress  = "10.1.3.4"
@@ -252,6 +263,7 @@ resource "random_password" "random_service_accounts_password" {
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
+  tags     = local.tags
 }
 
 # Setup the network
@@ -261,6 +273,7 @@ module "vnet" {
   name                = module.naming.virtual_network.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   address_space       = [local.network_settings.vNetPrivatePrefix]
   subnets = {
@@ -282,6 +295,7 @@ module "nsg_subnet_main" {
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   security_rules = local.create_rdp_rule ? {
     allow_rdp_rule = {
@@ -306,6 +320,7 @@ module "vm_dc_def" {
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  tags                       = local.tags
   enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_dc_name
   os_type                    = "Windows"
@@ -424,6 +439,7 @@ module "vm_sql_def" {
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  tags                       = local.tags
   enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_sql_name
   os_type                    = "Windows"
@@ -541,6 +557,7 @@ module "vm_sp_def" {
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  tags                       = local.tags
   enable_telemetry           = local.enable_telemetry
   computer_name              = local.vms_settings.vm_sp_name
   os_type                    = "Windows"
@@ -691,6 +708,7 @@ module "vm_fe_def" {
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
+  tags                       = local.tags
   enable_telemetry           = local.enable_telemetry
   computer_name              = "${local.vms_settings.vm_fe_name}-${count.index}"
   os_type                    = "Windows"
@@ -821,6 +839,7 @@ module "azure_bastion" {
   name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   virtual_network_id  = module.vnet.resource_id
   sku                 = "Developer"
@@ -845,6 +864,7 @@ module "firewall_pip" {
   name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -857,6 +877,7 @@ module "firewall_policy" {
   name                = module.naming.firewall_policy.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   firewall_policy_explicit_proxy = {
     enabled         = true
@@ -907,6 +928,7 @@ module "firewall_def" {
   name                = module.naming.firewall.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   firewall_sku_name   = "AZFW_VNet"
   firewall_sku_tier   = "Standard"

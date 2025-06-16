@@ -1,5 +1,18 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.0.0] - Unreleased
+
+### Changed
+
+- Template
+  - [Major change]: Create all the resources using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), instead of creating them manually
+
+### Added
+
+- Template
+  - Add variable `tags`, to specify tags to apply to all the resources
+  - Add variable `add_default_tags`, to specify if default tags will be added to the resources. Default tags are: 'source', 'createdOn', and 'sharePointVersion'
+
 ## [6.6.0] - 25-06-12
 
 ### Changed

@@ -371,3 +371,15 @@ variable "_artifactsLocation" {
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
   default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/6.6.0/dsc/"
 }
+
+variable "tags" {
+  description = "Tags to apply on the resources."
+  type        = map(string)
+  nullable    = true
+}
+
+variable "add_default_tags" {
+  type        = bool
+  default     = false
+  description = "If true, the default tags will be added to the resources. Default tags are: 'source', 'createdOn', and 'sharePointVersion'."
+}
