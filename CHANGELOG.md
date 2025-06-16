@@ -1,11 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [7.0.0] - Unreleased
+## [7.0.0] - 2025-06-16
 
 ### Changed
 
 - Template
   - [Major change]: Create all the resources using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), instead of creating them manually
+  - The provider `hashicorp/azurerm` must now be at least version 4.32
 
 ### Added
 
