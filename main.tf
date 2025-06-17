@@ -164,7 +164,7 @@ locals {
   }
 
   default_tags = {
-    source            = "https://registry.terraform.io/modules/Yvand/sharepoint/"
+    source            = "terraform:Yvand/sharepoint/azurerm"
     createdOn         = formatdate("YYYY-MM-DD", timestamp())
     sharePointVersion = var.sharepoint_version
   }
