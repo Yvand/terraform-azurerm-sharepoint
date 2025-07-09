@@ -373,8 +373,9 @@ variable "_artifactsLocation" {
 }
 
 variable "tags" {
-  description = "Tags to apply on the resources."
   type        = map(string)
+  default     = {}
+  description = "Tags to apply on the resources."
   nullable    = true
 }
 

@@ -98,7 +98,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/159a5f7c-b1ac-46c1-83e8-5949090ddcb1/uber-subscription-kb5002736-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/45736d53-3c43-430b-b6ee-7f56c29afff6/uber-subscription-kb5002751-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -327,7 +327,7 @@ module "vm_dc_def" {
   sku_size                   = var.vm_dc_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = 1 #random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByPlatform"
   secure_boot_enabled        = true
@@ -446,7 +446,7 @@ module "vm_sql_def" {
   sku_size                   = var.vm_sql_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = 1 #random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByOS"
   secure_boot_enabled        = true
@@ -564,7 +564,7 @@ module "vm_sp_def" {
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = 1 #random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
@@ -715,7 +715,7 @@ module "vm_fe_def" {
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = 1 #random_integer.zone_index.result
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
