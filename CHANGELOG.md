@@ -1,5 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.2.0] - 2025-07-24
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2025 CU for SharePoint Subscription WITH the [security update for the vulnerability CVE-2025-53770](https://msrc.microsoft.com/blog/2025/07/customer-guidance-for-sharepoint-vulnerability-cve-2025-53770/) ([KB5002768](https://support.microsoft.com/help/5002768))
+
+
 ## [7.1.0] - 2025-07-09
 
 ### Changed
