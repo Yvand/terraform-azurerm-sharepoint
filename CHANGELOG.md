@@ -1,5 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.4.0] - 
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2025 CU for SharePoint Subscription
+  - Added value `Subscription-25H2` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H2 (September 2025 CU)
+
 ## [7.3.0] - 2025-08-13
 
 ### Changed
