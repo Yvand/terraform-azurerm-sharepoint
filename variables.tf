@@ -385,3 +385,10 @@ variable "add_default_tags" {
   default     = false
   description = "If true, the default tags will be added to the resources. Default tags are: 'source', 'createdOn', and 'sharePointVersion'."
 }
+
+variable "vm_availability_zone" {
+  type        = number
+  default     = 0
+  description = "The Availability Zone which the Virtual Machines should be allocated in. If deploying to a region without zones, set this value to null. If the zone should be assigned randomly, set this value to 0."
+  nullable    = true
+}

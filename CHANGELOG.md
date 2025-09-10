@@ -8,6 +8,11 @@
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2025 CU for SharePoint Subscription
   - Added value `Subscription-25H2` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H2 (September 2025 CU)
 
+### Added
+
+- Template
+  - Add variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in
+
 ## [7.3.0] - 2025-08-13
 
 ### Changed
