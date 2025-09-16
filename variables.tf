@@ -388,7 +388,7 @@ variable "add_default_tags" {
 
 variable "vm_availability_zone" {
   type        = number
-  default     = 0
+  default     = null
   description = "The Availability Zone which the Virtual Machines should be allocated in. If deploying to a region without zones, set this value to null. If the zone should be assigned randomly, set this value to 0."
   nullable    = true
 }

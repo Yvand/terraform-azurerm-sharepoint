@@ -6,12 +6,21 @@
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2025 CU for SharePoint Subscription
-  - Added value `Subscription-25H2` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H2 (September 2025 CU)
+  - Add value `Subscription-25H2` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H2 (September 2025 CU)
+
+- All DSC configurations
+  - Updated DSC module **DnsServerDsc** from 3.0.0 to 3.0.1
+
+### Fixed
+
+- DSC Configuration for SharePoint SE
+  - Move script that runs GrantOwnerAccessToDatabaseAccount after all databases were created, and before any WFE server may connect to the farm, to fix SQL permission errors thrown at step 10/10 in SPS config wizard, when installing a CU post-provisionning
+  - Remove the explicit TLS settings, not required with Windows Server 2025
 
 ### Added
 
 - Template
-  - Add variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in
+  - Add variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in. Its default value is null: VMs are not deployed in an Availability Zone
 
 ## [7.3.0] - 2025-08-13
 
