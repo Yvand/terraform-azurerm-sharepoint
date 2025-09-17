@@ -1,7 +1,7 @@
 location                        = "francecentral"
 sharepoint_version              = "Subscription-Latest" #"2019"
 outbound_access_method          = "PublicIPAddress"     #"AzureFirewallProxy"
-front_end_servers_count         = 1
+front_end_servers_count         = 0
 enable_azure_bastion            = true
 auto_shutdown_time              = "1830"
 vm_dc_size                      = "Standard_B2als_v2"

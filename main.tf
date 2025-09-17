@@ -238,9 +238,8 @@ module "naming" {
 }
 
 module "regions" {
-  source                    = "Azure/avm-utl-regions/azurerm"
-  version                   = "~> 0.5"
-  availability_zones_filter = true
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "~> 0.5"
 }
 
 resource "random_integer" "zone_index" {

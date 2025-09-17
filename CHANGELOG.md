@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.4.1] - 2025-09-17
+
+### Fixed
+
+- Template
+  - Remove deprecated parameter `availability_zones_filter` in module avm-utl-regions
+
 ## [7.4.0] - 2025-09-17
 
 ### Changed
