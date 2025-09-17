@@ -20,7 +20,7 @@
 ### Added
 
 - Template
-  - Add variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in. Its default value is null: VMs are not deployed in an Availability Zone
+  - Add optional variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in. Its default value is null: VMs are not deployed in an Availability Zone
 
 ## [7.3.0] - 2025-08-13
 
