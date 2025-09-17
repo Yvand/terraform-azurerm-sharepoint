@@ -23,6 +23,7 @@ locals {
   other_accounts_password    = var.other_accounts_password == "" ? random_password.random_service_accounts_password.result : var.other_accounts_password
   create_rdp_rule            = lower(var.rdp_traffic_rule) == "no" ? false : true
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
+  vm_availability_zone       = var.vm_availability_zone == null ? null : var.vm_availability_zone == 0 ? random_integer.zone_index.result : var.vm_availability_zone
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
   enable_telemetry           = true
@@ -95,10 +96,18 @@ locals {
       ]
     },
     {
+      "Label" : "25H2",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/0ae39b29-890d-428c-bcee-c93eeca2053b/uber-subscription-kb5002784-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/fb4b4f82-bff0-4e14-9171-15c034549bb1/uber-subscription-kb5002773-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/0ae39b29-890d-428c-bcee-c93eeca2053b/uber-subscription-kb5002784-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -327,7 +336,7 @@ module "vm_dc_def" {
   sku_size                   = var.vm_dc_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = local.vm_availability_zone
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByPlatform"
   secure_boot_enabled        = true
@@ -446,7 +455,7 @@ module "vm_sql_def" {
   sku_size                   = var.vm_sql_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = local.vm_availability_zone
   encryption_at_host_enabled = false
   patch_mode                 = "AutomaticByOS"
   secure_boot_enabled        = true
@@ -564,7 +573,7 @@ module "vm_sp_def" {
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = local.vm_availability_zone
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled
@@ -715,7 +724,7 @@ module "vm_fe_def" {
   sku_size                   = var.vm_sp_size
   timezone                   = var.time_zone
   license_type               = local.license_type
-  zone                       = random_integer.zone_index.result
+  zone                       = local.vm_availability_zone
   encryption_at_host_enabled = false
   patch_mode                 = local.is_sharepoint_subscription ? "AutomaticByPlatform" : "AutomaticByOS"
   secure_boot_enabled        = local.vms_settings.vms_sharepoint_trustedLaunchEnabled

@@ -24,6 +24,7 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-25H2",
       "Subscription-25H1",
       "Subscription-24H2",
       "Subscription-24H1",
@@ -369,7 +370,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/7.3.0/dsc/"
+  default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/7.4.0/dsc/"
 }
 
 variable "tags" {
@@ -383,4 +384,11 @@ variable "add_default_tags" {
   type        = bool
   default     = false
   description = "If true, the default tags will be added to the resources. Default tags are: 'source', 'createdOn', and 'sharePointVersion'."
+}
+
+variable "vm_availability_zone" {
+  type        = number
+  default     = null
+  description = "The Availability Zone which the Virtual Machines should be allocated in. If deploying to a region without zones, set this value to null. If the zone should be assigned randomly, set this value to 0."
+  nullable    = true
 }
