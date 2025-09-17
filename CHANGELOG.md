@@ -1,6 +1,6 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [7.4.0] - 
+## [7.4.0] - 2025-09-17
 
 ### Changed
 
