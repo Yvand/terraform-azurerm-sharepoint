@@ -107,7 +107,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/0ae39b29-890d-428c-bcee-c93eeca2053b/uber-subscription-kb5002784-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/24cab3c4-d5bb-486a-a57b-3e8fb5bd5e28/uber-subscription-kb5002786-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -276,14 +276,14 @@ resource "azurerm_resource_group" "rg" {
 
 # Setup the network
 module "vnet" {
-  source              = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version             = "~> 0.8"
-  name                = module.naming.virtual_network.name_unique
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tags                = local.tags
-  enable_telemetry    = local.enable_telemetry
-  address_space       = [local.network_settings.vNetPrivatePrefix]
+  source           = "Azure/avm-res-network-virtualnetwork/azurerm"
+  version          = "0.14.1"
+  name             = module.naming.virtual_network.name_unique
+  location         = azurerm_resource_group.rg.location
+  parent_id        = azurerm_resource_group.rg.id
+  tags             = local.tags
+  enable_telemetry = local.enable_telemetry
+  address_space    = [local.network_settings.vNetPrivatePrefix]
   subnets = {
     vm_subnet_1 = {
       name                            = "${module.naming.subnet.name_unique}-1"
@@ -299,7 +299,7 @@ module "vnet" {
 # Network security group
 module "nsg_subnet_main" {
   source              = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version             = "~> 0.4"
+  version             = "0.5.0"
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -324,7 +324,7 @@ module "nsg_subnet_main" {
 // Create resources for VM DC
 module "vm_dc_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "~> 0.19"
+  version                    = "0.19.3"
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -443,7 +443,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SQL
 module "vm_sql_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "~> 0.19"
+  version                    = "0.19.3"
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -561,7 +561,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SP
 module "vm_sp_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "~> 0.19"
+  version                    = "0.19.3"
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -712,7 +712,7 @@ PROTECTED_SETTINGS
 module "vm_fe_def" {
   count                      = var.front_end_servers_count
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "~> 0.19"
+  version                    = "0.19.3"
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -843,7 +843,7 @@ PROTECTED_SETTINGS
 module "azure_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0
   source              = "Azure/avm-res-network-bastionhost/azurerm"
-  version             = "~> 0.7"
+  version             = "0.8.1"
   name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -868,7 +868,7 @@ resource "azurerm_subnet" "firewall_subnet" {
 module "firewall_pip" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-publicipaddress/azurerm"
-  version             = "~> 0.2"
+  version             = "0.2.0"
   name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -881,7 +881,7 @@ module "firewall_pip" {
 module "firewall_policy" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-firewallpolicy/azurerm"
-  version             = "~> 0.3"
+  version             = "0.3.3"
   name                = module.naming.firewall_policy.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -932,7 +932,7 @@ module "rule_collection_group" {
 module "firewall_def" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-azurefirewall/azurerm"
-  version             = "~> 0.3"
+  version             = "0.4.0"
   name                = module.naming.firewall.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
