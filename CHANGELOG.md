@@ -1,5 +1,20 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.6.0] - 
+
+### Changed
+
+- All DSC configurations
+  - Updated DSC module **DnsServerDsc** from 3.0.0 to 3.0.1
+
+- DSC Configuration for all SharePoint VMs
+  - Removed Azure Data Studio (deprecated)
+  - Updated DSC module **SharePointDsc** from 5.6.0 to 5.7.0
+
+- DSC Configuration for SharePoint SE
+  - Re-enabled setting property IsPeoplePickerSearchable on selected profile properties, for use by UPA claims provider
+  - Removed explicit TLS settings
+
 ## [7.5.0] - 2025-10-15
 
 ### Changed
