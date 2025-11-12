@@ -6,6 +6,7 @@
 
 - Template
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2025 CU for SharePoint Subscription
+  - Bumped AVM modules
 
 - All DSC configurations
   - Updated DSC module **DnsServerDsc** from 3.0.0 to 3.0.1

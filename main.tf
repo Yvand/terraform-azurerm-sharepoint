@@ -277,7 +277,7 @@ resource "azurerm_resource_group" "rg" {
 # Setup the network
 module "vnet" {
   source           = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version          = "0.14.1"
+  version          = "0.15.0"
   name             = module.naming.virtual_network.name_unique
   location         = azurerm_resource_group.rg.location
   parent_id        = azurerm_resource_group.rg.id
@@ -324,7 +324,7 @@ module "nsg_subnet_main" {
 // Create resources for VM DC
 module "vm_dc_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.19.3"
+  version                    = "0.20.0"
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -443,7 +443,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SQL
 module "vm_sql_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.19.3"
+  version                    = "0.20.0"
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -561,7 +561,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SP
 module "vm_sp_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.19.3"
+  version                    = "0.20.0"
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -712,7 +712,7 @@ PROTECTED_SETTINGS
 module "vm_fe_def" {
   count                      = var.front_end_servers_count
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.19.3"
+  version                    = "0.20.0"
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -843,7 +843,7 @@ PROTECTED_SETTINGS
 module "azure_bastion" {
   count               = var.enable_azure_bastion ? 1 : 0
   source              = "Azure/avm-res-network-bastionhost/azurerm"
-  version             = "0.8.1"
+  version             = "0.8.2"
   name                = module.naming.bastion_host.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -898,7 +898,7 @@ module "firewall_policy" {
 module "rule_collection_group" {
   count                                                    = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source                                                   = "Azure/avm-res-network-firewallpolicy/azurerm//modules/rule_collection_groups"
-  version                                                  = "~> 0.3"
+  version                                                  = "0.3.3"
   firewall_policy_rule_collection_group_firewall_policy_id = module.firewall_policy[0].resource_id
   firewall_policy_rule_collection_group_name               = "NetworkRuleCollectionGroup"
   firewall_policy_rule_collection_group_priority           = 100
