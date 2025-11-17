@@ -1,5 +1,34 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.6.0] - 2025-11-17
+
+### Changed
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2025 CU for SharePoint Subscription
+  - Bumped AVM modules
+
+- All DSC configurations
+  - Updated DSC module **DnsServerDsc** from 3.0.0 to 3.0.1
+
+- DSC Configuration for all SharePoint VMs
+  - Removed Azure Data Studio (deprecated)
+  - Updated DSC module **SharePointDsc** from 5.6.0 to 5.7.0
+
+- DSC Configuration for SharePoint SE
+  - Re-enabled setting property IsPeoplePickerSearchable on selected profile properties, for use by UPA claims provider
+  - Remove the explicit TLS settings, not required with Windows Server 2025
+  - Added parameter DatabaseConnectionEncryption for resource SPFarm, required with  **SharePointDsc** 5.7.0 + 2025-08 PU+
+
+### Fixed
+
+- DSC Configuration for SharePoint SE
+  - Move script that runs GrantOwnerAccessToDatabaseAccount after all databases were created, and before any WFE server may connect to the farm, to fix SQL permission errors thrown at step 10/10 in SPS config wizard, when installing a CU post-provisionning
+
+- DSC Configuration for DC
+  - Explicitly install the Windows feature "Group Policy Management Console (GPMC)", to ensure cmdlets *-GPO are installed
+  - Allow a reboot before running ADDomain, as it became necessary after installing the Windows feature "Group Policy Management Console (GPMC)"
+
 ## [7.5.0] - 2025-10-15
 
 ### Changed
