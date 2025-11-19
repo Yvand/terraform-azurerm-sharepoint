@@ -1,5 +1,12 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.7.0] - 2025-11-19
+
+### Changed
+
+- Template
+  - Switched to SQL Server 2025 on Windows Server 2025
+
 ## [7.6.0] - 2025-11-17
 
 ### Changed

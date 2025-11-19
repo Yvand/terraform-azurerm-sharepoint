@@ -131,7 +131,7 @@ locals {
     vm_sp_name                          = "SP"
     vm_fe_name                          = "FE"
     vm_dc_image                         = "MicrosoftWindowsServer:WindowsServer:2025-datacenter-azure-edition-smalldisk:latest"
-    vm_sql_image                        = "MicrosoftSQLServer:sql2022-ws2022:sqldev-gen2:latest"
+    vm_sql_image                        = "MicrosoftSQLServer:sql2025-ws2025:stddev-gen2:latest"
     vms_sharepoint_image                = lookup(local.sharepoint_images_list, split("-", var.sharepoint_version)[0])
     vms_sharepoint_trustedLaunchEnabled = var.sharepoint_version == "2016" ? false : true
   }

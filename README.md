@@ -1,7 +1,7 @@
 # terraform-azurerm-sharepoint
 
 This module is the Terraform version of [this public ARM template](https://azure.microsoft.com/resources/templates/sharepoint-adfs/).  
-It uses [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) to create a DC, a SQL Server 2022, and from 1 to 5 server(s) running a SharePoint Subscription / 2019 / 2016 farm with an extensive configuration, including trusted authentication, user profiles with personal sites, an OAuth trust (using a certificate), a dedicated IIS site for hosting high-trust add-ins, etc...  
+It uses [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) to create a DC, a SQL Server 2025, and from 1 to 5 server(s) running a SharePoint Subscription / 2019 / 2016 farm with an extensive configuration, including trusted authentication, user profiles with personal sites, an OAuth trust (using a certificate), a dedicated IIS site for hosting high-trust add-ins, etc...  
 The latest version of key softwares (including Fiddler, vscode, np++, 7zip, ULS Viewer) is installed.  
 SharePoint machines have additional fine-tuning to make them immediately usable (remote administration tools, custom policies for Edge and Chrome, shortcuts, etc...).
 
