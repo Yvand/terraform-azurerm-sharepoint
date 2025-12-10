@@ -1,5 +1,10 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.8.0] - 2025-12-10
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2025 PU for SharePoint Subscription
+
 ## [7.7.0] - 2025-11-19
 
 ### Changed
@@ -12,7 +17,7 @@
 ### Changed
 
 - Template
-  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2025 CU for SharePoint Subscription
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the November 2025 PU for SharePoint Subscription
   - Bumped AVM modules
 
 - All DSC configurations
