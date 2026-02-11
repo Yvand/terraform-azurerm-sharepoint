@@ -1,5 +1,13 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.10.0] - 2026-02-11
+
+- Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2026 PU for SharePoint Subscription
+
+- DSC Configuration for all SharePoint SE
+  - Renamed main web application to "SharePoint - main"
+
 ## [7.9.0] - 2026-01-14
 
 - Template
