@@ -1,5 +1,15 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.11.0] - Unreleased
+
+- DSC Configuration for SharePoint SE
+  - Added optional parameter `DefaultZoneIsHttps`, to decide if the default zone should use HTTP (default) or HTTPS
+  - Renamed main web application to "SharePoint - main"
+
+- DSC Configuration for DC
+  - Renamed favourites
+
+
 ## [7.10.0] - 2026-02-11
 
 - Template

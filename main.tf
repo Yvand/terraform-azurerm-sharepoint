@@ -170,6 +170,7 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
+    default_zone_is_https         = true
   }
 
   default_tags = {
@@ -656,7 +657,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used}
+      "SharePointBits": ${local.sharepoint_bits_used},
+      "DefaultZoneIsHttps": ${local.deployment_settings.default_zone_is_https}
     },
     "privacy": {
       "dataCollection": "enable"
