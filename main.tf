@@ -107,7 +107,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/893696ea-60b1-443b-9794-a303597e6c12/uber-subscription-kb5002833-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/9246c84a-1461-48be-8aee-6b99dc65f5cf/uber-subscription-kb5002843-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -170,6 +170,7 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
+    default_zone_is_https         = false
   }
 
   default_tags = {
@@ -277,7 +278,7 @@ resource "azurerm_resource_group" "rg" {
 # Setup the network
 module "vnet" {
   source           = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version          = "0.15.0"
+  version          = "0.17.1"
   name             = module.naming.virtual_network.name_unique
   location         = azurerm_resource_group.rg.location
   parent_id        = azurerm_resource_group.rg.id
@@ -299,7 +300,7 @@ module "vnet" {
 # Network security group
 module "nsg_subnet_main" {
   source              = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version             = "0.5.0"
+  version             = "0.5.1"
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -656,7 +657,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used}
+      "SharePointBits": ${local.sharepoint_bits_used},
+      "DefaultZoneIsHttps": ${local.deployment_settings.default_zone_is_https}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -841,17 +843,17 @@ PROTECTED_SETTINGS
 
 # Resources for Azure Bastion Developer SKU
 module "azure_bastion" {
-  count               = var.enable_azure_bastion ? 1 : 0
-  source              = "Azure/avm-res-network-bastionhost/azurerm"
-  version             = "0.8.2"
-  name                = module.naming.bastion_host.name_unique
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tags                = local.tags
-  enable_telemetry    = local.enable_telemetry
-  virtual_network_id  = module.vnet.resource_id
-  sku                 = "Developer"
-  zones               = []
+  count              = var.enable_azure_bastion ? 1 : 0
+  source             = "Azure/avm-res-network-bastionhost/azurerm"
+  version            = "0.9.0"
+  name               = module.naming.bastion_host.name_unique
+  location           = azurerm_resource_group.rg.location
+  parent_id          = azurerm_resource_group.rg.id
+  tags               = local.tags
+  enable_telemetry   = local.enable_telemetry
+  virtual_network_id = module.vnet.resource_id
+  sku                = "Developer"
+  zones              = []
 }
 
 # Resources for Azure Firewall
@@ -868,7 +870,7 @@ resource "azurerm_subnet" "firewall_subnet" {
 module "firewall_pip" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-publicipaddress/azurerm"
-  version             = "0.2.0"
+  version             = "0.2.1"
   name                = "${module.naming.public_ip.name_unique}-firewall"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -881,7 +883,7 @@ module "firewall_pip" {
 module "firewall_policy" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source              = "Azure/avm-res-network-firewallpolicy/azurerm"
-  version             = "0.3.3"
+  version             = "0.3.4"
   name                = module.naming.firewall_policy.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -898,7 +900,7 @@ module "firewall_policy" {
 module "rule_collection_group" {
   count                                                    = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
   source                                                   = "Azure/avm-res-network-firewallpolicy/azurerm//modules/rule_collection_groups"
-  version                                                  = "0.3.3"
+  version                                                  = "0.3.4"
   firewall_policy_rule_collection_group_firewall_policy_id = module.firewall_policy[0].resource_id
   firewall_policy_rule_collection_group_name               = "NetworkRuleCollectionGroup"
   firewall_policy_rule_collection_group_priority           = 100
