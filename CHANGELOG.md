@@ -3,6 +3,7 @@
 ## [7.11.0] - Unreleased
 
 - Template
+  - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the March 2026 PU for SharePoint Subscription
   - bump avm modules version
 
 - DSC Configuration for SharePoint SE

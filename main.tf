@@ -107,7 +107,7 @@ locals {
       "Label" : "Latest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/893696ea-60b1-443b-9794-a303597e6c12/uber-subscription-kb5002833-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/9246c84a-1461-48be-8aee-6b99dc65f5cf/uber-subscription-kb5002843-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -170,7 +170,7 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
-    default_zone_is_https         = true
+    default_zone_is_https         = false
   }
 
   default_tags = {
