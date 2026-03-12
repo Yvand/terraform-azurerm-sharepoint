@@ -2,6 +2,9 @@
 
 ## [7.11.0] - Unreleased
 
+- Template
+  - bump avm modules version
+
 - DSC Configuration for SharePoint SE
   - Added optional parameter `DefaultZoneIsHttps`, to decide if the default zone should use HTTP (default) or HTTPS
   - Renamed main web application to "SharePoint - main"
