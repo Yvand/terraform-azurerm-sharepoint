@@ -1,5 +1,10 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [7.12.0] - 
+
+- Template
+  - Use DSC configurations published in repository https://github.com/Yvand/SharePointInfraDsc instead of local copies
+
 ## [7.11.0] - 2026-03-12
 
 - Template

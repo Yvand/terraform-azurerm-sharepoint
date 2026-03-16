@@ -370,7 +370,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/7.11.0/dsc/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/SharePoint.Full-v1.0.0/"
 }
 
 variable "tags" {

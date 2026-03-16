@@ -137,21 +137,21 @@ locals {
   }
 
   dsc_settings = {
-    vm_dc_fileName = "ConfigureDCVM.zip"
-    vm_dc_script   = "ConfigureDCVM.ps1"
-    vm_dc_function = "ConfigureDCVM"
+    vm_dc_fileName = "dsc-dc.zip"
+    vm_dc_script   = "dsc-dc.ps1"
+    vm_dc_function = "ConfigDc"
 
-    vm_sql_fileName = "ConfigureSQLVM.zip"
-    vm_sql_script   = "ConfigureSQLVM.ps1"
-    vm_sql_function = "ConfigureSQLVM"
+    vm_sql_fileName = "dsc-sql.zip"
+    vm_sql_script   = "dsc-sql.ps1"
+    vm_sql_function = "ConfigSql"
 
-    vm_sp_fileName = local.is_sharepoint_subscription ? "ConfigureSPSE.zip" : "ConfigureSPLegacy.zip"
-    vm_sp_script   = local.is_sharepoint_subscription ? "ConfigureSPSE.ps1" : "ConfigureSPLegacy.ps1"
-    vm_sp_function = "ConfigureSPVM"
+    vm_sp_fileName = local.is_sharepoint_subscription ? "dsc-spse-main.zip" : "dsc-splegacy-main.zip"
+    vm_sp_script   = local.is_sharepoint_subscription ? "dsc-spse-main.ps1" : "dsc-splegacy-main.ps1"
+    vm_sp_function = "ConfigSpMain"
 
-    vm_fe_fileName = local.is_sharepoint_subscription ? "ConfigureFESE.zip" : "ConfigureFELegacy.zip"
-    vm_fe_script   = local.is_sharepoint_subscription ? "ConfigureFESE.ps1" : "ConfigureFELegacy.ps1"
-    vm_fe_function = "ConfigureFEVM"
+    vm_fe_fileName = local.is_sharepoint_subscription ? "dsc-spse-frontend.zip" : "dsc-splegacy-frontend.zip"
+    vm_fe_script   = local.is_sharepoint_subscription ? "dsc-spse-frontend.ps1" : "dsc-splegacy-frontend.ps1"
+    vm_fe_function = "ConfigSpFrontend"
   }
 
   deployment_settings = {
