@@ -392,3 +392,20 @@ variable "vm_availability_zone" {
   description = "The Availability Zone which the Virtual Machines should be allocated in. If deploying to a region without zones, set this value to null. If the zone should be assigned randomly, set this value to 0."
   nullable    = true
 }
+
+variable "sharepoint_configuration_level" {
+  type        = string
+  default     = "Light"
+  description = <<EOF
+    Level of configuration to apply on the SharePoint farm. The higher the level, the more configuration will be applied, and the longer the deployment will take. The 'Minimum' level applies only the necessary configuration to have a functional SharePoint farm, and is recommended for most use cases. The 'Full' level applies a more complete configuration that is closer to a production-like environment, but is not required for most scenarios.
+  EOF
+  validation {
+    condition = contains([
+      "Minimum",
+      "Light",
+      "Medium",
+      "Full"
+    ], var.sharepoint_configuration_level)
+    error_message = "Invalid value for sharepoint_configuration_level."
+  }
+}

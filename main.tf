@@ -658,7 +658,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
       "SharePointBits": ${local.sharepoint_bits_used},
-      "DefaultZoneIsHttps": ${local.deployment_settings.default_zone_is_https}
+      "DefaultZoneIsHttps": ${local.deployment_settings.default_zone_is_https},
+      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
     },
     "privacy": {
       "dataCollection": "enable"
