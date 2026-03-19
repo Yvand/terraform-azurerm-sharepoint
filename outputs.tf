@@ -54,3 +54,8 @@ output "other_accounts_password" {
   sensitive   = true
   description = "Password of all Active Directory service accounts"
 }
+
+output "sharepoint_version" {
+  value       = local.deployment_settings.sharepoint_version
+  description = "SharePoint version"
+}

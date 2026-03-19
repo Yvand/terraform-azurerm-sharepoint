@@ -393,6 +393,12 @@ variable "vm_availability_zone" {
   nullable    = true
 }
 
+variable "default_zone_must_be_https" {
+  type        = bool
+  default     = false
+  description = "Set to true to ensure the default zone of the main web application uses HTTPS protocol"
+}
+
 variable "sharepoint_configuration_level" {
   type        = string
   default     = "Light"
