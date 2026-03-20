@@ -810,7 +810,9 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "SharePointVersion": "${var.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used}
+      "SharePointBits": ${local.sharepoint_bits_used},
+      "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
+      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
     },
     "privacy": {
       "dataCollection": "enable"
