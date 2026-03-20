@@ -13,20 +13,22 @@ SharePoint machines have additional fine-tuning to make them immediately usable 
 
 ```terraform
 module "sharepoint" {
-  source                 = "Yvand/sharepoint/azurerm"
-  location               = "francecentral"
-  subscription_id        = "<your_azure_subscription_id>"
-  resource_group_name    = "<your_resource_group_name>"
-  sharepoint_version     = "Subscription-Latest"
-  admin_username         = "yvand"
-  admin_password         = "<password>"
-  outbound_access_method = "PublicIPAddress"
-  rdp_traffic_rule       = "<your_internet_public_ip>"
+  source                         = "Yvand/sharepoint/azurerm"
+  location                       = "francecentral"
+  subscription_id                = "<your_azure_subscription_id>"
+  resource_group_name            = "<your_resource_group_name>"
+  sharepoint_version             = "Subscription-Latest"
+  sharepoint_configuration_level = "Light"
+  admin_username                 = "yvand"
+  admin_password                 = "<password>"
+  outbound_access_method         = "PublicIPAddress"
+  rdp_traffic_rule               = "<your_internet_public_ip>"
 }
 ```
 
 ## Features
 
+The virtual machines are configured using the DSC scripts published in the public repository [SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).  
 There are some differences in the configuration, depending on the SharePoint version:
 
 ### Common to all SharePoint versions
@@ -91,6 +93,17 @@ IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`,
   - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
   - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
 - Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
+- Variable `sharepoint_configuration_level` sets how much configuration is done in the SharePoint farm:
+  - `Minimum`: Creates a web application with its default zone only
+  - `Light`: Everything in `Minimum` and:
+    - Provisions the State Service Application
+    - Configures the trusted authentication
+  - `Medium`: Everything in `Light` and:
+    - Provisions the User Profile Service Application
+    - Extends the web application in zone `Intranet`
+  - `Full`: Everything in `Medium` and:
+    - Configures all the resources to run and deploy add-ins
+    - Create addditional host-named site collections
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
 ## Outputs
