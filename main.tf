@@ -170,7 +170,7 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
-    sharepoint_version            = "SP${split("-", var.sharepoint_version)[1]}"
+    sharepoint_version            = local.is_sharepoint_subscription ? "SP${split("-", var.sharepoint_version)[1]}" : var.sharepoint_version
   }
 
   default_tags = {
@@ -434,6 +434,14 @@ SETTINGS
       },
       "AdfsSvcCreds": {
         "UserName": "${local.deployment_settings.adfsSvcUserName}",
+        "Password": "${local.other_accounts_password}"
+      },
+      "SqlSvcCreds": {
+        "UserName": "${local.deployment_settings.sqlSvcUserName}",
+        "Password": "${local.other_accounts_password}"
+      },
+      "SPSetupCreds": {
+        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.other_accounts_password}"
       }
     }
@@ -807,7 +815,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
-      "SharePointVersion": "${var.sharepoint_version}",
+      "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
       "SharePointBits": ${local.sharepoint_bits_used},

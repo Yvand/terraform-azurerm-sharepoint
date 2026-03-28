@@ -11,4 +11,4 @@ add_name_to_public_ip_addresses = "SharePointVMsOnly"
 add_default_tags                = true
 vm_availability_zone            = null
 default_zone_must_be_https      = false
-sharepoint_configuration_level  = "Light"
+sharepoint_configuration_level  = "Minimum"
