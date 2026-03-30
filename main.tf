@@ -539,7 +539,8 @@ resource "azurerm_virtual_machine_extension" "vm_sql_ext_applydsc" {
     },
     "configurationArguments": {
       "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
-      "DomainFQDN": "${var.domain_fqdn}"
+      "DomainFQDN": "${var.domain_fqdn}",
+      "SPSetupUserName": "${local.deployment_settings.spSetupUserName}"
     },
     "privacy": {
       "dataCollection": "enable"
@@ -556,10 +557,6 @@ SETTINGS
       },
       "SqlSvcCreds": {
         "UserName": "${local.deployment_settings.sqlSvcUserName}",
-        "Password": "${local.other_accounts_password}"
-      },
-      "SPSetupCreds": {
-        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.other_accounts_password}"
       }
     }
