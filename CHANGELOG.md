@@ -3,9 +3,8 @@
 ## [8.0.0] - 2026-04-01
 
 - This module now uses the DSC configurations published in repository https://github.com/Yvand/SharePointInfraDsc, specifically the [v2.0.0](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#200---2026-04-01), which includes significant improvements
-- Added input variable `default_zone_must_be_https`
-- Added input variable `sharepoint_configuration_level`
-- Added output variable `sharepoint_configuration_level`
+- Added input variable `default_zone_must_be_https` and `sharepoint_configuration_level`
+- Added output variable `sharepoint_configuration_level` and `sharepoint_version`
 - Updated provider `hashicorp/azurerm` to v4.66.0
 - Updated provider `hashicorp/random` to v3.8.1
 - Updated documentation

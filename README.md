@@ -56,7 +56,7 @@ module "sharepoint" {
     - Extends the web application in zone `Intranet`
   - `Full`: Everything in `Medium`, plus:
     - Configures all the resources to run and deploy add-ins
-    - Create addditional host-named site collections
+    - Creates addditional host-named site collections
 - Variable `default_zone_must_be_https`: `true` if the default zone must use HTTPS, `false` if it may use HTTP (if compatible with the configuration selected).
 - Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
 
@@ -109,7 +109,7 @@ You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate t
 - The password for the User Profile directory synchronization connection (variable `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the profile import fails (password decryption error in the logs).
 - When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey fail to download and are not installed.
 - The deployment of Azure Bastion fails pretty frequently. This has little impact, since it is very easy to redeploy through the portal.
-- SharePoint 2016 and 2019 are outdated and deprecated. Their corresponding DSC configuration receive little maintenance to ensure they continue to deploy, but receive no improvement. As such, variables `sharepoint_configuration_level` and `default_zone_must_be_https` have no effect on them.
+- SharePoint 2016 and 2019 are outdated and deprecated. Their corresponding DSC configurations receive little maintenance to ensure they continue to deploy, but receive no improvement. As such, variables `sharepoint_configuration_level` and `default_zone_must_be_https` have no effect on them.
 
 ## More information
 
