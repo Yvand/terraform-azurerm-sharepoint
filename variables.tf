@@ -49,7 +49,7 @@ variable "sharepoint_configuration_level" {
   type        = string
   default     = "Light"
   description = <<EOF
-    Level of configuration to apply on the SharePoint farm. The higher the level, the more configuration will be applied, and the longer the deployment will take. The 'Minimum' level applies only the necessary configuration to have a functional SharePoint farm, and is recommended for most use cases. The 'Full' level applies a more complete configuration that is closer to a production-like environment, but is not required for most scenarios.
+    Level of configuration to apply on the SharePoint farm. Choose between 'Minimum', 'Light', 'Medium', and 'Full'.
   EOF
   validation {
     condition = contains([
@@ -135,7 +135,7 @@ variable "outbound_access_method" {
 variable "add_name_to_public_ip_addresses" {
   type        = string
   default     = "SharePointVMsOnly"
-  description = "Set if the Public IP addresses of virtual machines should have a name label."
+  description = "Set if virtual machines should have a public DNS name, instead of just a public IP. Choose between 'No', 'SharePointVMsOnly', and 'Yes'."
   validation {
     condition = contains([
       "No",
