@@ -1,13 +1,16 @@
 # terraform-azurerm-sharepoint
 
-This module is the Terraform version of [this public ARM template](https://azure.microsoft.com/resources/templates/sharepoint-adfs/).  
-It uses [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/) to create a DC, a SQL Server 2025, and from 1 to 5 server(s) running a SharePoint Subscription / 2019 / 2016 farm with an extensive configuration, including trusted authentication, user profiles with personal sites, an OAuth trust (using a certificate), a dedicated IIS site for hosting high-trust add-ins, etc...  
-The latest version of key softwares (including Fiddler, vscode, np++, 7zip, ULS Viewer) is installed.  
-SharePoint machines have additional fine-tuning to make them immediately usable (remote administration tools, custom policies for Edge and Chrome, shortcuts, etc...).
+This module creates a highly customizable SharePoint Subscription / 2019 / 2016 farm, where you define the accounts password (it can be randomly generated), the AD domain and admin account names, and how much SharePoint configuration is performed.  
+The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured from scratch using the DSC configuration files in [project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).  
+
+The virtual machines for the DC and SharePoint Subscription use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice), and SQL uses [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice), so they are always up-to-date when deployed.  
+Note: The legacy versions of SharePoint use images published by SharePoint Engineering ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) which are outdated (and those versions are deprecated).
 
 ## Prerequisites
 
-- Access to an Azure subscription.
+- An Azure subscription with at least the Azure role [**Contributor**](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor), to create the resources (including a resource group).
+- [Terraform CLI](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest).
 
 ## Usage
 
@@ -18,7 +21,9 @@ module "sharepoint" {
   subscription_id                = "<your_azure_subscription_id>"
   resource_group_name            = "<your_resource_group_name>"
   sharepoint_version             = "Subscription-Latest"
-  sharepoint_configuration_level = "Light"
+  sharepoint_configuration_level = "Medium"
+  front_end_servers_count        = 0
+  domain_fqdn                    = "contoso.local"
   admin_username                 = "yvand"
   admin_password                 = "<password>"
   outbound_access_method         = "PublicIPAddress"
@@ -26,33 +31,33 @@ module "sharepoint" {
 }
 ```
 
-## Features
+## SharePoint configuration
 
-The virtual machines are configured using the DSC scripts published in the public repository [SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).  
-There are some differences in the configuration, depending on the SharePoint version:
-
-### Common to all SharePoint versions
-
-- An Active Directory forest with AD CS and AD FS configured. LDAPS (LDAP over SSL) is also configured.
-- SharePoint service applications configured: User Profiles, add-ins, session state.
-- SharePoint User Profiles service is configured with a directory synchronization connection, and the MySite host is a host-named site collection.
-- SharePoint has 1 web application with path based and host-named site collections, and contains 2 zones:
-  - Default zone: HTTP using Windows authentication.
-  - Intranet zone: HTTPS using federated (ADFS) authentication.
-- An OAuth trust is created, as well as a custom IIS site to host your high-trust add-ins.
-- Custom claims provider [LDAPCP](https://www.ldapcp.com/) is installed and configured.
-
-### Specific to SharePoint Subscription
-
-- SharePoint virtual machines are created using the latest disk image of [Windows Server 2025 Azure Edition](https://learn.microsoft.com/windows-server/get-started/editions-comparison?pivots=windows-server-2025) available, and SharePoint binaries (install + cumulative updates) are downloaded and installed from scratch.
-- The HTTPS site certificate is managed by SharePoint, which has the private key and sets the binding itself in the IIS site.
-- Federated authentication with ADFS is configured using OpenID Connect.
-
-### Specific to SharePoint 2019 / 2016
-
-- SharePoint virtual machines are created using a disk image built and maintained by SharePoint Engineering.
-- The HTTPS site certificate is positioned by the DSC script.
-- Federated authentication with ADFS is configured using SAML 1.1.
+- Variable `sharepoint_version` sets which version of SharePoint will be installed:
+  - `Subscription-Latest` (default): latest cumulative update available at the time of publishing this version: March 2026 ([KB5002843](https://support.microsoft.com/help/5002843)).
+  - `Subscription-25H2`: [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 CU / [KB5002784](https://support.microsoft.com/help/5002784)).
+  - `Subscription-25H1`: [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 CU / [KB5002698](https://support.microsoft.com/help/5002698)).
+  - `Subscription-24H2`: [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 CU / [kb5002640](https://support.microsoft.com/help/5002640)).
+  - `Subscription-24H1`: [Feature Update 24H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h1-release) (March 2024 CU / [KB5002564](https://support.microsoft.com/help/5002564)).
+  - `Subscription-23H2`: [Feature Update 23H2](https://learn.microsoft.com/SharePoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h2-release) (September 2023 CU / [KB5002474](https://support.microsoft.com/help/5002474)).
+  - `Subscription-23H1`: [Feature Update 23H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 CU / [KB5002355](https://support.microsoft.com/help/5002355)).
+  - `Subscription-22H2`: [Feature Update 22H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU / [KB5002270](https://support.microsoft.com/help/5002270) and [KB5002271](https://support.microsoft.com/help/5002271)).
+  - `Subscription-RTM`: SharePoint Subscription RTM available for [public download](https://www.microsoft.com/en-us/download/details.aspx?id=103599).
+  - `2019` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview) built and maintained by SharePoint Engineering.
+  - `2016` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) built and maintained by SharePoint Engineering.
+- Variable `sharepoint_configuration_level` sets how much configuration is done:
+  - `Minimum`: Creates a web application with its default zone only
+  - `Light`: Everything in `Minimum` and:
+    - Provisions the State Service Application
+    - Configures the trusted authentication
+  - `Medium`: Everything in `Light` and:
+    - Provisions the User Profile Service Application
+    - Extends the web application in zone `Intranet`
+  - `Full`: Everything in `Medium` and:
+    - Configures all the resources to run and deploy add-ins
+    - Create addditional host-named site collections
+- Variable `default_zone_must_be_https`: `true` if the default zone must use HTTPS, `false` if it may use HTTP (if compatible with the configuration selected).
+- Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
 
 ## Outbound access to internet
 
@@ -75,35 +80,12 @@ The remote access to the virtual machines depends on the following variables:
 
 IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`, you have to either enable Azure Bastion, or manually add a public IP address later, to be able to connect to a virtual machine.
 
-## Input variables
+## Other input variables
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
   - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
-- Variable `sharepoint_version` lets you choose which version of SharePoint to install:
-  - `Subscription-Latest` (default): Same as `Subscription-RTM`, then installs the latest cumulative update available at the time of publishing this version: March 2026 ([KB5002843](https://support.microsoft.com/help/5002843)).
-  - `Subscription-25H2`: Same as `Subscription-RTM`, then installs the [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 CU / [KB5002784](https://support.microsoft.com/help/5002784)).
-  - `Subscription-25H1`: Same as `Subscription-RTM`, then installs the [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 CU / [KB5002698](https://support.microsoft.com/help/5002698)).
-  - `Subscription-24H2`: Same as `Subscription-RTM`, then installs the [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 CU / [kb5002640](https://support.microsoft.com/help/5002640)).
-  - `Subscription-24H1`: Same as `Subscription-RTM`, then installs the [Feature Update 24H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h1-release) (March 2024 CU / [KB5002564](https://support.microsoft.com/help/5002564)).
-  - `Subscription-23H2`: Same as `Subscription-RTM`, then installs the [Feature Update 23H2](https://learn.microsoft.com/SharePoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h2-release) (September 2023 CU / [KB5002474](https://support.microsoft.com/help/5002474)).
-  - `Subscription-23H1`: Same as `Subscription-RTM`, then installs the [Feature Update 23H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 CU / [KB5002355](https://support.microsoft.com/help/5002355)).
-  - `Subscription-22H2`: Same as `Subscription-RTM`, then installs the [Feature Update 22H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU / [KB5002270](https://support.microsoft.com/help/5002270) and [KB5002271](https://support.microsoft.com/help/5002271)).
-  - `Subscription-RTM`: Uses a fresh Windows Server 2025 image, on which SharePoint Subscription RTM is downloaded and installed.
-  - `2019`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2019 bits already installed.
-  - `2016`: Uses an image built and maintained by SharePoint Engineering, with SharePoint 2016 bits already installed.
-- Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
-- Variable `sharepoint_configuration_level` sets how much configuration is done in the SharePoint farm:
-  - `Minimum`: Creates a web application with its default zone only
-  - `Light`: Everything in `Minimum` and:
-    - Provisions the State Service Application
-    - Configures the trusted authentication
-  - `Medium`: Everything in `Light` and:
-    - Provisions the User Profile Service Application
-    - Extends the web application in zone `Intranet`
-  - `Full`: Everything in `Medium` and:
-    - Configures all the resources to run and deploy add-ins
-    - Create addditional host-named site collections
+
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
 ## Outputs
@@ -119,14 +101,14 @@ Here is the default size and storage type per virtual machine role:
 - SQL Server: Size [Standard_B2as_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (2 vCPU / 8 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
 - SharePoint: Size [Standard_B4as_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (4 vCPU / 16 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription SharePoint 2016), or a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2019).
 
-You can visit <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate the monthly cost of the template in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
+You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate the monthly cost of deploying the resources in this module, in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
 
 ## Known issues
 
 - The password for the User Profile directory synchronization connection (variable `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the profile import fails (password decryption error in the logs).
 - When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey fail to download and are not installed.
-- When deploying SharePoint 2016 or 2019, the trial enterprise license has already expired, so you must enter your own in the central administration, then run iisreset and restart the SPTimerV4 service on all the servers.
-- When deploying SharePoint 2016 or 2019, the installation of softwares through Chocolatey fails for most of them.
+- The deployment of Azure Bastion fails pretty frequently. This has little impact, since it is very easy to redeploy through the portal.
+- SharePoint 2016 and 2019 are outdated and deprecated. Their corresponding DSC configuration receive little maintenance to ensure they continue to deploy, but receive no improvement. As such, variables `sharepoint_configuration_level` and `default_zone_must_be_https` have no effect on them.
 
 ## More information
 

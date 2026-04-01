@@ -39,6 +39,29 @@ variable "sharepoint_version" {
   }
 }
 
+variable "default_zone_must_be_https" {
+  type        = bool
+  default     = false
+  description = "Set to true to ensure the default zone of the main web application uses HTTPS protocol."
+}
+
+variable "sharepoint_configuration_level" {
+  type        = string
+  default     = "Light"
+  description = <<EOF
+    Level of configuration to apply on the SharePoint farm. The higher the level, the more configuration will be applied, and the longer the deployment will take. The 'Minimum' level applies only the necessary configuration to have a functional SharePoint farm, and is recommended for most use cases. The 'Full' level applies a more complete configuration that is closer to a production-like environment, but is not required for most scenarios.
+  EOF
+  validation {
+    condition = contains([
+      "Minimum",
+      "Light",
+      "Medium",
+      "Full"
+    ], var.sharepoint_configuration_level)
+    error_message = "Invalid value for sharepoint_configuration_level."
+  }
+}
+
 variable "domain_fqdn" {
   type        = string
   default     = "contoso.local"
@@ -370,7 +393,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/SharePoint.Full-v1.0.0/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.0.0/"
 }
 
 variable "tags" {
@@ -391,27 +414,4 @@ variable "vm_availability_zone" {
   default     = null
   description = "The Availability Zone which the Virtual Machines should be allocated in. If deploying to a region without zones, set this value to null. If the zone should be assigned randomly, set this value to 0."
   nullable    = true
-}
-
-variable "default_zone_must_be_https" {
-  type        = bool
-  default     = false
-  description = "Set to true to ensure the default zone of the main web application uses HTTPS protocol."
-}
-
-variable "sharepoint_configuration_level" {
-  type        = string
-  default     = "Light"
-  description = <<EOF
-    Level of configuration to apply on the SharePoint farm. The higher the level, the more configuration will be applied, and the longer the deployment will take. The 'Minimum' level applies only the necessary configuration to have a functional SharePoint farm, and is recommended for most use cases. The 'Full' level applies a more complete configuration that is closer to a production-like environment, but is not required for most scenarios.
-  EOF
-  validation {
-    condition = contains([
-      "Minimum",
-      "Light",
-      "Medium",
-      "Full"
-    ], var.sharepoint_configuration_level)
-    error_message = "Invalid value for sharepoint_configuration_level."
-  }
 }
