@@ -1,10 +1,11 @@
 # terraform-azurerm-sharepoint
 
-This module creates a highly customizable SharePoint Subscription / 2019 / 2016 farm, where you define the accounts password (it can be randomly generated), the AD domain and admin account names, and how much SharePoint configuration is performed.  
+This module creates a highly customizable SharePoint Subscription / 2019 / 2016 farm, where you can define many settings, including the accounts password (it can be randomly generated), the AD domain and admin account names, and how much SharePoint configuration is performed.
+
 The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured from scratch using the DSC configuration files in [project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).  
 
-The virtual machines for the DC and SharePoint Subscription use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice), and SQL uses [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice), so they are always up-to-date when deployed.  
-Note: The legacy versions of SharePoint use images published by SharePoint Engineering ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) which are outdated (and those versions are deprecated).
+The virtual machines for the DC and SharePoint Subscription use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice), and SQL uses image [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice), so they are always up-to-date when deployed.  
+Note: The legacy versions of SharePoint use outdated images ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) published by SharePoint Engineering.
 
 ## Prerequisites
 
@@ -34,15 +35,15 @@ module "sharepoint" {
 ## SharePoint configuration
 
 - Variable `sharepoint_version` sets which version of SharePoint will be installed:
-  - `Subscription-Latest` (default): latest cumulative update available at the time of publishing this version: March 2026 ([KB5002843](https://support.microsoft.com/help/5002843)).
-  - `Subscription-25H2`: [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 CU / [KB5002784](https://support.microsoft.com/help/5002784)).
-  - `Subscription-25H1`: [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 CU / [KB5002698](https://support.microsoft.com/help/5002698)).
-  - `Subscription-24H2`: [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 CU / [kb5002640](https://support.microsoft.com/help/5002640)).
-  - `Subscription-24H1`: [Feature Update 24H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h1-release) (March 2024 CU / [KB5002564](https://support.microsoft.com/help/5002564)).
-  - `Subscription-23H2`: [Feature Update 23H2](https://learn.microsoft.com/SharePoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h2-release) (September 2023 CU / [KB5002474](https://support.microsoft.com/help/5002474)).
-  - `Subscription-23H1`: [Feature Update 23H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 CU / [KB5002355](https://support.microsoft.com/help/5002355)).
-  - `Subscription-22H2`: [Feature Update 22H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 CU / [KB5002270](https://support.microsoft.com/help/5002270) and [KB5002271](https://support.microsoft.com/help/5002271)).
-  - `Subscription-RTM`: SharePoint Subscription RTM available for [public download](https://www.microsoft.com/en-us/download/details.aspx?id=103599).
+  - `Subscription-Latest` (default): SharePoint Subscription with the latest public update available at the time of publishing this version: March 2026 ([KB5002843](https://support.microsoft.com/help/5002843)).
+  - `Subscription-25H2`: SharePoint Subscription with the [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 PU / [KB5002784](https://support.microsoft.com/help/5002784)).
+  - `Subscription-25H1`: SharePoint Subscription with the [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 PU / [KB5002698](https://support.microsoft.com/help/5002698)).
+  - `Subscription-24H2`: SharePoint Subscription with the [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 PU / [kb5002640](https://support.microsoft.com/help/5002640)).
+  - `Subscription-24H1`: SharePoint Subscription with the [Feature Update 24H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h1-release) (March 2024 PU / [KB5002564](https://support.microsoft.com/help/5002564)).
+  - `Subscription-23H2`: SharePoint Subscription with the [Feature Update 23H2](https://learn.microsoft.com/SharePoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h2-release) (September 2023 PU / [KB5002474](https://support.microsoft.com/help/5002474)).
+  - `Subscription-23H1`: SharePoint Subscription with the [Feature Update 23H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-23h1-release) (March 2023 PU / [KB5002355](https://support.microsoft.com/help/5002355)).
+  - `Subscription-22H2`: SharePoint Subscription with the [Feature Update 22H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-22h2-release) (September 2022 PU / [KB5002270](https://support.microsoft.com/help/5002270) and [KB5002271](https://support.microsoft.com/help/5002271)).
+  - `Subscription-RTM`: SharePoint Subscription RTM [published here](https://www.microsoft.com/en-us/download/details.aspx?id=103599).
   - `2019` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview) built and maintained by SharePoint Engineering.
   - `2016` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) built and maintained by SharePoint Engineering.
 - Variable `sharepoint_configuration_level` sets how much configuration is done:
@@ -63,7 +64,7 @@ module "sharepoint" {
 
 During the provisionning, virtual machines require an outbound access to internet to be able to download and apply their configuration.  
 The outbound access method depends on variable `outbound_access_method`:
-- `PublicIPAddress`: Virtual machines use a [Public IP](https://learn.microsoft.com/azure/virtual-network/ip-services/virtual-network-public-ip-address), associated to their network card.
+- `PublicIPAddress`: Virtual machines use a [Public IP](https://learn.microsoft.com/azure/virtual-network/ip-services/virtual-network-public-ip-address), associated with their network card.
 - `AzureFirewallProxy`: Virtual machines use [Azure Firewall](https://azure.microsoft.com/products/azure-firewall/) as an [HTTP proxy](https://learn.microsoft.com/azure/firewall/explicit-proxy).
 
 ## Remote access
