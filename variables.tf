@@ -20,7 +20,7 @@ variable "location" {
 variable "sharepoint_version" {
   type        = string
   default     = "Subscription-Latest"
-  description = "Version of SharePoint farm to create."
+  description = "Version of the SharePoint farm to create."
   validation {
     condition = contains([
       "Subscription-Latest",
@@ -35,7 +35,40 @@ variable "sharepoint_version" {
       "2019",
       "2016"
     ], var.sharepoint_version)
-    error_message = "Invalid SharePoint farm version."
+    error_message = "Invalid value for sharepoint_version."
+  }
+}
+
+variable "default_zone_must_be_https" {
+  type        = bool
+  default     = false
+  description = "Set to true if the default zone of the main web application must use HTTPS protocol."
+}
+
+variable "sharepoint_configuration_level" {
+  type        = string
+  default     = "Light"
+  description = <<EOF
+    Level of configuration to apply on the SharePoint farm. Choose between 'Minimum', 'Light' (default), 'Medium', and 'Full'.
+  EOF
+  validation {
+    condition = contains([
+      "Minimum",
+      "Light",
+      "Medium",
+      "Full"
+    ], var.sharepoint_configuration_level)
+    error_message = "Invalid value for sharepoint_configuration_level."
+  }
+}
+
+variable "front_end_servers_count" {
+  type        = number
+  default     = 0
+  description = "Number of additional servers with the MinRole front-end to add to the farm."
+  validation {
+    condition     = var.front_end_servers_count >= 0 && var.front_end_servers_count <= 4
+    error_message = "The front_end_servers_count value must be between 0 and 4 included."
   }
 }
 
@@ -43,16 +76,6 @@ variable "domain_fqdn" {
   type        = string
   default     = "contoso.local"
   description = "FQDN of the Active Directory forest."
-}
-
-variable "front_end_servers_count" {
-  type        = number
-  default     = 0
-  description = "Number of servers with MinRole Front-end to add to the farm."
-  validation {
-    condition     = var.front_end_servers_count >= 0 && var.front_end_servers_count <= 4
-    error_message = "The front_end_servers_count value must be between 0 and 4 included."
-  }
 }
 
 variable "admin_username" {
@@ -64,7 +87,7 @@ variable "admin_username" {
       "admin",
       "administrator"
     ], var.admin_username)
-    error_message = "'admin' and 'administrator' are not allowed as value of admin_username."
+    error_message = "'admin' and 'administrator' are not allowed values for admin_username."
   }
 }
 
@@ -97,7 +120,7 @@ variable "outbound_access_method" {
   type        = string
   default     = "PublicIPAddress"
   description = <<EOF
-    Select how the virtual machines connect to internet.
+    Select how the virtual machines connect to internet. Choose between 'PublicIPAddress' (default) and 'AzureFirewallProxy'.
     IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to be able to connect to it.
   EOF
   validation {
@@ -112,7 +135,7 @@ variable "outbound_access_method" {
 variable "add_name_to_public_ip_addresses" {
   type        = string
   default     = "SharePointVMsOnly"
-  description = "Set if the Public IP addresses of virtual machines should have a name label."
+  description = "Set if virtual machines should have a public DNS name, instead of just a public IP. Choose between 'No', 'SharePointVMsOnly' (default), and 'Yes'."
   validation {
     condition = contains([
       "No",
@@ -370,7 +393,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://raw.githubusercontent.com/Yvand/terraform-azurerm-sharepoint/7.11.0/dsc/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.0.0/"
 }
 
 variable "tags" {

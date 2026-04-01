@@ -31,7 +31,7 @@ locals {
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
     {
-      "Label" : "RTM",
+      "Label" : "SPRTM",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/3/f/5/3f5f8a7e-462b-41ff-a5b2-04bdf5821ceb/OfficeServer.iso",
@@ -41,7 +41,7 @@ locals {
       ]
     },
     {
-      "Label" : "22H2",
+      "Label" : "SP22H2",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/8/d/f/8dfcb515-6e49-42e5-b20f-5ebdfd19d8e7/wssloc-subscription-kb5002270-fullfile-x64-glb.exe",
@@ -56,7 +56,7 @@ locals {
       ]
     },
     {
-      "Label" : "23H1",
+      "Label" : "SP23H1",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/c/6/a/c6a17105-3d86-42ad-888d-49b22383bfa1/uber-subscription-kb5002355-fullfile-x64-glb.exe"
@@ -64,7 +64,7 @@ locals {
       ]
     },
     {
-      "Label" : "23H2",
+      "Label" : "SP23H2",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/f/5/5/f5559e3f-8b24-419f-b238-b09cf986e927/uber-subscription-kb5002474-fullfile-x64-glb.exe"
@@ -72,7 +72,7 @@ locals {
       ]
     },
     {
-      "Label" : "24H1",
+      "Label" : "SP24H1",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/b/a/b/bab0c7cc-0454-474b-8538-7927f75e6486/uber-subscription-kb5002564-fullfile-x64-glb.exe"
@@ -80,7 +80,7 @@ locals {
       ]
     },
     {
-      "Label" : "24H2",
+      "Label" : "SP24H2",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/6/6/a/66a0057f-79af-4307-8263-103ee75ef5c6/uber-subscription-kb5002640-fullfile-x64-glb.exe"
@@ -88,7 +88,7 @@ locals {
       ]
     },
     {
-      "Label" : "25H1",
+      "Label" : "SP25H1",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/0b131072-7ee6-41ea-b33a-b3410865f3a0/uber-subscription-kb5002698-fullfile-x64-glb.exe"
@@ -96,7 +96,7 @@ locals {
       ]
     },
     {
-      "Label" : "25H2",
+      "Label" : "SP25H2",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/0ae39b29-890d-428c-bcee-c93eeca2053b/uber-subscription-kb5002784-fullfile-x64-glb.exe"
@@ -104,7 +104,7 @@ locals {
       ]
     },
     {
-      "Label" : "Latest",
+      "Label" : "SPLatest",
       "Packages" : [
         {
           "DownloadUrl" : "https://download.microsoft.com/download/9246c84a-1461-48be-8aee-6b99dc65f5cf/uber-subscription-kb5002843-fullfile-x64-glb.exe"
@@ -137,21 +137,21 @@ locals {
   }
 
   dsc_settings = {
-    vm_dc_fileName = "ConfigureDCVM.zip"
-    vm_dc_script   = "ConfigureDCVM.ps1"
-    vm_dc_function = "ConfigureDCVM"
+    vm_dc_fileName = "dsc-dc.zip"
+    vm_dc_script   = "dsc-dc.ps1"
+    vm_dc_function = "ConfigDc"
 
-    vm_sql_fileName = "ConfigureSQLVM.zip"
-    vm_sql_script   = "ConfigureSQLVM.ps1"
-    vm_sql_function = "ConfigureSQLVM"
+    vm_sql_fileName = "dsc-sql.zip"
+    vm_sql_script   = "dsc-sql.ps1"
+    vm_sql_function = "ConfigSql"
 
-    vm_sp_fileName = local.is_sharepoint_subscription ? "ConfigureSPSE.zip" : "ConfigureSPLegacy.zip"
-    vm_sp_script   = local.is_sharepoint_subscription ? "ConfigureSPSE.ps1" : "ConfigureSPLegacy.ps1"
-    vm_sp_function = "ConfigureSPVM"
+    vm_sp_fileName = local.is_sharepoint_subscription ? "dsc-spse-main.zip" : "dsc-splegacy-main.zip"
+    vm_sp_script   = local.is_sharepoint_subscription ? "dsc-spse-main.ps1" : "dsc-splegacy-main.ps1"
+    vm_sp_function = "ConfigSpMain"
 
-    vm_fe_fileName = local.is_sharepoint_subscription ? "ConfigureFESE.zip" : "ConfigureFELegacy.zip"
-    vm_fe_script   = local.is_sharepoint_subscription ? "ConfigureFESE.ps1" : "ConfigureFELegacy.ps1"
-    vm_fe_function = "ConfigureFEVM"
+    vm_fe_fileName = local.is_sharepoint_subscription ? "dsc-spse-frontend.zip" : "dsc-splegacy-frontend.zip"
+    vm_fe_script   = local.is_sharepoint_subscription ? "dsc-spse-frontend.ps1" : "dsc-splegacy-frontend.ps1"
+    vm_fe_function = "ConfigSpFrontend"
   }
 
   deployment_settings = {
@@ -170,7 +170,7 @@ locals {
     spADDirSyncUserName           = "spdirsync"
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
-    default_zone_is_https         = false
+    sharepoint_version            = local.is_sharepoint_subscription ? "SP${split("-", var.sharepoint_version)[1]}" : var.sharepoint_version
   }
 
   default_tags = {
@@ -435,6 +435,14 @@ SETTINGS
       "AdfsSvcCreds": {
         "UserName": "${local.deployment_settings.adfsSvcUserName}",
         "Password": "${local.other_accounts_password}"
+      },
+      "SqlSvcCreds": {
+        "UserName": "${local.deployment_settings.sqlSvcUserName}",
+        "Password": "${local.other_accounts_password}"
+      },
+      "SPSetupCreds": {
+        "UserName": "${local.deployment_settings.spSetupUserName}",
+        "Password": "${local.other_accounts_password}"
       }
     }
   }
@@ -531,7 +539,8 @@ resource "azurerm_virtual_machine_extension" "vm_sql_ext_applydsc" {
     },
     "configurationArguments": {
       "DNSServerIP": "${local.network_settings.vmDCPrivateIPAddress}",
-      "DomainFQDN": "${var.domain_fqdn}"
+      "DomainFQDN": "${var.domain_fqdn}",
+      "SPSetupUserName": "${local.deployment_settings.spSetupUserName}"
     },
     "privacy": {
       "dataCollection": "enable"
@@ -548,10 +557,6 @@ SETTINGS
       },
       "SqlSvcCreds": {
         "UserName": "${local.deployment_settings.sqlSvcUserName}",
-        "Password": "${local.other_accounts_password}"
-      },
-      "SPSetupCreds": {
-        "UserName": "${local.deployment_settings.spSetupUserName}",
         "Password": "${local.other_accounts_password}"
       }
     }
@@ -653,12 +658,13 @@ resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
-      "SharePointVersion": "${var.sharepoint_version}",
+      "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
       "SharePointBits": ${local.sharepoint_bits_used},
-      "DefaultZoneIsHttps": ${local.deployment_settings.default_zone_is_https}
+      "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
+      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
     },
     "privacy": {
       "dataCollection": "enable"
@@ -806,10 +812,12 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "DCServerName": "${local.vms_settings.vm_dc_name}",
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
-      "SharePointVersion": "${var.sharepoint_version}",
+      "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used}
+      "SharePointBits": ${local.sharepoint_bits_used},
+      "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
+      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
     },
     "privacy": {
       "dataCollection": "enable"

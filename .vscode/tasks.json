@@ -16,7 +16,7 @@
         {
             "label": "terraform apply",
             "type": "shell",
-            "command": "terraform fmt && terraform apply -var-file=configuration.tfvars -var-file=/home/yvand/terraform-sharepoint-secrets.tfvars -refresh=false",
+            "command": "terraform fmt && terraform apply -var-file=configuration.tfvars -var-file=/home/yvand/terraform-sharepoint-secrets.tfvars -refresh=false -auto-approve",
             "problemMatcher": [],
             "dependsOn": [
                 "remove state file"
@@ -25,7 +25,7 @@
                 "reveal": "always",
                 "panel": "dedicated",
                 "clear": true,
-                "focus": true
+                "focus": false
             }
         },
         {

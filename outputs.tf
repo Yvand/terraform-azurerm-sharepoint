@@ -8,6 +8,16 @@ output "resource_group_id" {
   description = "Id of the resource group created"
 }
 
+output "sharepoint_version" {
+  value       = local.deployment_settings.sharepoint_version
+  description = "SharePoint version"
+}
+
+output "sharepoint_configuration_level" {
+  value       = var.sharepoint_configuration_level
+  description = "SharePoint configuration level"
+}
+
 output "vm_dc_dns" {
   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
   description = "Public DNS name of the DC VM"
