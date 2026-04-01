@@ -1,13 +1,18 @@
 # Changelog for terraform-azurerm-sharepoint
 
-## [8.0.0] - 
+## [8.0.0] - 2026-04-01
 
-- Template
-  - Use DSC configurations published in repository https://github.com/Yvand/SharePointInfraDsc instead of local copies
+- This module now uses the DSC configurations published in repository https://github.com/Yvand/SharePointInfraDsc, specifically the [v2.0.0](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#200---2026-04-01), which includes significant improvements
+- Added input variable `default_zone_must_be_https`
+- Added input variable `sharepoint_configuration_level`
+- Added output variable `sharepoint_configuration_level`
+- Updated provider `hashicorp/azurerm` to v4.66.0
+- Updated provider `hashicorp/random` to v3.8.1
+- Updated documentation
 
 ## [7.11.0] - 2026-03-12
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the March 2026 PU for SharePoint Subscription
   - bump avm modules version
 
@@ -18,10 +23,9 @@
 - DSC Configuration for DC
   - Renamed favourites
 
-
 ## [7.10.0] - 2026-02-11
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2026 PU for SharePoint Subscription
 
 - DSC Configuration for all SharePoint SE
@@ -29,26 +33,26 @@
 
 ## [7.9.0] - 2026-01-14
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the January 2026 PU for SharePoint Subscription
 
 ## [7.8.0] - 2025-12-10
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2025 PU for SharePoint Subscription
 
 ## [7.7.0] - 2025-11-19
 
 ### Changed
 
-- Template
+- Module
   - Switched to SQL Server 2025 on Windows Server 2025
 
 ## [7.6.0] - 2025-11-17
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the November 2025 PU for SharePoint Subscription
   - Bumped AVM modules
 
@@ -77,7 +81,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2025 CU for SharePoint Subscription
   - Update providers to their latest version
   - Use a fixed version number for AVM modules, to avoid the template validation to fail due to an unexpected breaking change
@@ -86,14 +90,14 @@
 
 ### Fixed
 
-- Template
+- Module
   - Remove deprecated parameter `availability_zones_filter` in module avm-utl-regions
 
 ## [7.4.0] - 2025-09-17
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2025 CU for SharePoint Subscription
   - Add value `Subscription-25H2` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H2 (September 2025 CU)
 
@@ -108,21 +112,21 @@
 
 ### Added
 
-- Template
+- Module
   - Add optional variable `vm_availability_zone`, to specify the Availability Zone which the Virtual Machines should be allocated in. Its default value is null: VMs are not deployed in an Availability Zone
 
 ## [7.3.0] - 2025-08-13
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the August 2025 CU for SharePoint Subscription
 
 ## [7.2.0] - 2025-07-24
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2025 CU for SharePoint Subscription WITH the [security update for the vulnerability CVE-2025-53770](https://msrc.microsoft.com/blog/2025/07/customer-guidance-for-sharepoint-vulnerability-cve-2025-53770/) ([KB5002768](https://support.microsoft.com/help/5002768))
 
 
@@ -130,25 +134,25 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2025 CU for SharePoint Subscription
 
 ### Fixed
 
-- Template
+- Module
   - Ensure variable `tags` optional
 
 ## [7.0.0] - 2025-06-16
 
 ### Changed
 
-- Template
+- Module
   - [Major change]: Create all the resources using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), instead of creating them manually
   - The provider `hashicorp/azurerm` must now be at least version 4.32
 
 ### Added
 
-- Template
+- Module
   - Add variable `tags`, to specify tags to apply to all the resources
   - Add variable `add_default_tags`, to specify if default tags will be added to the resources. Default tags are: 'source', 'createdOn', and 'sharePointVersion'
 
@@ -156,21 +160,21 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the June 2025 CU for SharePoint Subscription
 
 ## [6.5.0] - 25-06-03
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2025 CU for SharePoint Subscription
 
 ## [6.4.0] - 25-04-23
 
 ### Changed
 
-- Template
+- Module
   - Value `enable_azure_bastion` now deploys Azure Bastion Developer, which is available at no extra cost
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2025 CU for SharePoint Subscription
 - DSC Configuration for all VMs
@@ -182,7 +186,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the March 2025 CU for SharePoint Subscription
   - Added value `Subscription-25H1` to parameter `sharePointVersion`, to install SharePoint Subscription version 25H1
   - Enabled accelerated networking on all the virtual machines
@@ -203,14 +207,14 @@
 
 ### Fixed
 
-- Template
+- Module
   - Fixed connecting to VMs through Azure Bastion
 
 ## [6.1.0] - 25-02-24
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2025 CU for SharePoint Subscription
 
 ### Fixed
@@ -225,7 +229,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Enabled [Trusted launch](https://learn.microsoft.com/azure/virtual-machines/trusted-launch-existing-vm), with secure boot and Virtual Trusted Platform Module, on all virtual machines except SharePoint 2016
   - Added variable `add_name_to_public_ip_addresses`, to set which virtual machines have a public name associated to their public IP address.
   - [BREAKING CHANGE] With the default value of new variable `add_name_to_public_ip_addresses` set to `SharePointVMsOnly`, now, only SharePoint VMs have a public name by default. Other VMs only have a public IP.
@@ -246,7 +250,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Update the default size of the virtual machines to use the [Basv2 series](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/basv2-series?tabs=sizebasic). It is newer, cheaper and more performant than the [Bv1 series](https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/bv1-series?tabs=sizebasic) used until now.
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2024 CU for SharePoint Subscription
 
@@ -254,33 +258,33 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the November 2024 CU for SharePoint Subscription
 
 ### Fixed
 
-- Template
+- Module
   - Stopped using the Windows Server's [small disk](https://azure.microsoft.com/en-us/blog/new-smaller-windows-server-iaas-image/) image for SharePoint Subscription VMs, as SharePoint updates no longer have enough free disk space to be installed.
 
 ## [5.1.0] - 24-10-23
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2024 CU for SharePoint Subscription
 
 ## [5.0.0] - 24-09-11
 
 ### Added
 
-- Template
+- Module
   - [BREAKING CHANGE] Add variable `subscription_id`, required after upgrading provider `azurerm` to version 4.1
   - [BREAKING CHANGE] Add variable `outbound_access_method`, to choose how the virtual machines connect to internet. Now, they can connect through either a public IP, or using Azure Firewall as an HTTP proxy
   - Add value `Subscription-24H2` to parameter `sharepoint_version`, to install SharePoint Subscription with 24H2 update
 
 ### Changed
 
-- Template
+- Module
   - [BREAKING CHANGE] Upgrade provider `azurerm` to version 4.1
   - [BREAKING CHANGE] Minimim version required for terraform core is now 1.9.5
   - [BREAKING CHANGE] Rename most of the variables
@@ -292,22 +296,22 @@
 
 ## [4.6.0] - 24-08-20
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the August 2024 CU for SharePoint Subscription
 
 ## [4.5.0] - 24-07-11
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2024 CU for SharePoint Subscription
 
 ## [4.4.0] - 24-06-18
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the June 2024 CU for SharePoint Subscription
 
 ## [4.3.0] - 24-06-04
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2024 CU for SharePoint Subscription
 - DSC configurations
   - Updated DSC module `ActiveDirectoryDsc` to 6.4.0
@@ -316,22 +320,22 @@
 
 ## [4.2.0] - 24-04-10
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2024 CU for SharePoint Subscription
 
 ## [4.1.0] - 24-03-15
 
-- Template
+- Module
   - Added value `Subscription-24H1` to parameter `sharePointVersion`, which installs the March 2024 CU (24H1) for SharePoint Subscription
 
 ## [4.0.1] - 24-02-26
 
-- Template
+- Module
   - Set the minimum version required for provider `azurerm` to 3.88, which is the one that introduced resource `azurerm_virtual_machine_run_command`
 
 ## [4.0.0] - 24-02-26
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the February 2024 CU for SharePoint Subscription
   - Remove provider `azure/azapi`, and use new `resource azurerm_virtual_machine_run_command` added recently to provider `azurerm`
   - Remove SharePoint 2013
@@ -347,14 +351,14 @@
 
 ## [3.14.0] - 24-01-11
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the January 2024 CU for SharePoint Subscription
 
 ## [3.13.0] - 23-12-18
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the December 2023 CU for SharePoint Subscription
   - Add a resource `azapi_resource` from provider `azapi` to run a script that increases MaxEnvelopeSizeKb on SPSE, so that service WS-Management in SPSE can process the bigger DSC script
 - Configuration for SPSE
@@ -374,7 +378,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the November 2023 CU for SharePoint Subscription
 - Configuration for SPSE
   - Configure the SPTrustedBackedByUPAClaimProvider (as much as possible). There are remaining steps needed to finalize its configuration
@@ -387,7 +391,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2023 CU for SharePoint Subscription
 
 ### Fixed
@@ -398,7 +402,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Added value `Subscription-23H2` to parameter `sharepoint_version`, to install SharePoint Subscription with 23H2 update
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2023 CU for SharePoint Subscription (23H2 update)
 
@@ -411,7 +415,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Changed the prefix of the built-in administrator from `local-` to `l-` so it does not exceed 15 characters, because the reset password feature in Azure requires that it has 15 characters maximum.
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the August 2023 CU for SharePoint Subscription
 
@@ -419,7 +423,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2023 CU for SharePoint Subscription
 
 ## [3.7.1] - 23-06-30
@@ -433,7 +437,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the June 2023 CU for SharePoint Subscription
   - Updated SQL image to use SQL Server 2022 on Windows Server 2022.
 - Configuration for all virtual machines
@@ -449,21 +453,21 @@
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2023 CU for SharePoint Subscription
 
 ## [3.5.0] - 23-04-12
 
 ### Changed
 
-- Template
+- Module
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2023 CU for SharePoint Subscription
 
 ## [3.4.0] - 23-04-06
 
 ### Added
 
-- Template
+- Module
   - Added value `Subscription-23H1` to parameter `sharepoint_version`, to install SharePoint Subscription with 23H1 update
 
 ### Changed
@@ -490,7 +494,7 @@
 
 ### Added
 
-- Template
+- Module
   - Added value `Subscription-latest` to variable `sharepoint_version`, to install the January 2023 CU on SharePoint Subscription
 - Configuration for DC
   - Create additional users in AD, in a dedicated OU `AdditionalUsers`
@@ -507,7 +511,7 @@
 
 ### Changed
 
-- Template
+- Module
   - Revert SQL image to SQL Server 2019, due to reliability issues with SQL Server 2022 (SQL PowerShell modules not ready yet)
   - If user chooses SharePoint 2013, template deploys SQL Server 2014 SP3 (latest version it supports)
 - Configuration for DC

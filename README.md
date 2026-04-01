@@ -48,13 +48,13 @@ module "sharepoint" {
   - `2016` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) built and maintained by SharePoint Engineering.
 - Variable `sharepoint_configuration_level` sets how much configuration is done:
   - `Minimum`: Creates a web application with its default zone only
-  - `Light`: Everything in `Minimum` and:
+  - `Light`: Everything in `Minimum`, plus:
     - Provisions the State Service Application
-    - Configures the trusted authentication
-  - `Medium`: Everything in `Light` and:
+    - Configures the trusted authentication (OIDC with ADFS)
+  - `Medium`: Everything in `Light`, plus:
     - Provisions the User Profile Service Application
     - Extends the web application in zone `Intranet`
-  - `Full`: Everything in `Medium` and:
+  - `Full`: Everything in `Medium`, plus:
     - Configures all the resources to run and deploy add-ins
     - Create addditional host-named site collections
 - Variable `default_zone_must_be_https`: `true` if the default zone must use HTTPS, `false` if it may use HTTP (if compatible with the configuration selected).

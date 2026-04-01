@@ -1,6 +1,6 @@
 location                        = "francecentral"
-sharepoint_version              = "Subscription-Latest" #"2019"
-outbound_access_method          = "PublicIPAddress"     #"AzureFirewallProxy"
+sharepoint_version              = "Subscription-RTM" #"2019"
+outbound_access_method          = "PublicIPAddress"  #"AzureFirewallProxy"
 front_end_servers_count         = 1
 enable_azure_bastion            = false
 auto_shutdown_time              = "1830"
@@ -11,4 +11,4 @@ add_name_to_public_ip_addresses = "SharePointVMsOnly"
 add_default_tags                = true
 vm_availability_zone            = null
 default_zone_must_be_https      = true
-sharepoint_configuration_level  = "Full"
+sharepoint_configuration_level  = "Minimum"
