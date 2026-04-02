@@ -1,5 +1,10 @@
 # Changelog for terraform-azurerm-sharepoint
 
+## [8.1.0] - 2026-04-02
+
+- Updated DSC configurations to [v2.1.0](https://github.com/Yvand/SharePointInfraDsc/releases/tag/releases%2Fv2.1.0), which contains [significant improvements](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#210---2026-04-02)
+- Updated documentation
+
 ## [8.0.0] - 2026-04-01
 
 - This module now uses the DSC configurations published in repository https://github.com/Yvand/SharePointInfraDsc, specifically the [v2.0.0](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#200---2026-04-01), which includes significant improvements
