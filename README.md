@@ -2,7 +2,7 @@
 
 This module creates a secure, highly customizable SharePoint Subscription / 2019 / 2016 farm, in your own Azure subscription.
 
-The Azure resources are provisioned with [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured using the [DSC (desired state configuration) project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).
+The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured with DSC (desired state configuration), using the [project Yvand/SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).
 
 ## Main objectives
 
@@ -28,22 +28,27 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 
 ## Usage
 
-```terraform
-module "sharepoint" {
-  source                         = "Yvand/sharepoint/azurerm"
-  location                       = "francecentral"
-  subscription_id                = "<your_azure_subscription_id>"
-  resource_group_name            = "<your_resource_group_name>"
-  sharepoint_version             = "Subscription-Latest"
-  sharepoint_configuration_level = "Medium"
-  front_end_servers_count        = 0
-  domain_fqdn                    = "contoso.local"
-  admin_username                 = "yvand"
-  admin_password                 = "<password>"
-  outbound_access_method         = "PublicIPAddress"
-  rdp_traffic_rule               = "<your_internet_public_ip>"
-}
-```
+1. Create a .tf file with the content below (change the values to fit your needs):
+
+    ```terraform
+    module "sharepoint" {
+      source                         = "Yvand/sharepoint/azurerm"
+      location                       = "francecentral"
+      subscription_id                = "<your_azure_subscription_id>"
+      resource_group_name            = "<resource_group_name_to_create>"
+      sharepoint_version             = "Subscription-Latest"
+      sharepoint_configuration_level = "Medium"
+      front_end_servers_count        = 0
+      domain_fqdn                    = "contoso.local"
+      admin_username                 = "yvand"
+      admin_password                 = "<password>"
+      outbound_access_method         = "PublicIPAddress"
+      rdp_traffic_rule               = "<your_internet_public_ip>"
+    }
+    ```
+
+1. run `terraform init`
+1. run `terraform apply`
 
 ## SharePoint configuration
 
@@ -124,11 +129,8 @@ You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate t
 - The deployment of Azure Bastion fails pretty frequently. This has little impact, since it is very easy to redeploy through the portal.
 - SharePoint 2016 and 2019 are outdated and deprecated. Their corresponding DSC configurations receive little maintenance to ensure they continue to deploy, but receive no improvement. As such, variables `sharepoint_configuration_level` and `default_zone_must_be_https` have no effect on them.
 
-## More information
-
-Additional notes:
+## Additional information
 
 - Using the default options, the complete deployment takes about 1h (but it is worth it).
 - Deploying any post-RTM SharePoint Subscription build adds only an extra 5-10 minutes to the total deployment time (compared to RTM), partly because the updates are installed before the farm is created.
-- Once it is completed, the template will return valuable information in the 'Outputs' of the deployment.
 - For various (very good) reasons, in SQL and SharePoint VMs, the name of the local (not domain) administrator is in format `"l-[admin_username]"`. It is recorded in the 'Outputs' and in the state file.
