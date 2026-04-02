@@ -7,11 +7,11 @@ The Azure resources are provisioned using [Azure Verified Modules](https://azure
 ## Main objectives
 
 - An easy to create, secure, customizable environment, under your full control (you set the AD domain name, admin account name, all accounts password).
-- A SharePoint farm installed with the PU of your choice (including the latest one), and up-to-date Windows and softwares installed before you first log-in.
+- A SharePoint farm installed with the PU of your choice (including the latest one), and up-to-date Windows and softwares before you first log-in.
 - A SharePoint farm configured based on your choice. In its full configuration, it covers many scenarios that take ages to configure manually.
 - Truly ready-to-use virtual machines right at the first log-in, with everything a SharePoint administrator needs.
 - A state-of-the-art configuration that showcases the best practices for a a well-configured SharePoint farm.
-- A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (compare this with the time it takes to install a SharePoint PU in your existing farm).
+- A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (compare this with the time it takes to install a SharePoint PU in your farm).
 
 ## Virtual machines
 
@@ -28,7 +28,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 
 ## Usage
 
-1. Create a .tf file with the content below (change the values to fit your needs):
+1. Create a .tf file and copy the content below (change the values to fit your needs):
 
     ```terraform
     module "sharepoint" {
@@ -65,16 +65,16 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
   - `2019` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview) built and maintained by SharePoint Engineering.
   - `2016` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) built and maintained by SharePoint Engineering.
 - Variable `sharepoint_configuration_level` sets how much configuration is done:
-  - `Minimum`: Creates a web application with its default zone only
+  - `Minimum`: Creates a web application with its default zone only.
   - `Light`: Everything in `Minimum`, plus:
-    - Provisions the State Service Application
-    - Configures the trusted authentication (OIDC with ADFS)
+    - Provisions the State Service Application.
+    - Configures the trusted authentication (OIDC with ADFS).
   - `Medium`: Everything in `Light`, plus:
-    - Provisions the User Profile Service Application
-    - Extends the web application in zone `Intranet`
+    - Provisions the User Profile Service Application.
+    - Extends the web application in zone `Intranet`.
   - `Full`: Everything in `Medium`, plus:
-    - Configures all the resources to run and deploy add-ins
-    - Creates addditional host-named site collections
+    - Configures all the resources to run and deploy add-ins.
+    - Creates addditional host-named site collections.
 - Variable `default_zone_must_be_https`: `true` if the default zone must use HTTPS, `false` if it may use HTTP (if compatible with the configuration selected).
 - Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
 
@@ -109,16 +109,16 @@ IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`,
 
 ## Outputs
 
-The module returns multiple variables to record the logins, passwords and the public IP address of virtual machines.
+The module stores multiple values in the state file, such as the logins, passwords, the public IP address of virtual machines, and other useful information.
 
 ## Cost of the resources deployed
 
 By default, virtual machines use [Basv2 series](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series), ideal for such template and much cheaper than other comparable series.  
-Here is the default size and storage type per virtual machine role:
+Below is the default size and storage used per virtual machine role:
 
 - DC: Size [Standard_B2als_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (2 vCPU / 4 GiB RAM) and OS disk is a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
 - SQL Server: Size [Standard_B2as_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (2 vCPU / 8 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds).
-- SharePoint: Size [Standard_B4as_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (4 vCPU / 16 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription SharePoint 2016), or a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2019).
+- SharePoint: Size [Standard_B4as_v2](https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/basv2-series) (4 vCPU / 16 GiB RAM) and OS disk is a 128 GiB [standard SSD E10](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint Subscription and SharePoint 2016), or a 32 GiB [standard SSD E4](https://learn.microsoft.com/azure/virtual-machines/disks-types#standard-ssds) (for SharePoint 2019).
 
 You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate the monthly cost of deploying the resources in this module, in the region/currency of your choice, assuming it is created using the default settings and runs 24*7.
 
