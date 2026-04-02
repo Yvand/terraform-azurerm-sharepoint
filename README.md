@@ -17,13 +17,13 @@ The Azure resources are provisioned using [Azure Verified Modules](https://azure
 ## Virtual machines
 
 - The DC and SharePoint Subscription machines use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice).
-- SQL machine uses the latest image [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice).
+- SQL machine uses the latest image of [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice).
 
 About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) published by SharePoint Engineering.
 
 ## Prerequisites
 
-- An Azure subscription with at least the Azure role [**Contributor**](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor), to create the resources (including a resource group).
+- An Azure subscription with at least the Azure role [**Contributor**](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor), to create the resources.
 - [Terraform CLI](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest).
 
@@ -133,5 +133,5 @@ You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate t
 ## Additional information
 
 - Using the default options, the complete deployment takes about 1h (but it is worth it).
-- Deploying any post-RTM SharePoint Subscription build adds only an extra 5-10 minutes to the total deployment time (compared to RTM), partly because the updates are installed before the farm is created.
+- Installing a SharePoint PU adds less than 10 minutes to the total deployment time, mostly because the PU is installed before the farm is created.
 - For various (very good) reasons, in SQL and SharePoint VMs, the name of the local (not domain) administrator is in format `"l-[admin_username]"`. It is recorded in the 'Outputs' and in the state file.
