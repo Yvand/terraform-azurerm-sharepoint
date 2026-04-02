@@ -2,16 +2,17 @@
 
 This module creates a secure, highly customizable SharePoint Subscription / 2019 / 2016 farm, in your own Azure subscription.
 
-The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured with DSC (desired state configuration), using the [project Yvand/SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).
+The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured with DSC (desired state configuration), using the [project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).
 
 ## Main objectives
 
-- An easy to create, secure, customizable environment, under your full control (you set the AD domain name, admin account name, all accounts password).
+- A highly secure, customizable environment, under your full control (you set the AD domain name, admin account name, all accounts password).
 - A SharePoint farm installed with the PU of your choice (including the latest one), and up-to-date Windows and softwares before you first log-in.
 - A SharePoint farm configured based on your choice. In its full configuration, it covers many scenarios that take ages to configure manually.
 - Truly ready-to-use virtual machines right at the first log-in, with everything a SharePoint administrator needs.
 - A state-of-the-art configuration that showcases the best practices for a a well-configured SharePoint farm.
-- A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (compare this with the time it takes to install a SharePoint PU in your farm).
+- A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (if you think it is not so fast, compare this with the time it takes to install a SharePoint PU in your farm).
+- Easy to create, use, and destroy. You want to test a SharePoint setting/config but you are afraid to mess your existing farm? You want to test a specific SharePoint build? Or test OIDC? Use this module.
 
 ## Virtual machines
 
