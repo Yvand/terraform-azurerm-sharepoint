@@ -1,11 +1,24 @@
 # terraform-azurerm-sharepoint
 
-This module creates a highly customizable SharePoint Subscription / 2019 / 2016 farm, where you can define many settings, including the accounts password (it can be randomly generated), the AD domain and admin account names, and how much SharePoint configuration is performed.
+This module creates a secure, highly customizable SharePoint Subscription / 2019 / 2016 farm, in your own Azure subscription.
 
-The Azure resources are provisioned using [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured from scratch using the DSC configuration files in [project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).  
+The Azure resources are provisioned with [Azure Verified Modules](https://azure.github.io/Azure-Verified-Modules/), and the virtual machines are configured using the [DSC (desired state configuration) project SharePointInfraDsc](https://github.com/Yvand/SharePointInfraDsc).
 
-The virtual machines for the DC and SharePoint Subscription use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice), and SQL uses image [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice), so they are always up-to-date when deployed.  
-Note: The legacy versions of SharePoint use outdated images ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) published by SharePoint Engineering.
+## Main objectives
+
+- An easy to create, secure, customizable environment, under your full control (you set the AD domain name, admin account name, all accounts password).
+- A SharePoint farm installed with the PU of your choice (including the latest one), and up-to-date Windows and softwares installed before you first log-in.
+- A SharePoint farm configured based on your choice. In its full configuration, it covers many scenarios that take ages to configure manually.
+- Truly ready-to-use virtual machines right at the first log-in, with everything a SharePoint administrator needs.
+- A state-of-the-art configuration that showcases the best practices for a a well-configured SharePoint farm.
+- A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (compare this with the time it takes to install a SharePoint PU in your existing farm).
+
+## Virtual machines
+
+- The DC and SharePoint Subscription machines use the latest image of [Windows Server 2025 Datacenter: Azure Edition](https://marketplace.microsoft.com/en-us/product/microsoftwindowsserver.windowsserver?tab=PlansAndPrice).
+- SQL machine uses the latest image [SQL Server 2025 Standard Developer on Windows Server 2025](https://marketplace.microsoft.com/en-us/product/microsoftsqlserver.sql2025-ws2025?tab=PlansAndPrice).
+
+About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) and [2019](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview)) published by SharePoint Engineering.
 
 ## Prerequisites
 
