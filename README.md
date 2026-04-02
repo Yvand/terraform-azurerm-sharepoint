@@ -29,7 +29,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 
 ## Usage
 
-1. Create a .tf file and copy the content below (change the values to fit your needs):
+1. Create a .tf file, copy the content below, and change the values to fit your needs:
 
     ```terraform
     module "sharepoint" {
