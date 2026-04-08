@@ -104,7 +104,7 @@ IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`,
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
-  - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
+  - As part of the public DNS name of the virtual machines, if they get a public IP (variable `outbound_access_method`), and a DNS name associated with it (variable `add_name_to_public_ip_addresses`).
 
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 
