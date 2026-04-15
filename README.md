@@ -54,7 +54,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 ## SharePoint configuration
 
 - Variable `sharepoint_version` sets which version of SharePoint will be installed:
-  - `Subscription-Latest` (default): SharePoint Subscription with the latest public update available at the time of publishing this version: March 2026 ([KB5002843](https://support.microsoft.com/help/5002843)).
+  - `Subscription-Latest` (default): SharePoint Subscription with the latest public update available at the time of publishing this version: April 2026 ([KB5002853](https://support.microsoft.com/help/5002853)).
   - `Subscription-25H2`: SharePoint Subscription with the [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 PU / [KB5002784](https://support.microsoft.com/help/5002784)).
   - `Subscription-25H1`: SharePoint Subscription with the [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 PU / [KB5002698](https://support.microsoft.com/help/5002698)).
   - `Subscription-24H2`: SharePoint Subscription with the [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 PU / [kb5002640](https://support.microsoft.com/help/5002640)).
@@ -104,7 +104,7 @@ IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`,
 
 - Variable `resource_group_name` is used:
   - As the name of the Azure resource group which hosts all the resources that will be created.
-  - As part of the public DNS name of the virtual machines, if a public IP is created (depends on variable `add_public_ip_address`).
+  - As part of the public DNS name of the virtual machines, if they get a public IP (variable `outbound_access_method`), and a DNS name associated with it (variable `add_name_to_public_ip_addresses`).
 
 - Variable `enable_hybrid_benefit_server_licenses` allows you to enable Azure Hybrid Benefit to use your on-premises Windows Server licenses and reduce cost, if you are eligible. See [this page](https://docs.microsoft.com/azure/virtual-machines/windows/hybrid-use-benefit-licensing) for more information..
 

@@ -13,7 +13,7 @@ variable "resource_group_name" {
 variable "location" {
   type        = string
   default     = "francecentral"
-  description = "The Azure region where this and supporting resources should be deployed."
+  description = "Location for all the resources."
   nullable    = false
 }
 
@@ -39,12 +39,6 @@ variable "sharepoint_version" {
   }
 }
 
-variable "default_zone_must_be_https" {
-  type        = bool
-  default     = false
-  description = "Set to true if the default zone of the main web application must use HTTPS protocol."
-}
-
 variable "sharepoint_configuration_level" {
   type        = string
   default     = "Light"
@@ -60,6 +54,12 @@ variable "sharepoint_configuration_level" {
     ], var.sharepoint_configuration_level)
     error_message = "Invalid value for sharepoint_configuration_level."
   }
+}
+
+variable "default_zone_must_be_https" {
+  type        = bool
+  default     = false
+  description = "Set to true if the default zone of the main web application must use HTTPS protocol."
 }
 
 variable "front_end_servers_count" {
@@ -135,7 +135,7 @@ variable "outbound_access_method" {
 variable "add_name_to_public_ip_addresses" {
   type        = string
   default     = "SharePointVMsOnly"
-  description = "Set if virtual machines should have a public DNS name, instead of just a public IP. Choose between 'No', 'SharePointVMsOnly' (default), and 'Yes'."
+  description = "If a virtual machine has a public IP address, specify if it should also have a public DNS name. Choose between 'No', 'SharePointVMsOnly' (default), and 'Yes'."
   validation {
     condition = contains([
       "No",
@@ -149,7 +149,7 @@ variable "add_name_to_public_ip_addresses" {
 variable "enable_azure_bastion" {
   type        = bool
   default     = false
-  description = "Specify if Azure Bastion Developer should be provisioned. See https://azure.microsoft.com/en-us/services/azure-bastion for more information."
+  description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
 }
 
 variable "enable_hybrid_benefit_server_licenses" {
@@ -161,7 +161,7 @@ variable "enable_hybrid_benefit_server_licenses" {
 variable "time_zone" {
   type        = string
   default     = "Romance Standard Time"
-  description = "Time zone of the virtual machines. Type '[TimeZoneInfo]::GetSystemTimeZones().Id' in PowerShell to get the list."
+  description = "Time zone of the virtual machines (also used for the variable auto_shutdown_time)."
   validation {
     condition = contains([
       "Dateline Standard Time",
@@ -393,7 +393,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.1.0/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.3.0/"
 }
 
 variable "tags" {
