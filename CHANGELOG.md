@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [8.2.0] - 2026-04-15
+
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2026 PU for SharePoint Subscription
 - Updated DSC configurations to [v2.3.0](https://github.com/Yvand/SharePointInfraDsc/releases/tag/releases%2Fv2.3.0), which contains [reliability improvements on the DC and SQL](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#230---2026-04-15)
 - Minor update to the documentation
