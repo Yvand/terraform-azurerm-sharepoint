@@ -1,11 +1,12 @@
-location                        = "francecentral"
-sharepoint_version              = "Subscription-Latest" #"2019"
-default_zone_must_be_https      = false
-sharepoint_configuration_level  = "Full"
+location           = "francecentral"
+sharepoint_version = "Subscription-Latest" #"2019"
+# sharepoint_configuration_level  = "Medium"
+sharepoint_configuration        = ["TrustedAuthentication", "UserProfilesService"]
+default_zone_must_be_https      = true
 outbound_access_method          = "PublicIPAddress" #"AzureFirewallProxy"
 front_end_servers_count         = 0
 enable_azure_bastion            = false
-auto_shutdown_time              = "1930"
+auto_shutdown_time              = "1830"
 vm_dc_size                      = "Standard_B2als_v2"
 vm_sql_size                     = "Standard_B2as_v2"
 vm_sp_size                      = "Standard_B4as_v2"

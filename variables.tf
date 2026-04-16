@@ -56,6 +56,25 @@ variable "sharepoint_configuration_level" {
   }
 }
 
+variable "sharepoint_configuration" {
+  type        = set(string)
+  default     = ["StateService"]
+  description = "Configuration options to apply to the SharePoint farm."
+  validation {
+    condition = length(setsubtract(var.sharepoint_configuration, [
+      "All",
+      "TrustedAuthentication",
+      "UserProfilesService",
+      "ExtendedWebApplication",
+      "Addins",
+      "HostNamedSiteCollections",
+      "StateService"
+    ])) == 0
+    error_message = "Invalid value(s) in sharepoint_configuration. Allowed values are: All, TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
+  }
+}
+
+
 variable "default_zone_must_be_https" {
   type        = bool
   default     = false
