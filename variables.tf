@@ -43,7 +43,7 @@ variable "sharepoint_configuration_level" {
   type        = string
   default     = "Medium"
   description = <<EOF
-    Level of configuration to apply on the SharePoint farm. Choose between 'Minimum', 'Light' (default), 'Medium', and 'Full'.
+    Level of configuration to apply on the SharePoint farm. Choose between 'Custom', 'Minimum', 'Light', 'Medium' (default), and 'Full'.
   EOF
   validation {
     condition = contains([
@@ -60,7 +60,7 @@ variable "sharepoint_configuration_level" {
 variable "custom_sharepoint_configuration" {
   type        = set(string)
   default     = []
-  description = "Configuration options to apply to the SharePoint farm."
+  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
   validation {
     condition = length(setsubtract(var.custom_sharepoint_configuration, [
       "TrustedAuthentication",
