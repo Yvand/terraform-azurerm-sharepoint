@@ -1,8 +1,8 @@
-location           = "francecentral"
-sharepoint_version = "Subscription-Latest" #"2019"
-# sharepoint_configuration_level  = "Medium"
-sharepoint_configuration        = ["TrustedAuthentication", "UserProfilesService"]
-default_zone_must_be_https      = true
+location                        = "francecentral"
+sharepoint_version              = "Subscription-RTM" #"2019"
+sharepoint_configuration_level  = "Custom"
+custom_sharepoint_configuration = ["TrustedAuthentication", "UserProfilesService"]
+default_zone_must_be_https      = false
 outbound_access_method          = "PublicIPAddress" #"AzureFirewallProxy"
 front_end_servers_count         = 0
 enable_azure_bastion            = false

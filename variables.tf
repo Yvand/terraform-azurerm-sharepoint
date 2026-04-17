@@ -41,12 +41,13 @@ variable "sharepoint_version" {
 
 variable "sharepoint_configuration_level" {
   type        = string
-  default     = "Light"
+  default     = "Medium"
   description = <<EOF
     Level of configuration to apply on the SharePoint farm. Choose between 'Minimum', 'Light' (default), 'Medium', and 'Full'.
   EOF
   validation {
     condition = contains([
+      "Custom",
       "Minimum",
       "Light",
       "Medium",
@@ -56,13 +57,12 @@ variable "sharepoint_configuration_level" {
   }
 }
 
-variable "sharepoint_configuration" {
+variable "custom_sharepoint_configuration" {
   type        = set(string)
-  default     = ["StateService"]
+  default     = []
   description = "Configuration options to apply to the SharePoint farm."
   validation {
-    condition = length(setsubtract(var.sharepoint_configuration, [
-      "All",
+    condition = length(setsubtract(var.custom_sharepoint_configuration, [
       "TrustedAuthentication",
       "UserProfilesService",
       "ExtendedWebApplication",
@@ -70,10 +70,17 @@ variable "sharepoint_configuration" {
       "HostNamedSiteCollections",
       "StateService"
     ])) == 0
-    error_message = "Invalid value(s) in sharepoint_configuration. Allowed values are: All, TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
+    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
+  }
+  validation {
+    condition     = var.sharepoint_configuration_level != "Custom" || length(var.custom_sharepoint_configuration) > 0
+    error_message = "custom_sharepoint_configuration cannot be empty when sharepoint_configuration_level is set to 'Custom'."
+  }
+  validation {
+    condition     = var.sharepoint_configuration_level == "Custom" || length(var.custom_sharepoint_configuration) == 0
+    error_message = "custom_sharepoint_configuration must be empty when sharepoint_configuration_level is not set to 'Custom'."
   }
 }
-
 
 variable "default_zone_must_be_https" {
   type        = bool
