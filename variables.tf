@@ -60,17 +60,17 @@ variable "sharepoint_configuration_level" {
 variable "custom_sharepoint_configuration" {
   type        = set(string)
   default     = []
-  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
+  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
   validation {
     condition = length(setsubtract(var.custom_sharepoint_configuration, [
       "TrustedAuthentication",
       "UserProfilesService",
       "ExtendedWebApplication",
       "Addins",
-      "HostNamedSiteCollections",
+      "AdditionalSiteCollections",
       "StateService"
     ])) == 0
-    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, HostNamedSiteCollections, StateService."
+    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
   }
   validation {
     condition     = var.sharepoint_configuration_level != "Custom" || length(var.custom_sharepoint_configuration) > 0
