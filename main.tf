@@ -159,7 +159,6 @@ locals {
     sharepoint_central_admin_port = 5000
     localAdminUserName            = "l-${var.admin_username}"
     enable_analysis               = false # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
-    apply_browser_policies        = true
     sqlAlias                      = "SQLAlias"
     adfsSvcUserName               = "adfssvc"
     sqlSvcUserName                = "sqlsvc"
@@ -171,6 +170,7 @@ locals {
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
     sharepoint_version            = local.is_sharepoint_subscription ? "SP${split("-", var.sharepoint_version)[1]}" : var.sharepoint_version
+    default_global_configuration  = ["ApplyBrowserPolicies", "EnableDscPerformanceAnalysis"]
   }
 
   default_tags = {
@@ -417,7 +417,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
       "SPServerName": "${local.vms_settings.vm_sp_name}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
-      "ApplyBrowserPolicies": ${local.deployment_settings.apply_browser_policies}
+      "GlobalConfiguration": ${jsonencode(local.deployment_settings.default_global_configuration)}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -816,10 +816,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used},
-      "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
-      "SharePointConfigurationLevel": "${var.sharepoint_configuration_level}",
-      "CustomSharePointConfiguration": ${jsonencode(var.custom_sharepoint_configuration)}
+      "SharePointBits": ${local.sharepoint_bits_used}
     },
     "privacy": {
       "dataCollection": "enable"

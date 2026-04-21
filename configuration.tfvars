@@ -1,10 +1,10 @@
 location                        = "francecentral"
 sharepoint_version              = "Subscription-RTM" #"2019"
 sharepoint_configuration_level  = "Custom"
-custom_sharepoint_configuration = ["TrustedAuthentication", "UserProfilesService"]
+custom_sharepoint_configuration = ["TrustedAuthentication"]
 default_zone_must_be_https      = false
 outbound_access_method          = "PublicIPAddress" #"AzureFirewallProxy"
-front_end_servers_count         = 0
+front_end_servers_count         = 1
 enable_azure_bastion            = false
 auto_shutdown_time              = "1830"
 vm_dc_size                      = "Standard_B2als_v2"
