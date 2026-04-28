@@ -419,12 +419,10 @@ module "vm_dc_def" {
       password                           = local.admin_password
       generate_admin_password_or_ssh_key = false
     }
-
     # key_vault_configuration = {
     #   resource_id = module.keyvault[0].resource_id
     #   secret_configuration = {
-    #     name = "vm-dc-admin-credentials"
-    #     value = local.admin_password
+    #     name = "adminpassword"
     #   }
     # }
   }
