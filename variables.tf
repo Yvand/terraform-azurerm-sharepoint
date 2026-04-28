@@ -178,6 +178,12 @@ variable "enable_azure_bastion" {
   description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
 }
 
+variable "provision_azure_keyvault" {
+  type        = bool
+  default     = false
+  description = "Specify if Azure Key Vault should be provisioned and store the credentials."
+}
+
 variable "enable_hybrid_benefit_server_licenses" {
   type        = bool
   default     = false

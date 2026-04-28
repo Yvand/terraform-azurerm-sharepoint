@@ -275,6 +275,59 @@ resource "azurerm_resource_group" "rg" {
   tags     = local.tags
 }
 
+# Get current IP address for use in KV firewall rules
+data "http" "ip" {
+  url = "https://api.ipify.org/"
+  retry {
+    attempts     = 5
+    max_delay_ms = 1000
+    min_delay_ms = 500
+  }
+}
+
+# We need the tenant id for the key vault
+data "azurerm_client_config" "this" {}
+
+# Azure key vault
+module "keyvault" {
+  count                    = var.provision_azure_keyvault ? 1 : 0
+  source                   = "Azure/avm-res-keyvault-vault/azurerm"
+  version                  = "0.10.2"
+  name                     = module.naming.key_vault.name_unique
+  location                 = azurerm_resource_group.rg.location
+  resource_group_name      = azurerm_resource_group.rg.name
+  tags                     = local.tags
+  enable_telemetry         = local.enable_telemetry
+  tenant_id                = data.azurerm_client_config.this.tenant_id
+  sku_name                 = "standard"
+  purge_protection_enabled = false
+  network_acls = {
+    bypass   = "AzureServices"
+    ip_rules = ["${data.http.ip.response_body}/32"]
+  }
+  role_assignments = {
+    deployment_user_kv_admin = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.this.object_id
+    }
+  }
+  secrets = {
+    admin_password = {
+      name = "password-${var.admin_username}"
+    }
+    other_accounts_password = {
+      name = "password-other-accounts"
+    }
+  }
+  secrets_value = {
+    admin_password          = local.admin_password
+    other_accounts_password = local.other_accounts_password
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+}
+
 # Setup the network
 module "vnet" {
   source           = "Azure/avm-res-network-virtualnetwork/azurerm"
@@ -324,6 +377,7 @@ module "nsg_subnet_main" {
 
 // Create resources for VM DC
 module "vm_dc_def" {
+  # depends_on                 = [module.keyvault]
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
   version                    = "0.20.0"
   name                       = "vm-dc"
@@ -365,6 +419,14 @@ module "vm_dc_def" {
       password                           = local.admin_password
       generate_admin_password_or_ssh_key = false
     }
+
+    # key_vault_configuration = {
+    #   resource_id = module.keyvault[0].resource_id
+    #   secret_configuration = {
+    #     name = "vm-dc-admin-credentials"
+    #     value = local.admin_password
+    #   }
+    # }
   }
   os_disk = {
     name                 = "vm-dc-${module.naming.managed_disk.name_unique}"
