@@ -275,8 +275,8 @@ resource "azurerm_resource_group" "rg" {
   tags     = local.tags
 }
 
-# Get current IP address for use in KV firewall rules
-data "http" "ip" {
+# Get current IP address
+data "http" "current_ip" {
   url = "https://api.ipify.org/"
   retry {
     attempts     = 5
@@ -285,12 +285,11 @@ data "http" "ip" {
   }
 }
 
-# We need the tenant id for the key vault
-data "azurerm_client_config" "this" {}
+data "azurerm_client_config" "current_config" {}
 
 # Azure key vault
 module "keyvault" {
-  count                    = var.provision_azure_keyvault ? 1 : 0
+  count                    = var.provision_keyvault ? 1 : 0
   source                   = "Azure/avm-res-keyvault-vault/azurerm"
   version                  = "0.10.2"
   name                     = module.naming.key_vault.name_unique
@@ -298,17 +297,17 @@ module "keyvault" {
   resource_group_name      = azurerm_resource_group.rg.name
   tags                     = local.tags
   enable_telemetry         = local.enable_telemetry
-  tenant_id                = data.azurerm_client_config.this.tenant_id
+  tenant_id                = data.azurerm_client_config.current_config.tenant_id
   sku_name                 = "standard"
   purge_protection_enabled = false
   network_acls = {
     bypass   = "AzureServices"
-    ip_rules = ["${data.http.ip.response_body}/32"]
+    ip_rules = ["${data.http.current_ip.response_body}/32"]
   }
   role_assignments = {
     deployment_user_kv_admin = {
       role_definition_id_or_name = "Key Vault Administrator"
-      principal_id               = data.azurerm_client_config.this.object_id
+      principal_id               = data.azurerm_client_config.current_config.object_id
     }
   }
   secrets = {

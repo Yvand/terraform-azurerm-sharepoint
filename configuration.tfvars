@@ -13,4 +13,4 @@ vm_sp_size                      = "Standard_B4as_v2"
 add_name_to_public_ip_addresses = "SharePointVMsOnly"
 add_default_tags                = true
 vm_availability_zone            = null
-provision_azure_keyvault        = true
+provision_keyvault        = true
