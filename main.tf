@@ -289,7 +289,7 @@ data "azurerm_client_config" "current_config" {}
 
 # Azure key vault
 module "keyvault" {
-  count                    = var.provision_keyvault ? 1 : 0
+  count                    = var.add_keyvault ? 1 : 0
   source                   = "Azure/avm-res-keyvault-vault/azurerm"
   version                  = "0.10.2"
   name                     = module.naming.key_vault.name_unique
@@ -302,6 +302,7 @@ module "keyvault" {
   purge_protection_enabled = false
   network_acls = {
     ip_rules = ["${data.http.current_ip.response_body}/32"]
+    bypass   = "None"
   }
   role_assignments = {
     deployment_user_kv_admin = {
@@ -311,10 +312,12 @@ module "keyvault" {
   }
   secrets = {
     admin_password = {
-      name = "password-${var.admin_username}"
+      name         = "password-${var.admin_username}"
+      content_type = "text/plain"
     }
     other_accounts_password = {
-      name = "password-other-accounts"
+      name         = "password-other-accounts"
+      content_type = "text/plain"
     }
   }
   secrets_value = {
