@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added input variable `add_keyvault`, to create a key vault and store the account passwords as secrets
+
 ## [8.2.0] - 2026-04-15
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2026 PU for SharePoint Subscription

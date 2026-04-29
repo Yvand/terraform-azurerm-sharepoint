@@ -275,6 +275,60 @@ resource "azurerm_resource_group" "rg" {
   tags     = local.tags
 }
 
+# Get current IP address
+data "http" "current_ip" {
+  url = "https://api.ipify.org/"
+  retry {
+    attempts     = 5
+    max_delay_ms = 1000
+    min_delay_ms = 500
+  }
+}
+
+data "azurerm_client_config" "current_config" {}
+
+# Azure key vault
+module "keyvault" {
+  count                    = var.add_keyvault ? 1 : 0
+  source                   = "Azure/avm-res-keyvault-vault/azurerm"
+  version                  = "0.10.2"
+  name                     = module.naming.key_vault.name_unique
+  location                 = azurerm_resource_group.rg.location
+  resource_group_name      = azurerm_resource_group.rg.name
+  tags                     = local.tags
+  enable_telemetry         = local.enable_telemetry
+  tenant_id                = data.azurerm_client_config.current_config.tenant_id
+  sku_name                 = "standard"
+  purge_protection_enabled = false
+  network_acls = {
+    ip_rules = ["${data.http.current_ip.response_body}/32"]
+    bypass   = "None"
+  }
+  role_assignments = {
+    deployment_user_kv_admin = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.current_config.object_id
+    }
+  }
+  secrets = {
+    admin_password = {
+      name         = "password-${var.admin_username}"
+      content_type = "text/plain"
+    }
+    other_accounts_password = {
+      name         = "password-other-accounts"
+      content_type = "text/plain"
+    }
+  }
+  secrets_value = {
+    admin_password          = local.admin_password
+    other_accounts_password = local.other_accounts_password
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
+}
+
 # Setup the network
 module "vnet" {
   source           = "Azure/avm-res-network-virtualnetwork/azurerm"
