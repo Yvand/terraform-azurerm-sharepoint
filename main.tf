@@ -378,7 +378,6 @@ module "nsg_subnet_main" {
 
 // Create resources for VM DC
 module "vm_dc_def" {
-  # depends_on                 = [module.keyvault]
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
   version                    = "0.20.0"
   name                       = "vm-dc"
@@ -420,12 +419,6 @@ module "vm_dc_def" {
       password                           = local.admin_password
       generate_admin_password_or_ssh_key = false
     }
-    # key_vault_configuration = {
-    #   resource_id = module.keyvault[0].resource_id
-    #   secret_configuration = {
-    #     name = "adminpassword"
-    #   }
-    # }
   }
   os_disk = {
     name                 = "vm-dc-${module.naming.managed_disk.name_unique}"
