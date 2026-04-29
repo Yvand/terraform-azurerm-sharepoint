@@ -301,7 +301,6 @@ module "keyvault" {
   sku_name                 = "standard"
   purge_protection_enabled = false
   network_acls = {
-    bypass   = "AzureServices"
     ip_rules = ["${data.http.current_ip.response_body}/32"]
   }
   role_assignments = {
