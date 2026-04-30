@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Added input variable `add_keyvault`, to create a key vault and store the account passwords as secrets
-- Renamed input variable `add_bastion` to `add_bastion`
+- Renamed and removed input variable `enable_azure_bastion` to `add_bastion`
 
 ## [8.2.0] - 2026-04-15
 

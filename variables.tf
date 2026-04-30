@@ -172,11 +172,11 @@ variable "add_name_to_public_ip_addresses" {
   }
 }
 
-variable "add_bastion" {
-  type        = bool
-  default     = false
-  description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
-}
+# variable "add_bastion" {
+#   type        = bool
+#   default     = false
+#   description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
+# }
 
 variable "add_keyvault" {
   type        = bool

@@ -27,6 +27,7 @@ locals {
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
   enable_telemetry           = true
+  add_bastion                = false
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
@@ -902,20 +903,20 @@ SETTINGS
 PROTECTED_SETTINGS
 }
 
-# Resources for Azure Bastion Developer SKU
-module "azure_bastion" {
-  count              = var.add_bastion ? 1 : 0
-  source             = "Azure/avm-res-network-bastionhost/azurerm"
-  version            = "0.9.0"
-  name               = module.naming.bastion_host.name_unique
-  location           = azurerm_resource_group.rg.location
-  parent_id          = azurerm_resource_group.rg.id
-  tags               = local.tags
-  enable_telemetry   = local.enable_telemetry
-  virtual_network_id = module.vnet.resource_id
-  sku                = "Developer"
-  zones              = []
-}
+# # Resources for Azure Bastion Developer SKU
+# module "azure_bastion" {
+#   count              = local.add_bastion ? 1 : 0
+#   source             = "Azure/avm-res-network-bastionhost/azurerm"
+#   version            = "0.9.0"
+#   name               = module.naming.bastion_host.name_unique
+#   location           = azurerm_resource_group.rg.location
+#   parent_id          = azurerm_resource_group.rg.id
+#   tags               = local.tags
+#   enable_telemetry   = local.enable_telemetry
+#   virtual_network_id = module.vnet.resource_id
+#   sku                = "Developer"
+#   zones              = []
+# }
 
 # Resources for Azure Firewall
 resource "azurerm_subnet" "firewall_subnet" {
