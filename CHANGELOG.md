@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added input variable `add_keyvault`, to create a key vault and store the account passwords as secrets
+- Renamed input variable `add_bastion` to `add_bastion`
 
 ## [8.2.0] - 2026-04-15
 
@@ -189,7 +190,7 @@
 ### Changed
 
 - Module
-  - Value `enable_azure_bastion` now deploys Azure Bastion Developer, which is available at no extra cost
+  - Value `add_bastion` now deploys Azure Bastion Developer, which is available at no extra cost
   - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the April 2025 CU for SharePoint Subscription
 - DSC Configuration for all VMs
   - Updated DSC module ActiveDirectoryDsc to 6.6.2 and remove all customizations on this module
