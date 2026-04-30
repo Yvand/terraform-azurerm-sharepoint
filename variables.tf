@@ -425,7 +425,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.3.0/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.0.0/"
 }
 
 variable "tags" {
