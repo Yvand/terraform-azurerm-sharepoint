@@ -904,7 +904,7 @@ PROTECTED_SETTINGS
 
 # Resources for Azure Bastion Developer SKU
 module "azure_bastion" {
-  count              = var.add_bastion ? 0 : 0
+  count              = var.add_bastion ? 1 : 0
   source             = "Azure/avm-res-network-bastionhost/azurerm"
   version            = "0.9.0"
   name               = module.naming.bastion_host.name_unique
