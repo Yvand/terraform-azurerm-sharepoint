@@ -41,18 +41,44 @@ variable "sharepoint_version" {
 
 variable "sharepoint_configuration_level" {
   type        = string
-  default     = "Light"
+  default     = "Medium"
   description = <<EOF
-    Level of configuration to apply on the SharePoint farm. Choose between 'Minimum', 'Light' (default), 'Medium', and 'Full'.
+    Level of configuration to apply on the SharePoint farm. Choose between 'Custom', 'Minimum', 'Light', 'Medium' (default), and 'Full'.
   EOF
   validation {
     condition = contains([
+      "Custom",
       "Minimum",
       "Light",
       "Medium",
       "Full"
     ], var.sharepoint_configuration_level)
     error_message = "Invalid value for sharepoint_configuration_level."
+  }
+}
+
+variable "custom_sharepoint_configuration" {
+  type        = set(string)
+  default     = []
+  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
+  validation {
+    condition = length(setsubtract(var.custom_sharepoint_configuration, [
+      "TrustedAuthentication",
+      "UserProfilesService",
+      "ExtendedWebApplication",
+      "Addins",
+      "AdditionalSiteCollections",
+      "StateService"
+    ])) == 0
+    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
+  }
+  validation {
+    condition     = var.sharepoint_configuration_level != "Custom" || length(var.custom_sharepoint_configuration) > 0
+    error_message = "custom_sharepoint_configuration cannot be empty when sharepoint_configuration_level is set to 'Custom'."
+  }
+  validation {
+    condition     = var.sharepoint_configuration_level == "Custom" || length(var.custom_sharepoint_configuration) == 0
+    error_message = "custom_sharepoint_configuration must be empty when sharepoint_configuration_level is not set to 'Custom'."
   }
 }
 
@@ -121,7 +147,7 @@ variable "outbound_access_method" {
   default     = "PublicIPAddress"
   description = <<EOF
     Select how the virtual machines connect to internet. Choose between 'PublicIPAddress' (default) and 'AzureFirewallProxy'.
-    IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to be able to connect to it.
+    IMPORTANT: With AzureFirewallProxy, you will need to either add a public IP address to a virtual machine to connect to it, or use Azure Bastion.
   EOF
   validation {
     condition = contains([
@@ -146,10 +172,16 @@ variable "add_name_to_public_ip_addresses" {
   }
 }
 
-variable "enable_azure_bastion" {
+# variable "add_bastion" {
+#   type        = bool
+#   default     = false
+#   description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
+# }
+
+variable "add_keyvault" {
   type        = bool
   default     = false
-  description = "Specify if Azure Bastion Developer should be provisioned. See https://go.microsoft.com/fwlink/?linkid=2249215 for more information."
+  description = "Specify if an Azure Key Vault resource should be created to store the passwords."
 }
 
 variable "enable_hybrid_benefit_server_licenses" {
@@ -393,7 +425,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v2.3.0/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.0.0/"
 }
 
 variable "tags" {

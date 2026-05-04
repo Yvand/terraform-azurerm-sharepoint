@@ -18,6 +18,11 @@ output "sharepoint_configuration_level" {
   description = "SharePoint configuration level"
 }
 
+output "custom_sharepoint_configuration" {
+  value       = var.custom_sharepoint_configuration
+  description = "Custom SharePoint configuration applied when sharepoint_configuration_level is set to 'Custom'"
+}
+
 output "vm_dc_dns" {
   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_dc_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
   description = "Public DNS name of the DC VM"

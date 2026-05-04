@@ -27,6 +27,7 @@ locals {
   _artifactsLocation         = var._artifactsLocation
   _artifactsLocationSasToken = ""
   enable_telemetry           = true
+  add_bastion                = false
   is_sharepoint_subscription = split("-", var.sharepoint_version)[0] == "Subscription" ? true : false
   sharepoint_bits_used       = local.is_sharepoint_subscription ? jsonencode(local.sharepoint_subscription_bits) : jsonencode([])
   sharepoint_subscription_bits = [
@@ -159,7 +160,6 @@ locals {
     sharepoint_central_admin_port = 5000
     localAdminUserName            = "l-${var.admin_username}"
     enable_analysis               = false # This enables a Python script that parses dsc logs on SharePoint VMs, to compute the time take by each resource to run
-    apply_browser_policies        = true
     sqlAlias                      = "SQLAlias"
     adfsSvcUserName               = "adfssvc"
     sqlSvcUserName                = "sqlsvc"
@@ -171,6 +171,7 @@ locals {
     spSuperUserName               = "spSuperUser"
     spSuperReaderName             = "spSuperReader"
     sharepoint_version            = local.is_sharepoint_subscription ? "SP${split("-", var.sharepoint_version)[1]}" : var.sharepoint_version
+    default_global_configuration  = ["ApplyBrowserPolicies", "EnableDscPerformanceAnalysis"]
   }
 
   default_tags = {
@@ -273,6 +274,61 @@ resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
   tags     = local.tags
+}
+
+# Get current IP address - only when Key Vault is enabled
+data "http" "current_ip" {
+  count = var.add_keyvault ? 1 : 0
+  url   = "https://api.ipify.org/"
+  retry {
+    attempts     = 5
+    max_delay_ms = 1000
+    min_delay_ms = 500
+  }
+}
+
+data "azurerm_client_config" "current_config" {}
+
+# Azure key vault
+module "keyvault" {
+  count                    = var.add_keyvault ? 1 : 0
+  source                   = "Azure/avm-res-keyvault-vault/azurerm"
+  version                  = "0.10.2"
+  name                     = module.naming.key_vault.name_unique
+  location                 = azurerm_resource_group.rg.location
+  resource_group_name      = azurerm_resource_group.rg.name
+  tags                     = local.tags
+  enable_telemetry         = local.enable_telemetry
+  tenant_id                = data.azurerm_client_config.current_config.tenant_id
+  sku_name                 = "standard"
+  purge_protection_enabled = false
+  network_acls = {
+    ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
+    bypass   = "None"
+  }
+  role_assignments = {
+    deployment_user_kv_admin = {
+      role_definition_id_or_name = "Key Vault Administrator"
+      principal_id               = data.azurerm_client_config.current_config.object_id
+    }
+  }
+  secrets = {
+    admin_password = {
+      name         = "password-${var.admin_username}"
+      content_type = "text/plain"
+    }
+    other_accounts_password = {
+      name         = "password-other-accounts"
+      content_type = "text/plain"
+    }
+  }
+  secrets_value = {
+    admin_password          = local.admin_password
+    other_accounts_password = local.other_accounts_password
+  }
+  wait_for_rbac_before_secret_operations = {
+    create = "60s"
+  }
 }
 
 # Setup the network
@@ -417,7 +473,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
       "SPServerName": "${local.vms_settings.vm_sp_name}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "SharePointCentralAdminPort": "${local.deployment_settings.sharepoint_central_admin_port}",
-      "ApplyBrowserPolicies": ${local.deployment_settings.apply_browser_policies}
+      "GlobalConfiguration": ${jsonencode(local.deployment_settings.default_global_configuration)}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -664,7 +720,8 @@ resource "azurerm_virtual_machine_extension" "vm_sp_ext_applydsc" {
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
       "SharePointBits": ${local.sharepoint_bits_used},
       "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
-      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
+      "SharePointConfigurationLevel": "${var.sharepoint_configuration_level}",
+      "CustomSharePointConfiguration": ${jsonencode(var.custom_sharepoint_configuration)}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -815,9 +872,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
       "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
-      "SharePointBits": ${local.sharepoint_bits_used},
-      "DefaultZoneMustBeHttps": ${var.default_zone_must_be_https},
-      "ConfigurationLevel": "${var.sharepoint_configuration_level}"
+      "SharePointBits": ${local.sharepoint_bits_used}
     },
     "privacy": {
       "dataCollection": "enable"
@@ -849,20 +904,20 @@ SETTINGS
 PROTECTED_SETTINGS
 }
 
-# Resources for Azure Bastion Developer SKU
-module "azure_bastion" {
-  count              = var.enable_azure_bastion ? 1 : 0
-  source             = "Azure/avm-res-network-bastionhost/azurerm"
-  version            = "0.9.0"
-  name               = module.naming.bastion_host.name_unique
-  location           = azurerm_resource_group.rg.location
-  parent_id          = azurerm_resource_group.rg.id
-  tags               = local.tags
-  enable_telemetry   = local.enable_telemetry
-  virtual_network_id = module.vnet.resource_id
-  sku                = "Developer"
-  zones              = []
-}
+# # Resources for Azure Bastion Developer SKU
+# module "azure_bastion" {
+#   count              = local.add_bastion ? 1 : 0
+#   source             = "Azure/avm-res-network-bastionhost/azurerm"
+#   version            = "0.9.0"
+#   name               = module.naming.bastion_host.name_unique
+#   location           = azurerm_resource_group.rg.location
+#   parent_id          = azurerm_resource_group.rg.id
+#   tags               = local.tags
+#   enable_telemetry   = local.enable_telemetry
+#   virtual_network_id = module.vnet.resource_id
+#   sku                = "Developer"
+#   zones              = []
+# }
 
 # Resources for Azure Firewall
 resource "azurerm_subnet" "firewall_subnet" {

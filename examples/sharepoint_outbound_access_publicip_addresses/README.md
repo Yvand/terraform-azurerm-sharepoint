@@ -10,7 +10,6 @@ module "sharepoint" {
   resource_group_name     = "<your_resource_group_name>"
   sharepoint_version      = "Subscription-Latest"
   outbound_access_method  = "PublicIPAddress"
-  enable_azure_bastion    = true
   admin_username          = "<your_admin_username>"
   admin_password          = "<your_admin_password>"
   other_accounts_password = "<your_other_accounts_password>"
