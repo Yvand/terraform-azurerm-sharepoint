@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Added input variable `add_keyvault`, to create a key vault and store the account passwords as secrets
-- Renamed and removed input variable `enable_azure_bastion` to `add_bastion`
+- **BREAKING CHANGE**: Renamed and removed input variable `enable_azure_bastion` to `add_bastion`
+- Updated DSC configurations to [v3.0.0](https://github.com/Yvand/SharePointInfraDsc/releases/tag/releases%2Fv3.0.0), which contains [multiple improvements](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md#300---2026-04-30)
 
 ## [8.2.0] - 2026-04-15
 

@@ -147,7 +147,7 @@ variable "outbound_access_method" {
   default     = "PublicIPAddress"
   description = <<EOF
     Select how the virtual machines connect to internet. Choose between 'PublicIPAddress' (default) and 'AzureFirewallProxy'.
-    IMPORTANT: With AzureFirewallProxy, you need to either enable Azure Bastion, or manually add a public IP address to a virtual machine, to be able to connect to it.
+    IMPORTANT: With AzureFirewallProxy, you will need to either add a public IP address to a virtual machine to connect to it, or use Azure Bastion.
   EOF
   validation {
     condition = contains([

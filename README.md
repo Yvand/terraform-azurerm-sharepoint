@@ -95,7 +95,7 @@ The remote access to the virtual machines depends on the following variables:
     - `*` or `Internet`: RDP traffic is allowed from everywhere.
     - CIDR notation (e.g. `192.168.99.0/24` or `2001:1234::/64`) or an IP address (e.g. `192.168.99.0` or `2001:1234::`): RDP traffic is allowed from the IP address / pattern specified.
 
-IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`, you have to either use Azure Bastion, or manually add a public IP address later, to be able to connect to a virtual machine.
+IMPORTANT: If you set variable `outbound_access_method` to `AzureFirewallProxy`, the virtual machines do not get a public IP. To connect to a virtual machine, you will need to either assign a public IP address after deployment, or use Azure Bastion.
 
 ## Other input variables
 
