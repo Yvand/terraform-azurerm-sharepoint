@@ -276,9 +276,10 @@ resource "azurerm_resource_group" "rg" {
   tags     = local.tags
 }
 
-# Get current IP address
+# Get current IP address - only when Key Vault is enabled
 data "http" "current_ip" {
-  url = "https://api.ipify.org/"
+  count = var.add_keyvault ? 1 : 0
+  url   = "https://api.ipify.org/"
   retry {
     attempts     = 5
     max_delay_ms = 1000
@@ -302,7 +303,7 @@ module "keyvault" {
   sku_name                 = "standard"
   purge_protection_enabled = false
   network_acls = {
-    ip_rules = ["${data.http.current_ip.response_body}/32"]
+    ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
     bypass   = "None"
   }
   role_assignments = {
