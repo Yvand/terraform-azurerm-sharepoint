@@ -60,7 +60,7 @@ variable "sharepoint_configuration_level" {
 variable "custom_sharepoint_configuration" {
   type        = set(string)
   default     = []
-  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
+  description = "Configuration to apply to the SharePoint farm. Used only if sharePointConfigurationLevel is set to 'Custom'. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService, ProjectServer, Search."
   validation {
     condition = length(setsubtract(var.custom_sharepoint_configuration, [
       "TrustedAuthentication",
@@ -68,9 +68,11 @@ variable "custom_sharepoint_configuration" {
       "ExtendedWebApplication",
       "Addins",
       "AdditionalSiteCollections",
-      "StateService"
+      "StateService",
+      "ProjectServer",
+      "Search"
     ])) == 0
-    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService."
+    error_message = "Invalid value(s) in custom_sharepoint_configuration. Allowed values are: TrustedAuthentication, UserProfilesService, ExtendedWebApplication, Addins, AdditionalSiteCollections, StateService, ProjectServer, Search."
   }
   validation {
     condition     = var.sharepoint_configuration_level != "Custom" || length(var.custom_sharepoint_configuration) > 0
@@ -425,7 +427,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.0.0/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.1.0/"
 }
 
 variable "tags" {

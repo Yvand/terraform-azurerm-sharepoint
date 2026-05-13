@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [9.1.0] - 2026-05-13
+
+- Value `Subscription-Latest` for parameter `sharePointVersion` now installs the May 2026 PU for SharePoint Subscription
+- Updated DSC configurations to [v3.1.0](https://github.com/Yvand/SharePointInfraDsc/releases/tag/releases%2Fv3.1.0) over v3.0.0 ([changelog](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md))
+- Updated documentation
+
 ## [9.0.0] - 2026-05-04
 
 - Added input variable `add_keyvault`, to create a key vault and store the account passwords as secrets
