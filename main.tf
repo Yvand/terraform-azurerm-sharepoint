@@ -108,7 +108,7 @@ locals {
       "Label" : "SPLatest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/f839c57c-7b4e-4213-b03b-2c1508e13588/uber-subscription-kb5002853-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/926a1266-38a6-4721-9cb8-700df61ffaa2/uber-subscription-kb5002863-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -870,7 +870,6 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
       "SQLServerName": "${local.vms_settings.vm_sql_name}",
       "SQLAlias": "${local.deployment_settings.sqlAlias}",
       "SharePointVersion": "${local.deployment_settings.sharepoint_version}",
-      "SharePointSitesAuthority": "${local.deployment_settings.sharepoint_sites_authority}",
       "EnableAnalysis": ${local.deployment_settings.enable_analysis},
       "SharePointBits": ${local.sharepoint_bits_used}
     },

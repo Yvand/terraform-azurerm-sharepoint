@@ -8,7 +8,7 @@ The Azure resources are provisioned using [Azure Verified Modules](https://azure
 
 - A highly secure, customizable environment, under your full control (you set the AD domain name, admin account name, all accounts password).
 - A SharePoint farm installed with the PU of your choice (including the latest one), and up-to-date Windows and softwares before you first log-in.
-- Eliminate the burden of doing tedious configuration: Many SharePoint features and services are configured, doing this manually would take ages.
+- A fine-grained control on the SharePoint configuration: You can easily specify what features are configured individually, or choose between 4 levels: 'Minimum', 'Light', 'Medium' (default), and 'Full'
 - Truly ready-to-use virtual machines right at the first log-in, with everything a SharePoint administrator needs.
 - A state-of-the-art configuration that showcases the best practices for a well-configured SharePoint farm.
 - A fast deployment time: A fully configured SharePoint farm installed with the latest PU takes only about 1h15 mins to be fully ready (if you think it is not so fast, compare this with the time it takes to install a SharePoint PU in your farm).
@@ -54,7 +54,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 ## SharePoint configuration
 
 - Variable `sharepoint_version` sets which version of SharePoint will be installed:
-  - `Subscription-Latest` (default): SharePoint Subscription with the latest public update available at the time of publishing this version: April 2026 ([KB5002853](https://support.microsoft.com/help/5002853)).
+  - `Subscription-Latest` (default): SharePoint Subscription with the latest public update available at the time of publishing this version: May 2026 ([kb5002863](https://support.microsoft.com/help/5002863)).
   - `Subscription-25H2`: SharePoint Subscription with the [Feature Update 25H2](https://learn.microsoft.com/sharepoint/what-s-new/new-improved-features-sharepoint-server-subscription-edition-2025-h2-release) (September 2025 PU / [KB5002784](https://support.microsoft.com/help/5002784)).
   - `Subscription-25H1`: SharePoint Subscription with the [Feature Update 25H1](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-25h1-release) (March 2025 PU / [KB5002698](https://support.microsoft.com/help/5002698)).
   - `Subscription-24H2`: SharePoint Subscription with the [Feature Update 24H2](https://learn.microsoft.com/sharepoint/what-s-new/new-and-improved-features-in-sharepoint-server-subscription-edition-24h2-release) (September 2024 PU / [kb5002640](https://support.microsoft.com/help/5002640)).
@@ -66,16 +66,19 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
   - `2019` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2019?tab=Overview) built and maintained by SharePoint Engineering.
   - `2016` (deprecated): Uses the [image](https://marketplace.microsoft.com/en-us/product/sharepointserver.2016?tab=Overview) built and maintained by SharePoint Engineering.
 - Variable `sharepoint_configuration_level` sets how much configuration is done:
+  - `Custom`: You specify what SharePoint features are installed by setting the variable `custom_sharepoint_configuration`.
   - `Minimum`: Creates a web application with its default zone only.
   - `Light`: Everything in `Minimum`, plus:
     - Provisions the State Service Application.
     - Configures the trusted authentication (OIDC with ADFS).
+    - Creates additional site collections (host-named and path-based).
   - `Medium`: Everything in `Light`, plus:
+    - Extends the web application to zone `Intranet`.
     - Provisions the User Profile Service Application.
-    - Extends the web application in zone `Intranet`.
-  - `Full`: Everything in `Medium`, plus:
     - Configures all the resources to run and deploy add-ins.
-    - Creates additional host-named site collections.
+  - `Full`: Everything in `Medium`, plus:
+    - Provisions Project Server.
+    - Provisions the Search Service Application.
 - Variable `default_zone_must_be_https`: `true` if the default zone must use HTTPS, `false` if it may use HTTP (if compatible with the configuration selected).
 - Variable `front_end_servers_count` lets you add up to 4 additional SharePoint servers to the farm with the [MinRole Front-end](https://learn.microsoft.com/sharepoint/install/planning-for-a-minrole-server-deployment-in-sharepoint-server).
 
