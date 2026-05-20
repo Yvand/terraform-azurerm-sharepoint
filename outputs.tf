@@ -28,15 +28,15 @@ output "vm_dc_dns" {
   description = "Public DNS name of the DC VM"
 }
 
-output "vm_sql_dns" {
-  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
-  description = "Public DNS name of the SQL VM"
-}
+# output "vm_sql_dns" {
+#   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" ? module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sql_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
+#   description = "Public DNS name of the SQL VM"
+# }
 
-output "vm_sp_dns" {
-  value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
-  description = "Public DNS name of the SP VM"
-}
+# output "vm_sp_dns" {
+#   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_sp_def.public_ips["network_interface_1-ip_configuration_1"].ip_address : null
+#   description = "Public DNS name of the SP VM"
+# }
 
 output "vm_fe_dns" {
   value       = var.outbound_access_method == "PublicIPAddress" ? var.add_name_to_public_ip_addresses == "Yes" || var.add_name_to_public_ip_addresses == "SharePointVMsOnly" ? module.vm_fe_def[*].public_ips["network_interface_1-ip_configuration_1"].fqdn : module.vm_fe_def[*].public_ips["network_interface_1-ip_configuration_1"].ip_address : null
@@ -53,10 +53,10 @@ output "domain_admin_account_format_bastion" {
   description = "Domain administrator account in the format required by Azure Bastion: 'username@domain_fqdn'"
 }
 
-output "local_admin_username" {
-  value       = module.vm_sp_def.admin_username
-  description = "Local (not domain) administrator of SQL and SharePoint VMs"
-}
+# output "local_admin_username" {
+#   value       = module.vm_sp_def.admin_username
+#   description = "Local (not domain) administrator of SQL and SharePoint VMs"
+# }
 
 output "admin_password" {
   value       = local.admin_password

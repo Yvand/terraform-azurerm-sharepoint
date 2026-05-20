@@ -11,6 +11,6 @@ auto_shutdown_time              = "1930"
 vm_dc_size                      = "Standard_B2als_v2"
 vm_sql_size                     = "Standard_B2as_v2"
 vm_sp_size                      = "Standard_B4as_v2"
-add_name_to_public_ip_addresses = "SharePointVMsOnly"
+add_name_to_public_ip_addresses = "Yes" #"SharePointVMsOnly"
 add_default_tags                = true
 vm_availability_zone            = null
