@@ -14,7 +14,8 @@ provider "azurerm" {
       purge_soft_delete_on_destroy = true
     }
   }
-  subscription_id = var.subscription_id
+  subscription_id     = var.subscription_id
+  storage_use_azuread = true # https://registry.terraform.io/modules/Azure/avm-res-storage-storageaccount/azurerm/latest
 }
 
 locals {
@@ -280,8 +281,7 @@ resource "azurerm_resource_group" "rg" {
 
 # Get current IP address - only when Key Vault is enabled
 data "http" "current_ip" {
-  count = var.add_keyvault ? 1 : 0
-  url   = "https://api.ipify.org/"
+  url = "https://api.ipify.org/"
   retry {
     attempts     = 5
     max_delay_ms = 1000
@@ -305,7 +305,7 @@ module "keyvault" {
   sku_name                 = "standard"
   purge_protection_enabled = false
   network_acls = {
-    ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
+    ip_rules = ["${trimspace(data.http.current_ip.response_body)}/32"]
     bypass   = "None"
   }
   role_assignments = {
@@ -454,6 +454,12 @@ module "storage_account" {
   containers = {
     blob_container_dsc = {
       name = "blob-container-dsc"
+      role_assignments = {
+        rbac_storage_blob_data_contributor = {
+          role_definition_id_or_name = "Storage Blob Data Contributor"
+          principal_id               = data.azurerm_client_config.current_config.object_id
+        }
+      }
     }
   }
   managed_identities = {
@@ -462,15 +468,12 @@ module "storage_account" {
   # network_rules = {
   #   virtual_network_subnet_ids = toset([azapi_resource.subnet.id])
   # }
-  #create a private endpoint for each endpoint type
   private_endpoints = {
     endpoint = {
-      # the name must be set to avoid conflicting resources.
-      name                          = "pe-blob-${module.naming.storage_account.name_unique}"
-      subnet_resource_id            = module.vnet.subnets["subnet_pe"].resource_id
-      subresource_name              = "blob"
-      private_dns_zone_resource_ids = [module.private_dns_zone.resource_id]
-      # these are optional but illustrate making well-aligned service connection & NIC names.
+      name                            = "pe-blob-${module.naming.storage_account.name_unique}"
+      subnet_resource_id              = module.vnet.subnets["subnet_pe"].resource_id
+      subresource_name                = "blob"
+      private_dns_zone_resource_ids   = [module.private_dns_zone.resource_id]
       private_service_connection_name = "psc-blob-${module.naming.storage_account.name_unique}"
       network_interface_name          = "nic-pe-blob-${module.naming.storage_account.name_unique}"
       inherit_lock                    = false
@@ -481,7 +484,6 @@ module "storage_account" {
         }
       }
 
-
       # role_assignments = {
       #   role_assignment_1 = {
       #     role_definition_id_or_name = "Contributor"
@@ -490,7 +492,12 @@ module "storage_account" {
       # }
     }
   }
-  public_network_access_enabled = false
+  public_network_access_enabled = true
+  network_rules = {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+    ip_rules       = ["${trimspace(data.http.current_ip.response_body)}"]
+  }
   role_assignments = {
     role_assignment_1 = {
       role_definition_id_or_name       = "Owner"
@@ -498,16 +505,22 @@ module "storage_account" {
       skip_service_principal_aad_check = false
     },
     role_assignment_2 = {
-      role_definition_id_or_name = "Storage Blob Data Reader"
-      # principal_id                     = module.vm_dc_def.managed_identities["system_assigned"].principal_id
+      role_definition_id_or_name       = "Storage Blob Data Reader"
       principal_id                     = module.vm_dc_def.system_assigned_mi_principal_id
       skip_service_principal_aad_check = false
     },
   }
-
 }
 
-
+resource "azurerm_storage_blob" "dsc_dc" {
+  storage_account_name   = module.storage_account.name
+  storage_container_name = module.storage_account.containers["blob_container_dsc"].name
+  name                   = "dsc-dc.zip"
+  type                   = "Block"
+  content_type           = "application/zip"
+  source                 = "/home/yvand/temp/dsc-dc.zip"
+  # source = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases%2Fv3.1.0/dsc-dc.zip"
+}
 
 
 
@@ -645,6 +658,7 @@ module "vm_dc_def" {
 # }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
+  count                      = 0
   name                       = "AzurePolicyforWindows"
   virtual_machine_id         = module.vm_dc_def.resource_id
   publisher                  = "Microsoft.GuestConfiguration"
