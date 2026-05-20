@@ -344,7 +344,7 @@ module "vnet" {
   enable_telemetry = local.enable_telemetry
   address_space    = [local.network_settings.vNetPrivatePrefix]
   subnets = {
-    vm_subnet_1 = {
+    subnet_vm = {
       name                            = "${module.naming.subnet.name_unique}-vms"
       address_prefix                  = local.network_settings.mainSubnetPrefix
       default_outbound_access_enabled = false
@@ -352,7 +352,7 @@ module "vnet" {
         id = module.nsg_subnet_main.resource_id
       }
     }
-    vm_subnet_pe = {
+    subnet_pe = {
       name                            = "${module.naming.subnet.name_unique}-pe"
       address_prefix                  = local.network_settings.peSubnetPrefix
       default_outbound_access_enabled = false
@@ -421,6 +421,99 @@ module "nsg_subnet_pe" {
   }
 }
 
+// Private endpoint for storage account
+// Private DNS zone
+module "private_dns_zone" {
+  source      = "Azure/avm-res-network-privatednszone/azurerm"
+  version     = "0.5.0"
+  tags        = local.tags
+  domain_name = "privatelink.blob.core.windows.net"
+  parent_id   = azurerm_resource_group.rg.id
+  retry = {
+    error_message_regex = ["CannotDeleteResource"]
+    attempts            = 3
+    delay               = "15s"
+  }
+  virtual_network_links = {
+    vnetBloblink = {
+      name                 = "blob_${module.vnet.name}-link"
+      virtual_network_id   = module.vnet.resource_id
+      registration_enabled = false
+    }
+  }
+}
+
+// Storage account
+module "storage_account" {
+  source    = "Azure/avm-res-storage-storageaccount/azurerm"
+  version   = "0.7.0"
+  tags      = local.tags
+  location  = azurerm_resource_group.rg.location
+  name      = module.naming.storage_account.name_unique
+  parent_id = azurerm_resource_group.rg.id
+  containers = {
+    blob_container_dsc = {
+      name = "blob-container-dsc"
+    }
+  }
+  managed_identities = {
+    system_assigned = true
+  }
+  # network_rules = {
+  #   virtual_network_subnet_ids = toset([azapi_resource.subnet.id])
+  # }
+  #create a private endpoint for each endpoint type
+  private_endpoints = {
+    endpoint = {
+      # the name must be set to avoid conflicting resources.
+      name                          = "pe-blob-${module.naming.storage_account.name_unique}"
+      subnet_resource_id            = module.vnet.subnets["subnet_pe"].resource_id
+      subresource_name              = "blob"
+      private_dns_zone_resource_ids = [module.private_dns_zone.resource_id]
+      # these are optional but illustrate making well-aligned service connection & NIC names.
+      private_service_connection_name = "psc-blob-${module.naming.storage_account.name_unique}"
+      network_interface_name          = "nic-pe-blob-${module.naming.storage_account.name_unique}"
+      inherit_lock                    = false
+      ip_configurations = {
+        staticIpConfig = {
+          name               = "staticIpConfig"
+          private_ip_address = local.network_settings.blobStoragePrivateIPAddress
+        }
+      }
+
+
+      # role_assignments = {
+      #   role_assignment_1 = {
+      #     role_definition_id_or_name = "Contributor"
+      #     principal_id               = coalesce(var.msi_id, data.azapi_client_config.current.object_id)
+      #   }
+      # }
+    }
+  }
+  public_network_access_enabled = false
+  role_assignments = {
+    role_assignment_1 = {
+      role_definition_id_or_name       = "Owner"
+      principal_id                     = data.azurerm_client_config.current_config.object_id
+      skip_service_principal_aad_check = false
+    },
+    role_assignment_2 = {
+      role_definition_id_or_name = "Storage Blob Data Reader"
+      # principal_id                     = module.vm_dc_def.managed_identities["system_assigned"].principal_id
+      principal_id                     = module.vm_dc_def.system_assigned_mi_principal_id
+      skip_service_principal_aad_check = false
+    },
+  }
+
+}
+
+
+
+
+
+
+
+
 // Create resources for VM DC
 module "vm_dc_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
@@ -449,7 +542,7 @@ module "vm_dc_def" {
       ip_configurations = {
         ip_configuration_1 = {
           name                          = "vm-dc-${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          private_ip_subnet_resource_id = module.vnet.subnets["subnet_vm"].resource_id
           private_ip_address_allocation = "Static"
           private_ip_address            = local.network_settings.vmDCPrivateIPAddress
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
@@ -585,7 +678,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
 #       ip_configurations = {
 #         ip_configuration_1 = {
 #           name                          = "vm-sql-${module.naming.network_interface.name_unique}-ipconfig1"
-#           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+#           private_ip_subnet_resource_id = module.vnet.subnets["subnet_vm"].resource_id
 #           private_ip_address_allocation = "Dynamic"
 #           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
 #           public_ip_address_name        = "vm-sql-${module.naming.public_ip.name_unique}"
@@ -700,7 +793,7 @@ resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
 #       ip_configurations = {
 #         ip_configuration_1 = {
 #           name                          = "vm-sp-${module.naming.network_interface.name_unique}-ipconfig1"
-#           private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+#           private_ip_subnet_resource_id = module.vnet.subnets["subnet_vm"].resource_id
 #           private_ip_address_allocation = "Dynamic"
 #           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
 #           public_ip_address_name        = "vm-sp-${module.naming.public_ip.name_unique}"
@@ -854,7 +947,7 @@ module "vm_fe_def" {
       ip_configurations = {
         ip_configuration_1 = {
           name                          = "vm-fe${count.index}-${module.naming.network_interface.name_unique}-ipconfig1"
-          private_ip_subnet_resource_id = module.vnet.subnets["vm_subnet_1"].resource_id
+          private_ip_subnet_resource_id = module.vnet.subnets["subnet_vm"].resource_id
           private_ip_address_allocation = "Dynamic"
           create_public_ip_address      = var.outbound_access_method == "PublicIPAddress" ? true : false
           public_ip_address_name        = "vm-fe${count.index}-${module.naming.public_ip.name_unique}"
