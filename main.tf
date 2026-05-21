@@ -26,6 +26,7 @@ locals {
   license_type               = var.enable_hybrid_benefit_server_licenses == true ? "Windows_Server" : "None"
   vm_availability_zone       = var.vm_availability_zone == null ? null : var.vm_availability_zone == 0 ? random_integer.zone_index.result : var.vm_availability_zone
   _artifactsLocation         = var._artifactsLocation
+  artifacts_location_base    = endswith(local._artifactsLocation, "/") ? local._artifactsLocation : "${local._artifactsLocation}/"
   _artifactsLocationSasToken = ""
   enable_telemetry           = true
   add_bastion                = false
@@ -156,6 +157,15 @@ locals {
     vm_fe_fileName = local.is_sharepoint_subscription ? "dsc-spse-frontend.zip" : "dsc-splegacy-frontend.zip"
     vm_fe_script   = local.is_sharepoint_subscription ? "dsc-spse-frontend.ps1" : "dsc-splegacy-frontend.ps1"
     vm_fe_function = "ConfigSpFrontend"
+  }
+
+  dsc_zip_files = {
+    "dsc-dc.zip"                = "${local.artifacts_location_base}dsc-dc.zip${local._artifactsLocationSasToken}"
+    "dsc-sql.zip"               = "${local.artifacts_location_base}dsc-sql.zip${local._artifactsLocationSasToken}"
+    "dsc-spse-main.zip"         = "${local.artifacts_location_base}dsc-spse-main.zip${local._artifactsLocationSasToken}"
+    "dsc-spse-frontend.zip"     = "${local.artifacts_location_base}dsc-spse-frontend.zip${local._artifactsLocationSasToken}"
+    "dsc-splegacy-main.zip"     = "${local.artifacts_location_base}dsc-splegacy-main.zip${local._artifactsLocationSasToken}"
+    "dsc-splegacy-frontend.zip" = "${local.artifacts_location_base}dsc-splegacy-frontend.zip${local._artifactsLocationSasToken}"
   }
 
   deployment_settings = {
@@ -512,16 +522,42 @@ module "storage_account" {
   }
 }
 
-resource "azurerm_storage_blob" "dsc_dc" {
-  storage_account_name   = module.storage_account.name
-  storage_container_name = module.storage_account.containers["blob_container_dsc"].name
-  name                   = "dsc-dc.zip"
-  type                   = "Block"
-  content_type           = "application/zip"
-  source                 = "/home/yvand/temp/dsc-dc.zip"
-  # source = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases%2Fv3.1.0/dsc-dc.zip"
+# data "http" "testfile_file" {
+#   url = "https://raw.githubusercontent.com/Yvand/SharePointInfraDsc/refs/heads/main/README.md"
+# }
+
+# resource "local_file" "readme" {
+#   filename = "${path.module}/dsc/README.md"
+#   content  = data.http.testfile_file.response_body
+# }
+
+# resource "azurerm_storage_blob" "testfile" {
+#   depends_on             = [module.storage_account, resource.local_file.readme]
+#   storage_account_name   = module.storage_account.name
+#   storage_container_name = module.storage_account.containers["blob_container_dsc"].name
+#   name                   = "README.md"
+#   type                   = "Block"
+#   source                 = "${path.module}/dsc/README.md"
+# }
+
+resource "terraform_data" "dsc_zip_files" {
+  for_each         = local.dsc_zip_files
+  triggers_replace = [each.value]
+
+  provisioner "local-exec" {
+    command = "curl --location --create-dirs --output '${path.module}/dsc/${each.key}' '${each.value}'"
+  }
 }
 
+resource "azurerm_storage_blob" "dsc_zip_files" {
+  for_each               = local.dsc_zip_files
+  depends_on             = [module.storage_account, terraform_data.dsc_zip_files]
+  storage_account_name   = module.storage_account.name
+  storage_container_name = module.storage_account.containers["blob_container_dsc"].name
+  name                   = each.key
+  type                   = "Block"
+  source                 = "${path.module}/dsc/${each.key}"
+}
 
 
 
@@ -1021,7 +1057,7 @@ resource "azurerm_virtual_machine_extension" "vm_fe_ext_applydsc" {
   {
     "wmfVersion": "latest",
     "configuration": {
-	    "url": "${local._artifactsLocation}${local.dsc_settings["vm_fe_fileName"]}${local._artifactsLocationSasToken}",
+      "url": "${local.artifacts_location_base}${local.dsc_settings["vm_fe_fileName"]}${local._artifactsLocationSasToken}",
 	    "function": "${local.dsc_settings["vm_fe_function"]}",
 	    "script": "${local.dsc_settings["vm_fe_script"]}"
     },

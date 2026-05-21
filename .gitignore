@@ -1,3 +1,6 @@
+# Local directory where dsc zip files are downloaded
+dsc
+
 # Local .terraform directories
 **/.terraform/*
 
