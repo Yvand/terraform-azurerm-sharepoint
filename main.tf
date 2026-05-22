@@ -160,12 +160,12 @@ locals {
   }
 
   dsc_zip_files = {
-    "dsc-dc.zip"                = "${local.artifacts_location_base}dsc-dc.zip${local._artifactsLocationSasToken}"
-    "dsc-sql.zip"               = "${local.artifacts_location_base}dsc-sql.zip${local._artifactsLocationSasToken}"
-    "dsc-spse-main.zip"         = "${local.artifacts_location_base}dsc-spse-main.zip${local._artifactsLocationSasToken}"
-    "dsc-spse-frontend.zip"     = "${local.artifacts_location_base}dsc-spse-frontend.zip${local._artifactsLocationSasToken}"
-    "dsc-splegacy-main.zip"     = "${local.artifacts_location_base}dsc-splegacy-main.zip${local._artifactsLocationSasToken}"
-    "dsc-splegacy-frontend.zip" = "${local.artifacts_location_base}dsc-splegacy-frontend.zip${local._artifactsLocationSasToken}"
+    "dsc-dc.zip" = "https://github.com/Yvand/SharePointInfraDsc/raw/refs/heads/amc/tests/ConfigDc/dsc-dc.zip"
+    # "dsc-sql.zip"               = "${local.artifacts_location_base}dsc-sql.zip${local._artifactsLocationSasToken}"
+    # "dsc-spse-main.zip"         = "${local.artifacts_location_base}dsc-spse-main.zip${local._artifactsLocationSasToken}"
+    # "dsc-spse-frontend.zip"     = "${local.artifacts_location_base}dsc-spse-frontend.zip${local._artifactsLocationSasToken}"
+    # "dsc-splegacy-main.zip"     = "${local.artifacts_location_base}dsc-splegacy-main.zip${local._artifactsLocationSasToken}"
+    # "dsc-splegacy-frontend.zip" = "${local.artifacts_location_base}dsc-splegacy-frontend.zip${local._artifactsLocationSasToken}"
   }
 
   deployment_settings = {
@@ -468,7 +468,12 @@ module "storage_account" {
         rbac_storage_blob_data_contributor = {
           role_definition_id_or_name = "Storage Blob Data Contributor"
           principal_id               = data.azurerm_client_config.current_config.object_id
-        }
+        },
+        role_assignment_2 = {
+          role_definition_id_or_name       = "Storage Blob Data Reader"
+          principal_id                     = module.vm_dc_def.system_assigned_mi_principal_id
+          skip_service_principal_aad_check = false
+        },
       }
     }
   }
@@ -512,11 +517,6 @@ module "storage_account" {
     role_assignment_1 = {
       role_definition_id_or_name       = "Owner"
       principal_id                     = data.azurerm_client_config.current_config.object_id
-      skip_service_principal_aad_check = false
-    },
-    role_assignment_2 = {
-      role_definition_id_or_name       = "Storage Blob Data Reader"
-      principal_id                     = module.vm_dc_def.system_assigned_mi_principal_id
       skip_service_principal_aad_check = false
     },
   }
@@ -694,13 +694,102 @@ module "vm_dc_def" {
 # }
 
 resource "azurerm_virtual_machine_extension" "vm_dc_ext_applydsc" {
-  count                      = 0
   name                       = "AzurePolicyforWindows"
   virtual_machine_id         = module.vm_dc_def.resource_id
   publisher                  = "Microsoft.GuestConfiguration"
   type                       = "ConfigurationforWindows"
   type_handler_version       = "1.29"
   auto_upgrade_minor_version = "true"
+}
+
+resource "azurerm_policy_virtual_machine_configuration_assignment" "config_dc" {
+  # depends_on         = [azurerm_virtual_machine_extension.vm_dc_ext_applydsc]
+  name               = "ConfigDc"
+  location           = azurerm_resource_group.rg.location
+  virtual_machine_id = module.vm_dc_def.resource_id
+  # configuration {
+  #   assignment_type = "ApplyAndMonitor"
+  #   version         = "1.*"
+
+  #   parameter {
+  #     name  = "Minimum Password Length;ExpectedValue"
+  #     value = "16"
+  #   }
+  #   parameter {
+  #     name  = "Minimum Password Age;ExpectedValue"
+  #     value = "0"
+  #   }
+  #   parameter {
+  #     name  = "Maximum Password Age;ExpectedValue"
+  #     value = "30,45"
+  #   }
+  #   parameter {
+  #     name  = "Enforce Password History;ExpectedValue"
+  #     value = "10"
+  #   }
+  #   parameter {
+  #     name  = "Password Must Meet Complexity Requirements;ExpectedValue"
+  #     value = "1"
+  #   }
+  # }
+  configuration {
+    content_uri     = "https://github.com/Yvand/SharePointInfraDsc/raw/refs/heads/amc/tests/ConfigDc/dsc-dc.zip"
+    content_hash    = "C6EC456274A2DBF7DE907721ABA4236D9B44CA5F27EA4C4A5D8C6B1A015FF6C1"
+    version         = "1.0.0"
+    assignment_type = "ApplyAndMonitor"
+    parameter {
+      name  = "DomainFQDN;ExpectedValue"
+      value = var.domain_fqdn
+    }
+    parameter {
+      name  = "PrivateIP;ExpectedValue"
+      value = local.network_settings.vmDCPrivateIPAddress
+    }
+    parameter {
+      name  = "SPServerName;ExpectedValue"
+      value = local.vms_settings.vm_sp_name
+    }
+    parameter {
+      name  = "SharePointSitesAuthority;ExpectedValue"
+      value = local.deployment_settings.sharepoint_sites_authority
+    }
+    parameter {
+      name  = "SharePointCentralAdminPort;ExpectedValue"
+      value = tostring(local.deployment_settings.sharepoint_central_admin_port)
+    }
+    parameter {
+      name  = "GlobalConfiguration;ExpectedValue"
+      value = jsonencode(local.deployment_settings.default_global_configuration)
+    }
+    parameter {
+      name = "AdminCreds;ExpectedValue"
+      value = jsonencode({
+        UserName = var.admin_username
+        Password = local.admin_password
+      })
+    }
+    parameter {
+      name = "AdfsSvcCreds;ExpectedValue"
+      value = jsonencode({
+        UserName = local.deployment_settings.adfsSvcUserName
+        Password = local.other_accounts_password
+      })
+    }
+    parameter {
+      name = "SqlSvcCreds;ExpectedValue"
+      value = jsonencode({
+        UserName = local.deployment_settings.sqlSvcUserName
+        Password = local.other_accounts_password
+      })
+    }
+    parameter {
+      name = "SPSetupCreds;ExpectedValue"
+      value = jsonencode({
+        UserName = local.deployment_settings.spSetupUserName
+        Password = local.other_accounts_password
+      })
+    }
+  }
 }
 
 # // Create resources for VM SQL
