@@ -25,11 +25,14 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 
 - An Azure subscription with at least the Azure role [**Contributor**](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/privileged#contributor), to create the resources.
 - [Terraform CLI](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
+- [Git](https://git-scm.com/install/).
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest).
+
+To install all prerequisites on Windows with a single command: `winget install --exact Hashicorp.Terraform Git.Git Microsoft.AzureCLI`
 
 ## Usage
 
-1. Create a .tf file, copy the content below, and change the values to fit your needs:
+1. Create a .tf file, copy the content below, and set the variables to fit your needs (read below for more information):
 
     ```terraform
     module "sharepoint" {
@@ -39,6 +42,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
       resource_group_name            = "<resource_group_name_to_create>"
       sharepoint_version             = "Subscription-Latest"
       sharepoint_configuration_level = "Medium"
+      add_keyvault                   = false
       front_end_servers_count        = 0
       domain_fqdn                    = "contoso.local"
       admin_username                 = "yvand"
