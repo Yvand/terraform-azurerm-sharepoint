@@ -28,7 +28,7 @@ About SharePoint legacy: SharePoint 2016 / 2019 use outdated images ([2016](http
 - [Git](https://git-scm.com/install/).
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest).
 
-To install all prerequisites on Windows with a single command: `winget install --exact Hashicorp.Terraform Git.Git Microsoft.AzureCLI`
+To install/update all the prerequisites on Windows with a single command: `winget install --exact Hashicorp.Terraform Git.Git Microsoft.AzureCLI`
 
 ## Usage
 
@@ -131,6 +131,7 @@ You can use <https://azure.com/e/26eea69e35b04cb884b83ce06feadb5c> to estimate t
 
 - The password for the User Profile directory synchronization connection (variable `other_accounts_password`) needs to be re-entered in the "Edit synchronization connection" page, otherwise the profile import fails (password decryption error in the logs).
 - When setting `outbound_access_method` to `AzureFirewallProxy`, most of the softwares installed through Chocolatey fail to download and are not installed.
+- When setting `sharepoint_configuration_level` to `Full` and `front_end_servers_count` > 0: The configuration wizard hangs on the additional web front-ends, when joining the farm.
 - The deployment of Azure Bastion fails pretty frequently. This has little impact, since it is very easy to redeploy through the portal.
 - SharePoint 2016 and 2019 are outdated and deprecated. Their corresponding DSC configurations receive little maintenance to ensure they continue to deploy, but receive no improvement. As such, variables `sharepoint_configuration_level` and `default_zone_must_be_https` have no effect on them.
 
