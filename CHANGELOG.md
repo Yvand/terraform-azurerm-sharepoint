@@ -6,7 +6,6 @@
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the August 2026 PU for SharePoint Subscription
 
-
 ## [9.3.0] - 2026-07-15
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the July 2026 PU for SharePoint Subscription
