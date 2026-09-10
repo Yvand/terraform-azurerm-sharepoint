@@ -153,8 +153,8 @@ variable "outbound_access_method" {
   EOF
   validation {
     condition = contains([
-      "PublicIPAddress",
-      "AzureFirewallProxy"
+      "PublicIPAddress" #,
+      # "AzureFirewallProxy"
     ], var.outbound_access_method)
     error_message = "Invalid value for outbound_access_method."
   }

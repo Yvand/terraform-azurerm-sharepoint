@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2026 PU for SharePoint Subscription
+- Setting `outbound_access_method` to `AzureFirewallProxy` is no longer working correctly, and was deactivated until it is fixed
 
 ## [9.4.0] - 2026-08-12
 
