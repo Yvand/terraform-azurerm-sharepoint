@@ -108,7 +108,7 @@ locals {
       "Label" : "SPLatest",
       "Packages" : [
         {
-          "DownloadUrl" : "https://download.microsoft.com/download/4096f5f0-fe90-47d9-bc8d-330eaa11b9da/uber-subscription-kb5002893-fullfile-x64-glb.exe"
+          "DownloadUrl" : "https://download.microsoft.com/download/28e5d95a-225d-4669-b3da-2fe1aec3399c/uber-subscription-kb5002908-fullfile-x64-glb.exe"
         }
       ]
     }
@@ -236,12 +236,12 @@ locals {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4"
+  version = "0.4.3"
 }
 
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.5"
+  version = "0.12.0"
 }
 
 resource "random_integer" "zone_index" {
@@ -293,7 +293,7 @@ data "azurerm_client_config" "current_config" {}
 module "keyvault" {
   count                    = var.add_keyvault ? 1 : 0
   source                   = "Azure/avm-res-keyvault-vault/azurerm"
-  version                  = "0.10.2"
+  version                  = "0.11.0"
   name                     = module.naming.key_vault.name_unique
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
@@ -334,7 +334,7 @@ module "keyvault" {
 # Setup the network
 module "vnet" {
   source           = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version          = "0.17.1"
+  version          = "0.22.2"
   name             = module.naming.virtual_network.name_unique
   location         = azurerm_resource_group.rg.location
   parent_id        = azurerm_resource_group.rg.id
@@ -381,7 +381,7 @@ module "nsg_subnet_main" {
 // Create resources for VM DC
 module "vm_dc_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.20.0"
+  version                    = "0.21.0"
   name                       = "vm-dc"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -508,7 +508,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SQL
 module "vm_sql_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.20.0"
+  version                    = "0.21.0"
   name                       = "vm-sql"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -623,7 +623,7 @@ PROTECTED_SETTINGS
 // Create resources for VM SP
 module "vm_sp_def" {
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.20.0"
+  version                    = "0.21.0"
   name                       = "vm-sp"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
@@ -777,7 +777,7 @@ PROTECTED_SETTINGS
 module "vm_fe_def" {
   count                      = var.front_end_servers_count
   source                     = "Azure/avm-res-compute-virtualmachine/azurerm"
-  version                    = "0.20.0"
+  version                    = "0.21.0"
   name                       = "vm-fe${count.index}"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
