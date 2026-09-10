@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [9.5.0] - 2026-09-10
+
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2026 PU for SharePoint Subscription
 - Setting `outbound_access_method` to `AzureFirewallProxy` is no longer working correctly, and was deactivated until it is fixed
 - Update Terraform modules to their latest version
