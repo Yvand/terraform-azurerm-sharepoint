@@ -301,6 +301,7 @@ module "keyvault" {
   enable_telemetry         = local.enable_telemetry
   tenant_id                = data.azurerm_client_config.current_config.tenant_id
   sku_name                 = "standard"
+  public_network_access_enabled = true
   purge_protection_enabled = false
   network_acls = {
     ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
