@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## [9.6.0] - 2026-09-10
+## [9.6.0] - 2026-09-17
 
 - Fixed deployment failed due to VMs unable to connect to internet, when parameter `outbound_access_method` is set to `AzureFirewallProxy`
 
