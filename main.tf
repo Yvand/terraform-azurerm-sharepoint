@@ -953,8 +953,8 @@ module "firewall_policy" {
   tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   firewall_policy_explicit_proxy = {
-    enabled         = true
-    http_port       = local.firewall_proxy_settings.http_port
+    enabled   = true
+    http_port = local.firewall_proxy_settings.http_port
     # https_port      = local.firewall_proxy_settings.https_port
     enable_pac_file = false
   }
