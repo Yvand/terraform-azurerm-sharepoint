@@ -188,11 +188,11 @@ locals {
   firewall_proxy_settings = {
     vNetAzureFirewallPrefix = "10.1.3.0/24"
     azureFirewallIPAddress  = "10.1.3.4"
-    http_port               = 8080
-    https_port              = 8443
+    http_port               = 9009
+    https_port              = 9009
   }
 
-  set_proxy_script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path '$registryPath\\Connections' -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
+  set_proxy_script = "param([string]$proxyIp, [string]$proxyHttpPort, [string]$proxyHttpsPort, [string]$localDomainFqdn) $proxy = 'http={0}:{1};https={0}:{2}' -f $proxyIp, $proxyHttpPort, $proxyHttpsPort; $bypasslist = '*.{0};<local>' -f $localDomainFqdn; netsh winhttp set proxy proxy-server=$proxy bypass-list=$bypasslist; $proxyEnabled = 1; New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name 'ProxySettingsPerUser' -PropertyType DWORD -Value 0 -Force; $proxyBytes = [system.Text.Encoding]::ASCII.GetBytes($proxy); $bypassBytes = [system.Text.Encoding]::ASCII.GetBytes($bypasslist); $defaultConnectionSettings = [byte[]]@(@(70, 0, 0, 0, 0, 0, 0, 0, $proxyEnabled, 0, 0, 0, $proxyBytes.Length, 0, 0, 0) + $proxyBytes + @($bypassBytes.Length, 0, 0, 0) + $bypassBytes + @(1..36 | % { 0 })); $registryPaths = @('HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'); foreach ($registryPath in $registryPaths) { Set-ItemProperty -Path $registryPath -Name ProxyServer -Value $proxy; Set-ItemProperty -Path $registryPath -Name ProxyEnable -Value $proxyEnabled; Set-ItemProperty -Path $registryPath -Name ProxyOverride -Value $bypasslist; Set-ItemProperty -Path \"$registryPath\\Connections\" -Name DefaultConnectionSettings -Value $defaultConnectionSettings; } Bitsadmin /util /setieproxy localsystem MANUAL_PROXY $proxy $bypasslist;"
 
   run_command_set_proxy = {
     location = azurerm_resource_group.rg.location
@@ -236,7 +236,7 @@ locals {
 
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.3"
+  version = "0.4.4"
 }
 
 module "regions" {
@@ -291,20 +291,21 @@ data "azurerm_client_config" "current_config" {}
 
 # Azure key vault
 module "keyvault" {
-  count                    = var.add_keyvault ? 1 : 0
-  source                   = "Azure/avm-res-keyvault-vault/azurerm"
-  version                  = "0.11.0"
-  name                     = module.naming.key_vault.name_unique
-  location                 = azurerm_resource_group.rg.location
-  resource_group_name      = azurerm_resource_group.rg.name
-  tags                     = local.tags
-  enable_telemetry         = local.enable_telemetry
-  tenant_id                = data.azurerm_client_config.current_config.tenant_id
-  sku_name                 = "standard"
-  purge_protection_enabled = false
+  count                         = var.add_keyvault ? 1 : 0
+  source                        = "Azure/avm-res-keyvault-vault/azurerm"
+  version                       = "0.11.0"
+  name                          = module.naming.key_vault.name_unique
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
+  tags                          = local.tags
+  enable_telemetry              = local.enable_telemetry
+  tenant_id                     = data.azurerm_client_config.current_config.tenant_id
+  sku_name                      = "standard"
+  public_network_access_enabled = true
+  purge_protection_enabled      = false
   network_acls = {
     ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
-    bypass   = "None"
+    bypass   = "AzureServices"
   }
   role_assignments = {
     deployment_user_kv_admin = {
@@ -952,9 +953,9 @@ module "firewall_policy" {
   tags                = local.tags
   enable_telemetry    = local.enable_telemetry
   firewall_policy_explicit_proxy = {
-    enabled         = true
-    http_port       = local.firewall_proxy_settings.http_port
-    https_port      = local.firewall_proxy_settings.https_port
+    enabled   = true
+    http_port = local.firewall_proxy_settings.http_port
+    # https_port      = local.firewall_proxy_settings.https_port
     enable_pac_file = false
   }
 }
@@ -995,6 +996,7 @@ module "rule_collection_group" {
 
 module "firewall_def" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  depends_on          = [module.rule_collection_group[0]]
   source              = "Azure/avm-res-network-azurefirewall/azurerm"
   version             = "0.4.0"
   name                = module.naming.firewall.name
@@ -1005,11 +1007,11 @@ module "firewall_def" {
   firewall_sku_name   = "AZFW_VNet"
   firewall_sku_tier   = "Standard"
   firewall_policy_id  = module.firewall_policy[0].resource_id
-  firewall_ip_configuration = [
-    {
+  ip_configurations = {
+    ipconfig1 = {
       name                 = "ipconfig1"
       subnet_id            = azurerm_subnet.firewall_subnet[0].id
       public_ip_address_id = module.firewall_pip[0].resource_id
     }
-  ]
+  }
 }

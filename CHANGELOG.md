@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed deployment failed due to VMs unable to connect to internet, when parameter `outbound_access_method` is set to `AzureFirewallProxy`
+
 ## [9.5.0] - 2026-09-10
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the September 2026 PU for SharePoint Subscription
