@@ -995,6 +995,7 @@ module "rule_collection_group" {
 
 module "firewall_def" {
   count               = var.outbound_access_method == "AzureFirewallProxy" ? 1 : 0
+  depends_on          = [module.rule_collection_group[0]]
   source              = "Azure/avm-res-network-azurefirewall/azurerm"
   version             = "0.4.0"
   name                = module.naming.firewall.name
@@ -1005,11 +1006,11 @@ module "firewall_def" {
   firewall_sku_name   = "AZFW_VNet"
   firewall_sku_tier   = "Standard"
   firewall_policy_id  = module.firewall_policy[0].resource_id
-  firewall_ip_configuration = [
-    {
+  ip_configurations = {
+    ipconfig1 = {
       name                 = "ipconfig1"
       subnet_id            = azurerm_subnet.firewall_subnet[0].id
       public_ip_address_id = module.firewall_pip[0].resource_id
     }
-  ]
+  }
 }
