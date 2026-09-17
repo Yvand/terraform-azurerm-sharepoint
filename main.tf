@@ -305,7 +305,7 @@ module "keyvault" {
   purge_protection_enabled      = false
   network_acls = {
     ip_rules = ["${trimspace(data.http.current_ip[0].response_body)}/32"]
-    bypass   = "None"
+    bypass   = "AzureServices"
   }
   role_assignments = {
     deployment_user_kv_admin = {

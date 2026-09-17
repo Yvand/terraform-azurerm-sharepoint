@@ -1,5 +1,6 @@
 {
     "chat.tools.terminal.autoApprove": {
-        "terraform": true
+        "terraform": true,
+        "az": true
     }
 }
