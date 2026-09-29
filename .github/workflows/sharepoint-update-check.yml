@@ -1,0 +1,55 @@
+name: Monthly SharePoint update check
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs at 06:00 UTC on the 1st of every month
+    - cron: '0 6 1 * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-sharepoint-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v7
+
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Run sharepoint-update-syncer agent
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          copilot -p "run the SharePoint update check" --agent=sharepoint-update-syncer --allow-all-tools --no-ask-user
+
+      - name: Open pull request if main.tf changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- main.tf; then
+            echo "No SharePoint update found; nothing to do."
+            exit 0
+          fi
+
+          branch="sharepoint-update-$(date +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add main.tf
+          git commit -m "chore: update SharePoint Server Subscription Edition download URL"
+          git push origin "$branch"
+          gh pr create \
+            --title "chore: update SharePoint Server Subscription Edition download URL" \
+            --body "Automated monthly check by the sharepoint-update-syncer agent found a newer SharePoint Server Subscription Edition build and updated the SPLatest DownloadUrl in main.tf. Please review before merging." \
+            --base main \
+            --head "$branch"
