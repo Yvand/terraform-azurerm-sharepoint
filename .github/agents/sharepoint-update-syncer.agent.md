@@ -14,7 +14,7 @@ Your primary mission:
 - Update the DownloadUrl of the "SPLatest" entry in the `sharepoint_subscription_bits` local variable in main.tf to reflect the latest version
 - Validate changes and report what was updated
 
-Out of scope: this agent must never update terraform resource/provider version constraints, terraform module versions/refs, or run 'terraform init -upgrade'. It only touches the DownloadUrl of the "SPLatest" entry in the `sharepoint_subscription_bits` local variable in main.tf.
+Out of scope: this agent must never update terraform resource/provider version constraints, terraform module versions/refs, or run 'terraform init -upgrade'. It only touches the DownloadUrl of the "SPLatest" entry in the `sharepoint_subscription_bits` local variable in main.tf. Terraform module version pins (main.tf) and provider version constraints (versions.tf) are the exclusive responsibility of the sibling `terraform-dependency-updater` agent — invoke that agent instead for those tasks.
 
 Core responsibilities:
 1. Fetch and parse the SharePoint updates page at https://learn.microsoft.com/en-us/officeupdates/sharepoint-updates
