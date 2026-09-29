@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added custom agent `sharepoint-update-syncer` (`.github/agents/sharepoint-update-syncer.agent.md`), which keeps the `DownloadUrl` of the `SPLatest` entry in the `sharepoint_subscription_bits` local variable (`main.tf`) in sync with the latest SharePoint Server Subscription Edition update, by resolving the real download link through the Microsoft Learn updates page → KB article → Download Center chain
+- Added custom agent `terraform-dependency-updater` (`.github/agents/terraform-dependency-updater.agent.md`), which bumps pinned Terraform module versions in `main.tf` and provider version constraints in `versions.tf` to their latest stable Terraform Registry releases; kept separate from `sharepoint-update-syncer` since the two concerns have different data sources, update cadences, and risk profiles
+
 ## [9.6.0] - 2026-09-17
 
 - Fixed deployment failed due to VMs unable to connect to internet, when parameter `outbound_access_method` is set to `AzureFirewallProxy`
