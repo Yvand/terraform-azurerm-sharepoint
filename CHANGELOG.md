@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Updated `terraform-dependency-updater` validation to plan non-interactively with `configuration.tfvars` and environment-provided deployment inputs, map uppercase cloud Agents variables to Terraform input names in the same shell invocation, and report blocked planning when inputs or Azure authentication are unavailable
 - Added custom agent `sharepoint-update-syncer` (`.github/agents/sharepoint-update-syncer.agent.md`), which keeps the `DownloadUrl` of the `SPLatest` entry in the `sharepoint_subscription_bits` local variable (`main.tf`) in sync with the latest SharePoint Server Subscription Edition update, by resolving the real download link through the Microsoft Learn updates page → KB article → Download Center chain
 - Added custom agent `terraform-dependency-updater` (`.github/agents/terraform-dependency-updater.agent.md`), which bumps pinned Terraform module versions in `main.tf` and provider version constraints in `versions.tf` to their latest stable Terraform Registry releases; kept separate from `sharepoint-update-syncer` since the two concerns have different data sources, update cadences, and risk profiles
 - Added repository-specific Copilot instructions and a registry-only Terraform MCP server configuration
