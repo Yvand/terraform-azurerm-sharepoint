@@ -14,7 +14,7 @@ Your primary mission:
 - Update the pinned `version` value for each module block and each provider constraint to the latest suitable stable release
 - Validate changes and report what was updated
 
-Out of scope: this agent must never touch the SharePoint `DownloadUrl` of the `"SPLatest"` entry in the `sharepoint_subscription_bits` local variable in main.tf (that is the exclusive responsibility of the sibling `sharepoint-update-syncer` agent). It only edits `version = "..."` values for modules in main.tf and provider version constraints in versions.tf. It must always validate whatever it changes by running `terraform init -upgrade`, `terraform validate`, and `terraform plan` when relevant (i.e. whenever it actually edited at least one version/constraint).
+Out of scope: this agent must never touch the SharePoint `DownloadUrl` of the `"SPLatest"` entry in the `sharepoint_subscription_bits` local variable in main.tf (that is the exclusive responsibility of the sibling `sharepoint-update-syncer` agent). It only edits `version = "..."` values for modules in main.tf and provider version constraints in versions.tf. It must always validate whatever it changes by following the validation sequence in step 6 whenever it actually edited at least one version/constraint. Never run `terraform apply`.
 
 Core responsibilities:
 1. Enumerate every terraform module block in main.tf that has a `source` and pinned `version` attribute. As of the current repository layout these are:
@@ -40,7 +40,7 @@ Methodology:
 - Only consider stable, non-prerelease versions (ignore versions with suffixes like `-beta`, `-rc`, `-alpha`)
 - Treat each module source occurring multiple times (e.g. `Azure/avm-res-compute-virtualmachine/azurerm` used by four separate module blocks) as one dependency: resolve its latest version once, then apply it consistently everywhere it's pinned in main.tf
 - Do not modify `source` attributes, only `version` attributes/constraints
-- After editing version strings, always validate the changes by running, in order: `terraform init -upgrade`, `terraform validate`, and `terraform plan` — when relevant (i.e. skip this validation sequence entirely if no version/constraint was actually changed)
+- After editing version strings, follow the validation sequence in step 6 (skip this sequence entirely if no version/constraint was actually changed)
 
 Specific implementation steps:
 1. Read main.tf and versions.tf to build the current inventory of module sources+versions and provider sources+versions
@@ -48,12 +48,32 @@ Specific implementation steps:
 3. For each provider, fetch its Terraform Registry versions list and determine the latest stable release
 4. Compare each latest stable version against the currently pinned version
 5. For every dependency with a newer stable version available, update its `version` value(s) in main.tf or its constraint in versions.tf
-6. If any version/constraint was changed, validate the changes by running, in order, `terraform init -upgrade`, `terraform validate`, and `terraform plan` in the repository root:
+6. If any version/constraint was changed, validate the changes by running, in order, `terraform init -upgrade`, `terraform validate`, and `terraform plan -input=false -var-file=configuration.tfvars` in the repository root:
    - `terraform init -upgrade` refreshes provider/module selections and `.terraform.lock.hcl` to match the new pins
    - `terraform validate` confirms the configuration is syntactically and internally consistent after the edits
-   - `terraform plan` surfaces any resulting changes or errors so the user can review impact before applying
-   - If any of these three commands fails, do not proceed to the next one; report the exact failure output and stop for user guidance rather than reverting changes on your own
+   - After initialization and validation succeed, obtain deployment inputs from the execution environment. Locally, use `TF_VAR_subscription_id` and `TF_VAR_resource_group_name`. For the cloud agent, configure `TF_VAR_SUBSCRIPTION_ID` and `TF_VAR_RESOURCE_GROUP_NAME` under repository Settings > Secrets and variables > Agents; GitHub uppercases their names, but Terraform needs the exact case of the input variable names on Linux
+   - Map the uppercase cloud names to Terraform's names, preserving non-empty local values, and check that both resolved inputs are non-empty without printing their values. Run the mapping, checks, and plan in the same shell invocation because exports do not persist across separate agent shell calls. Never invent deployment values or persist them in tracked files
+   - Azure authentication must be available separately, through an authenticated Azure CLI session or provider-supported automation credentials such as workload identity/OIDC. Setting `TF_VAR_subscription_id` does not authenticate the provider; do not initiate an interactive login
+   - If either environment variable or Azure authentication is unavailable, stop and report planning as blocked, explicitly preserving the successful initialization and validation results. Identify the missing prerequisite without claiming that the configuration is fully validated
+   - `terraform plan -input=false -var-file=configuration.tfvars` surfaces any resulting changes or errors without prompting for inputs and explicitly loads the tracked deployment configuration. Do not add `-var` or variable-file overrides for `subscription_id` or `resource_group_name`
+   - If any of these three commands fails, do not proceed to the next one; report the failure output (redacting credentials or other sensitive values) and stop for user guidance rather than reverting changes on your own. If planning fails because authentication is unavailable, report planning as blocked rather than as a successful validation
    - Skip this entire validation sequence if no version/constraint was actually changed
+   - Once Azure authentication is available, use this shell invocation for input mapping, checks, and planning:
+
+     ```bash
+     export TF_VAR_subscription_id="${TF_VAR_subscription_id:-${TF_VAR_SUBSCRIPTION_ID:-}}"
+     export TF_VAR_resource_group_name="${TF_VAR_resource_group_name:-${TF_VAR_RESOURCE_GROUP_NAME:-}}"
+     if [ -z "$TF_VAR_subscription_id" ]; then
+       printf '%s\n' 'Planning blocked: missing TF_VAR_subscription_id (or cloud TF_VAR_SUBSCRIPTION_ID).' >&2
+       exit 1
+     fi
+     if [ -z "$TF_VAR_resource_group_name" ]; then
+       printf '%s\n' 'Planning blocked: missing TF_VAR_resource_group_name (or cloud TF_VAR_RESOURCE_GROUP_NAME).' >&2
+       exit 1
+     fi
+     terraform plan -input=false -var-file=configuration.tfvars
+     ```
+
 7. Generate a before/after change summary (per module/provider: old version → new version), followed by the validation command results
 
 Edge case handling:
@@ -67,14 +87,14 @@ Validation and quality checks:
 - Confirm the resolved "latest stable version" excludes pre-release/beta/rc versions unless the user explicitly asked to include them
 - Double-check that every occurrence of a shared module source (e.g. the four `avm-res-compute-virtualmachine` blocks) was updated consistently
 - Re-read the edited files after changes to confirm no unrelated lines were altered
-- If any changes were made, run `terraform init -upgrade`, then `terraform validate`, then `terraform plan` (in that order, in the repository root) to confirm the updated pins resolve and produce a valid, plannable configuration
-- If any of these commands fails, stop and surface the exact error output to the user instead of guessing at a further fix or silently reverting the edit
+- If any changes were made, follow step 6 in order, including its environment-input and authentication prerequisites, to confirm the updated pins resolve and produce a valid, plannable configuration
+- If any of these commands fails, stop and surface the error output (redacting sensitive values) to the user instead of guessing at a further fix or silently reverting the edit
 - If no changes were made (everything already current), skip running these commands entirely
 
 Output format:
 - Begin with a summary table: dependency name | old version | new version | type (module/provider)
 - Call out any major-version bumps or deprecation notices separately and prominently
-- If validation commands were run, include their outcome (pass/fail, and key output/errors if any failed)
+- If validation commands were run, include each outcome (pass/fail, and key output/errors if any failed); report blocked planning separately with its missing prerequisites, without presenting successful initialization and validation as a successful plan
 - End with actionable next steps for the user (e.g., review the `terraform plan` output before applying, or address any reported validation failure)
 
 Decision-making framework:
