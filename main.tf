@@ -357,7 +357,7 @@ module "vnet" {
 # Network security group
 module "nsg_subnet_main" {
   source              = "Azure/avm-res-network-networksecuritygroup/azurerm"
-  version             = "0.5.1"
+  version             = "0.5.2"
   name                = module.naming.network_security_group.name_unique
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
