@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [9.7.0] - 2026-09-17
+
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2026 PU for SharePoint Subscription (KB5002927)
 - Updated `terraform-dependency-updater` validation to plan non-interactively with `configuration.tfvars` and environment-provided deployment inputs, map uppercase cloud Agents variables to Terraform input names in the same shell invocation, and report blocked planning when inputs or Azure authentication are unavailable
 - Added custom agent `sharepoint-update-syncer` (`.github/agents/sharepoint-update-syncer.agent.md`), which keeps the `DownloadUrl` of the `SPLatest` entry in the `sharepoint_subscription_bits` local variable (`main.tf`) in sync with the latest SharePoint Server Subscription Edition update, by resolving the real download link through the Microsoft Learn updates page → KB article → Download Center chain
