@@ -105,6 +105,22 @@ locals {
       ]
     },
     {
+      "Label" : "SP26H1",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/7b4c3ae5-ce9d-4f5d-8e30-cefd28c92c3e/uber-subscription-kb5002873-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
+      "Label" : "SP26H2",
+      "Packages" : [
+        {
+          "DownloadUrl" : "https://download.microsoft.com/download/23516bd3-8d7e-41c8-9cfd-1fa72bcf52f8/uber-subscription-kb5002927-fullfile-x64-glb.exe"
+        }
+      ]
+    },
+    {
       "Label" : "SPLatest",
       "Packages" : [
         {
