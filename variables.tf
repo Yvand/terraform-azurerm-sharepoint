@@ -24,6 +24,8 @@ variable "sharepoint_version" {
   validation {
     condition = contains([
       "Subscription-Latest",
+      "Subscription-26H2",
+      "Subscription-26H1",
       "Subscription-25H2",
       "Subscription-25H1",
       "Subscription-24H2",
@@ -427,7 +429,7 @@ variable "vm_sp_storage" {
 variable "_artifactsLocation" {
   type        = string
   description = "The base URI where artifacts required by this template are located including a trailing '/'"
-  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.1.1/"
+  default     = "https://github.com/Yvand/SharePointInfraDsc/releases/download/releases/v3.2.1/"
 }
 
 variable "tags" {

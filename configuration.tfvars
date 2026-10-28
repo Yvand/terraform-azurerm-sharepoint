@@ -1,10 +1,10 @@
 location                       = "francecentral"
-sharepoint_version             = "Subscription-RTM" #"2019"
-sharepoint_configuration_level = "Minimum"          #"Full"                #"Custom"
+sharepoint_version             = "Subscription-Latest" #"2019"
+sharepoint_configuration_level = "Medium"              #"Full"                #"Custom"
 # custom_sharepoint_configuration = ["ProjectServer", "Search"]
 default_zone_must_be_https = true
 outbound_access_method     = "AzureFirewallProxy" #"PublicIPAddress" #"AzureFirewallProxy"
-front_end_servers_count    = 0
+front_end_servers_count    = 1
 add_keyvault               = true
 # add_bastion                     = true
 auto_shutdown_time              = "1930"

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [9.8.0] - 2026-10-28
+
+- Added SharePoint Subscription 26H1 and 26H2 updates
+- Updated DSC configurations to [v3.2.1](https://github.com/Yvand/SharePointInfraDsc/releases/tag/releases%2Fv3.2.1) over v3.1.1 ([changelog](https://github.com/Yvand/SharePointInfraDsc/blob/main/CHANGELOG.md))
+
 ## [9.7.0] - 2026-09-17
 
 - Value `Subscription-Latest` for parameter `sharePointVersion` now installs the October 2026 PU for SharePoint Subscription (KB5002927)
