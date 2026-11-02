@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Updated `sharepoint-update-syncer` to synchronize the README `Subscription-Latest` release and changelog, and automatically create or reuse a ready-for-review PR for validated SharePoint updates.
+
 ## [9.8.0] - 2026-10-28
 
 - Added SharePoint Subscription 26H1 and 26H2 updates
