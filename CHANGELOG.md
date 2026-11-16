@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [9.9.0] - 2026-11-16
+
 - Updated `sharepoint-update-syncer` to synchronize the README `Subscription-Latest` release and changelog, and automatically create or reuse a ready-for-review PR for validated SharePoint updates.
 - Updated `Subscription-Latest` to the November 2026 SharePoint Subscription update (KB5002945).
 
