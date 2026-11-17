@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added task-focused tool allowlists for both update agents, excluding delegation, skills, and unrelated MCP tools.
+- Simplified `sharepoint-update-syncer` to open or reuse a validated update PR using available tools, without requiring a specific publication workflow or changing draft status.
+
 ## [9.9.0] - 2026-11-16
 
 - Updated `sharepoint-update-syncer` to synchronize the README `Subscription-Latest` release and changelog, and automatically create or reuse a ready-for-review PR for validated SharePoint updates.
