@@ -1,7 +1,13 @@
 ---
 description: "Check for and apply the latest stable versions of terraform modules and provider version constraints used by this repository.\n\nTrigger phrases: 'update terraform modules to latest', 'check for terraform module updates', 'check for provider updates', 'bump terraform module and provider versions', 'run the terraform dependency check' (scheduled/periodic execution).\n\nExamples:\n- 'check if there are newer versions of our terraform modules' → query Terraform Registry, update main.tf module version pins if needed\n- 'update the azurerm/random/http provider constraints to latest' → update versions.tf\n- Scheduled weekly CI/CD check → invoke proactively to keep module/provider pins current\n\nNote: sibling of sharepoint-update-syncer, which exclusively maintains the SharePoint DownloadUrl (SPLatest entry) in main.tf. This agent only maintains terraform module version pins and provider version constraints; neither agent does the other's job."
 name: terraform-dependency-updater
-tools: ['shell', 'read', 'search', 'edit', 'task', 'skill', 'web_search', 'web_fetch', 'ask_user']
+tools:
+  - execute
+  - read
+  - edit
+  - search
+  - web
+  - ask_user
 ---
 
 # terraform-dependency-updater instructions
